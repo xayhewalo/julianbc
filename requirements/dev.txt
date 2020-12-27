@@ -1,0 +1,7 @@
+-r base.txt
+git+https://github.com/fitnr/convertdate.git@2.3.1-working#egg=convertdate
+factory-boy~=3.1.0
+pytest~=6.1.2
+pytest-cov~=2.10.1
+pytest-black~=0.3.12
+pytest-flake8~=1.0.4

@@ -671,24 +671,36 @@ class CalendarConversionTest(CalendarTestCase, FactoriesMixin):
     def test_make_mutual_conversions(self):
         with self.session:
             conversion1_2 = self.conversion_factory()
-            calendar1 = conversion1_2.target_calendar
-            calendar2 = conversion1_2.source_calendar
+            calendar1 = conversion1_2.source_calendar
+            calendar2 = conversion1_2.target_calendar
             conversion2_3 = self.conversion_factory(source_calendar=calendar2)
             calendar3 = conversion2_3.target_calendar
+            expected_sync_ordinal_difference = abs(
+                conversion1_2.source_sync_ordinal
+                - conversion2_3.target_sync_ordinal
+            )
             self.session.flush()
 
-            assert event.contains(
-                Session,
-                "before_flush",
-                CalendarConversion.make_mutual_conversions,
-            )
             conversions = set(
                 object_
                 for object_ in self.session
                 if isinstance(object_, CalendarConversion)
             )
             conversion1_3 = conversions - {conversion1_2, conversion2_3}
-            conversion1_3 = conversion1_3.pop()
+            conversion1_3 = conversion1_3.pop()  # set -> CalendarConversion
+
+            assert event.contains(
+                Session,
+                "before_flush",
+                CalendarConversion.make_mutual_conversions,
+            )
+            assert (
+                abs(
+                    conversion1_3.source_sync_ordinal
+                    - conversion1_3.target_sync_ordinal
+                )
+                == expected_sync_ordinal_difference
+            )
             if calendar1.id == conversion1_3.source_calendar.id:
                 assert calendar3.id == conversion1_3.target_calendar.id
             elif calendar3.id == conversion1_3.source_calendar.id:

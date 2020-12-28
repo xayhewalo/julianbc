@@ -89,7 +89,6 @@ class CalendarConversionFactory(BaseFactory):
     class Meta:
         model = CalendarConversion
 
-    id = factory.Sequence(lambda n: n)
     target_calendar = factory.SubFactory(ConvertibleCalendarFactory)
     source_calendar = factory.SubFactory(ConvertibleCalendarFactory)
     source_sync_ordinal = factory.Faker("random_int", min=-9999)

@@ -28,7 +28,6 @@ from sqlalchemy import (
     Integer,
     JSON,
     Unicode,
-    UniqueConstraint,
 )
 from sqlalchemy.orm import (
     declarative_base,
@@ -438,16 +437,11 @@ class CalendarConversion(CalBase):
     """Calendar-to-Calendar Association Object"""
 
     __tablename__ = "calendar_conversion"
-    __table_args__ = (
-        UniqueConstraint("source_calendar_id", "target_calendar_id"),
-    )
-
-    id = Column(Integer, primary_key=True)
     source_calendar_id = Column(
-        Integer, ForeignKey("convertible_calendar.id"), nullable=False
+        Integer, ForeignKey("convertible_calendar.id"), primary_key=True
     )
     target_calendar_id = Column(
-        Integer, ForeignKey("convertible_calendar.id"), nullable=False
+        Integer, ForeignKey("convertible_calendar.id"), primary_key=True
     )
     source_sync_ordinal = Column(BigInteger, nullable=False)
     target_sync_ordinal = Column(BigInteger, nullable=False)

@@ -232,12 +232,18 @@ class GregorianTest(RealCalendarTestCase):
         bce_ymd = self.random_bce_ymd()
         bce_ordinal = self.gregorian_dc.from_gregorian(*bce_ymd) + 1
         bce_ordinal_date = ordinal.from_gregorian(*bce_ymd)
-        assert self.gregorian_cdt.ordinal_to_ordinal_date(
-            self.gregorian_cdt.ordinal_date_to_ordinal(bce_ordinal_date)
-        ) == bce_ordinal_date
-        assert self.gregorian_cdt.ordinal_date_to_ordinal(
-            self.gregorian_cdt.ordinal_to_ordinal_date(bce_ordinal)
-        ) == bce_ordinal
+        assert (
+            self.gregorian_cdt.ordinal_to_ordinal_date(
+                self.gregorian_cdt.ordinal_date_to_ordinal(bce_ordinal_date)
+            )
+            == bce_ordinal_date
+        )
+        assert (
+            self.gregorian_cdt.ordinal_date_to_ordinal(
+                self.gregorian_cdt.ordinal_to_ordinal_date(bce_ordinal)
+            )
+            == bce_ordinal
+        )
 
     @patch(
         "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
@@ -251,12 +257,18 @@ class GregorianTest(RealCalendarTestCase):
         ce_ymd = self.random_ce_ymd()
         ce_ordinal = self.gregorian_dc.from_gregorian(*ce_ymd) + 1
         ce_ordinal_date = ordinal.from_gregorian(*ce_ymd)
-        assert self.gregorian_cdt.ordinal_to_ordinal_date(
-            self.gregorian_cdt.ordinal_date_to_ordinal(ce_ordinal_date)
-        ) == ce_ordinal_date
-        assert self.gregorian_cdt.ordinal_date_to_ordinal(
-            self.gregorian_cdt.ordinal_to_ordinal_date(ce_ordinal)
-        ) == ce_ordinal
+        assert (
+            self.gregorian_cdt.ordinal_to_ordinal_date(
+                self.gregorian_cdt.ordinal_date_to_ordinal(ce_ordinal_date)
+            )
+            == ce_ordinal_date
+        )
+        assert (
+            self.gregorian_cdt.ordinal_date_to_ordinal(
+                self.gregorian_cdt.ordinal_to_ordinal_date(ce_ordinal)
+            )
+            == ce_ordinal
+        )
 
     #
     # ConvertibleDateTime.ast_ymd_to_ordinal_date
@@ -353,12 +365,18 @@ class GregorianTest(RealCalendarTestCase):
         common_year, month, day = self.random_common_ymd()
         ordinal_date = ordinal.from_gregorian(common_year, month, day)
         ast_ymd = common_year, month, day
-        assert self.gregorian_cdt.ordinal_date_to_ast_ymd(
-            self.gregorian_cdt.ast_ymd_to_ordinal_date(ast_ymd)
-        ) == ast_ymd
-        assert self.gregorian_cdt.ast_ymd_to_ordinal_date(
-            self.gregorian_cdt.ordinal_date_to_ast_ymd(ordinal_date)
-        ) == ordinal_date
+        assert (
+            self.gregorian_cdt.ordinal_date_to_ast_ymd(
+                self.gregorian_cdt.ast_ymd_to_ordinal_date(ast_ymd)
+            )
+            == ast_ymd
+        )
+        assert (
+            self.gregorian_cdt.ast_ymd_to_ordinal_date(
+                self.gregorian_cdt.ordinal_date_to_ast_ymd(ordinal_date)
+            )
+            == ordinal_date
+        )
 
     @patch(
         "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
@@ -373,12 +391,18 @@ class GregorianTest(RealCalendarTestCase):
         leap_year, month, day = self.random_leap_ymd()
         ordinal_date = ordinal.from_gregorian(leap_year, month, day)
         ast_ymd = leap_year, month, day
-        assert self.gregorian_cdt.ordinal_date_to_ast_ymd(
-            self.gregorian_cdt.ast_ymd_to_ordinal_date(ast_ymd)
-        ) == ast_ymd
-        assert self.gregorian_cdt.ast_ymd_to_ordinal_date(
-            self.gregorian_cdt.ordinal_date_to_ast_ymd(ordinal_date)
-        ) == ordinal_date
+        assert (
+            self.gregorian_cdt.ordinal_date_to_ast_ymd(
+                self.gregorian_cdt.ast_ymd_to_ordinal_date(ast_ymd)
+            )
+            == ast_ymd
+        )
+        assert (
+            self.gregorian_cdt.ast_ymd_to_ordinal_date(
+                self.gregorian_cdt.ordinal_date_to_ast_ymd(ordinal_date)
+            )
+            == ordinal_date
+        )
 
     @patch(
         "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
@@ -412,17 +436,23 @@ class GregorianTest(RealCalendarTestCase):
         assert self.gregorian_cdt.ast_to_hr(ast_bce_year) == (hr_bce_year, 0)
         assert self.gregorian_cdt.ast_to_hr(ast_ce_year) == (ast_ce_year, 1)
 
-    def test_ast_to_hr_and_hr_to_ast_reversible(self):
+    def test_ast_to_hr_and_hr_to_ast_are_reversible(self):
         ast_bce_year = self.random_bce_year()
         hr_bce_year = abs(ast_bce_year - 1)
         ast_ce_year = self.random_ce_year()
         hr_ce_year = ast_ce_year
-        assert self.gregorian_cdt.hr_to_ast(
-            *self.gregorian_cdt.ast_to_hr(ast_bce_year)
-        ) == ast_bce_year
-        assert self.gregorian_cdt.hr_to_ast(
-            *self.gregorian_cdt.ast_to_hr(ast_ce_year)
-        ) == ast_ce_year
+        assert (
+            self.gregorian_cdt.hr_to_ast(
+                *self.gregorian_cdt.ast_to_hr(ast_bce_year)
+            )
+            == ast_bce_year
+        )
+        assert (
+            self.gregorian_cdt.hr_to_ast(
+                *self.gregorian_cdt.ast_to_hr(ast_ce_year)
+            )
+            == ast_ce_year
+        )
         assert self.gregorian_cdt.ast_to_hr(
             self.gregorian_cdt.hr_to_ast(hr_bce_year, 0)
         ) == (hr_bce_year, 0)

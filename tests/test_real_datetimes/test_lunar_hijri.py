@@ -118,7 +118,7 @@ class LunarHijriTest(RealCalendarTestCase):
         )
 
     #
-    # ConvertibleDateTime.ordinal_date_to_ordinal
+    # Ordinals
     #
     @patch(
         "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
@@ -162,9 +162,6 @@ class LunarHijriTest(RealCalendarTestCase):
         with pytest.raises(ValueError):
             self.l_hijri_cdt.ordinal_date_to_ordinal((year, day_of_year))
 
-    #
-    # ConvertibleDateTime.ordinal_to_ordinal_date
-    #
     def test_ordinal_to_ordinal_date(self):
         assert self.l_hijri_cdt.ordinal_to_ordinal_date(836) == (3, 127)
         assert self.l_hijri_cdt.ordinal_to_ordinal_date(709) == (2, 355)
@@ -182,6 +179,57 @@ class LunarHijriTest(RealCalendarTestCase):
         assert self.l_hijri_cdt.ordinal_to_ordinal_date(-199) == (0, 155)
         assert self.l_hijri_cdt.ordinal_to_ordinal_date(-257) == (0, 97)
         assert self.l_hijri_cdt.ordinal_to_ordinal_date(-353) == (0, 1)
+
+    @patch(
+        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        return_value=True,
+    )
+    @patch(
+        "src.datetimes.ConvertibleDateTime.is_descending_era",
+        return_value=True,
+    )
+    def test_ordinal_to_ordinal_date_is_reversible_for_bh_year(self, *_):
+        bh_ordinal = FAKE.random_int(min=-9999, max=0)
+        bh_ordinal_date = (
+            FAKE.random_int(min=-9999, max=0),
+            FAKE.random_int(min=1, max=354),
+        )
+        assert (
+            self.l_hijri_cdt.ordinal_to_ordinal_date(
+                self.l_hijri_cdt.ordinal_date_to_ordinal(bh_ordinal_date)
+            )
+            == bh_ordinal_date
+        )
+        assert (
+            self.l_hijri_cdt.ordinal_date_to_ordinal(
+                self.l_hijri_cdt.ordinal_to_ordinal_date(bh_ordinal)
+            )
+            == bh_ordinal
+        )
+
+    @patch(
+        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        return_value=True,
+    )
+    @patch(
+        "src.datetimes.ConvertibleDateTime.is_descending_era",
+        return_value=False,
+    )
+    def test_ordinal_to_ordinal_date_is_reversible_for_ah_year(self, *_):
+        ah_ordinal = FAKE.random_int()
+        ah_ordinal_date = FAKE.random_int(), FAKE.random_int(min=1, max=354)
+        assert (
+            self.l_hijri_cdt.ordinal_to_ordinal_date(
+                self.l_hijri_cdt.ordinal_date_to_ordinal(ah_ordinal_date)
+            )
+            == ah_ordinal_date
+        )
+        assert (
+            self.l_hijri_cdt.ordinal_date_to_ordinal(
+                self.l_hijri_cdt.ordinal_to_ordinal_date(ah_ordinal)
+            )
+            == ah_ordinal
+        )
 
     #
     # ConvertibleDateTime.ast_ymd_to_ordinal_date
@@ -269,6 +317,58 @@ class LunarHijriTest(RealCalendarTestCase):
 
     @patch(
         "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        return_value=True,
+    )
+    @patch("src.datetimes.ConvertibleDateTime.months_in_year", return_value=12)
+    @patch(
+        "src.datetimes.ConvertibleDateTime.days_in_months",
+        return_value=(30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 30, 29),
+    )
+    def test_ordinal_date_to_ast_ymd_is_reversible_for_common_year(self, *_):
+        common_year, month, day = self.random_common_ymd()
+        ordinal_date = common_year, FAKE.random_int(min=1, max=354)
+        ast_ymd = common_year, month, day
+        assert (
+            self.l_hijri_cdt.ordinal_date_to_ast_ymd(
+                self.l_hijri_cdt.ast_ymd_to_ordinal_date(ast_ymd)
+            )
+            == ast_ymd
+        )
+        assert (
+            self.l_hijri_cdt.ast_ymd_to_ordinal_date(
+                self.l_hijri_cdt.ordinal_date_to_ast_ymd(ordinal_date)
+            )
+            == ordinal_date
+        )
+
+    @patch(
+        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        return_value=True,
+    )
+    @patch("src.datetimes.ConvertibleDateTime.months_in_year", return_value=12)
+    @patch(
+        "src.datetimes.ConvertibleDateTime.days_in_months",
+        return_value=(30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 30, 30),
+    )
+    def test_ordinal_date_to_ast_ymd_is_reversible_for_leap_year(self, *_):
+        leap_year, month, day = self.random_leap_ymd()
+        ordinal_date = leap_year, FAKE.random_int(min=1, max=355)
+        ast_ymd = leap_year, month, day
+        assert (
+            self.l_hijri_cdt.ordinal_date_to_ast_ymd(
+                self.l_hijri_cdt.ast_ymd_to_ordinal_date(ast_ymd)
+            )
+            == ast_ymd
+        )
+        assert (
+            self.l_hijri_cdt.ast_ymd_to_ordinal_date(
+                self.l_hijri_cdt.ordinal_date_to_ast_ymd(ordinal_date)
+            )
+            == ordinal_date
+        )
+
+    @patch(
+        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
         return_value=False,
     )
     def test_ordinal_date_to_ast_ymd_can_raise(self, _):
@@ -297,6 +397,30 @@ class LunarHijriTest(RealCalendarTestCase):
         assert self.l_hijri_cdt.ast_to_hr(-1) == (2, 0)
         assert self.l_hijri_cdt.ast_to_hr(ast_bh_year) == (hr_bh_year, 0)
         assert self.l_hijri_cdt.ast_to_hr(ast_ah_year) == (ast_ah_year, 1)
+
+    def test_ast_to_hr_and_hr_to_ast_are_reversible(self):
+        ast_bce_year = self.random_bce_year()
+        hr_bce_year = abs(ast_bce_year - 1)
+        ast_ce_year = self.random_ce_year()
+        hr_ce_year = ast_ce_year
+        assert (
+            self.l_hijri_cdt.hr_to_ast(
+                *self.l_hijri_cdt.ast_to_hr(ast_bce_year)
+            )
+            == ast_bce_year
+        )
+        assert (
+            self.l_hijri_cdt.hr_to_ast(
+                *self.l_hijri_cdt.ast_to_hr(ast_ce_year)
+            )
+            == ast_ce_year
+        )
+        assert self.l_hijri_cdt.ast_to_hr(
+            self.l_hijri_cdt.hr_to_ast(hr_bce_year, 0)
+        ) == (hr_bce_year, 0)
+        assert self.l_hijri_cdt.ast_to_hr(
+            self.l_hijri_cdt.hr_to_ast(hr_ce_year, 1)
+        ) == (hr_ce_year, 1)
 
     @patch("src.datetimes.ConvertibleDateTime.gen_years_before_era")
     def test_ast_to_hr_raise(self, _):

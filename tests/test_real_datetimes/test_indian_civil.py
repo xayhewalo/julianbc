@@ -112,7 +112,7 @@ class IndianCivilTest(RealCalendarTestCase):
         )
 
     #
-    # ConvertibleDateTime.ordinal_date_to_ordinal
+    # Ordinals
     #
     @patch(
         "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
@@ -158,9 +158,6 @@ class IndianCivilTest(RealCalendarTestCase):
         with pytest.raises(ValueError):
             self.indian_cdt.ordinal_date_to_ordinal((year, day_of_year))
 
-    #
-    # ConvertibleDateTime.ordinal_to_ordinal_date
-    #
     def test_ordinal_to_ordinal_date(self):
         assert self.indian_cdt.ordinal_to_ordinal_date(760) == (3, 30)
         assert self.indian_cdt.ordinal_to_ordinal_date(731) == (3, 1)
@@ -180,6 +177,57 @@ class IndianCivilTest(RealCalendarTestCase):
         assert self.indian_cdt.ordinal_to_ordinal_date(-200) == (0, 165)
         assert self.indian_cdt.ordinal_to_ordinal_date(-300) == (0, 65)
         assert self.indian_cdt.ordinal_to_ordinal_date(-364) == (0, 1)
+
+    @patch(
+        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        return_value=True,
+    )
+    @patch(
+        "src.datetimes.ConvertibleDateTime.is_descending_era",
+        return_value=True,
+    )
+    def test_ordinal_to_ordinal_date_is_reversible_for_be_year(self, *_):
+        be_ordinal = FAKE.random_int(min=-9999, max=0)
+        be_ordinal_date = (
+            FAKE.random_int(min=-9999, max=0),
+            FAKE.random_int(min=1, max=365),
+        )
+        assert (
+            self.indian_cdt.ordinal_to_ordinal_date(
+                self.indian_cdt.ordinal_date_to_ordinal(be_ordinal_date)
+            )
+            == be_ordinal_date
+        )
+        assert (
+            self.indian_cdt.ordinal_date_to_ordinal(
+                self.indian_cdt.ordinal_to_ordinal_date(be_ordinal)
+            )
+            == be_ordinal
+        )
+
+    @patch(
+        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        return_value=True,
+    )
+    @patch(
+        "src.datetimes.ConvertibleDateTime.is_descending_era",
+        return_value=False,
+    )
+    def test_ordinal_to_ordinal_date_is_reversible_for_se_year(self, *_):
+        se_ordinal = FAKE.random_int()
+        se_ordinal_date = FAKE.random_int(), FAKE.random_int(min=1, max=365)
+        assert (
+            self.indian_cdt.ordinal_to_ordinal_date(
+                self.indian_cdt.ordinal_date_to_ordinal(se_ordinal_date)
+            )
+            == se_ordinal_date
+        )
+        assert (
+            self.indian_cdt.ordinal_date_to_ordinal(
+                self.indian_cdt.ordinal_to_ordinal_date(se_ordinal)
+            )
+            == se_ordinal
+        )
 
     #
     # ConvertibleDateTime.ast_ymd_to_ordinal_date
@@ -267,6 +315,58 @@ class IndianCivilTest(RealCalendarTestCase):
 
     @patch(
         "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        return_value=True,
+    )
+    @patch("src.datetimes.ConvertibleDateTime.months_in_year", return_value=12)
+    @patch(
+        "src.datetimes.ConvertibleDateTime.days_in_months",
+        return_value=(30, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 30),
+    )
+    def test_ordinal_date_to_ast_ymd_is_reversible_for_common_year(self, *_):
+        common_year, month, day = self.random_common_ymd()
+        ordinal_date = common_year, FAKE.random_int(min=1, max=365)
+        ast_ymd = common_year, month, day
+        assert (
+            self.indian_cdt.ordinal_date_to_ast_ymd(
+                self.indian_cdt.ast_ymd_to_ordinal_date(ast_ymd)
+            )
+            == ast_ymd
+        )
+        assert (
+            self.indian_cdt.ast_ymd_to_ordinal_date(
+                self.indian_cdt.ordinal_date_to_ast_ymd(ordinal_date)
+            )
+            == ordinal_date
+        )
+
+    @patch(
+        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        return_value=True,
+    )
+    @patch("src.datetimes.ConvertibleDateTime.months_in_year", return_value=12)
+    @patch(
+        "src.datetimes.ConvertibleDateTime.days_in_months",
+        return_value=(31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 30),
+    )
+    def test_ordinal_date_to_ast_ymd_is_reversible_for_leap_year(self, *_):
+        leap_year, month, day = self.random_leap_ymd()
+        ordinal_date = leap_year, FAKE.random_int(min=1, max=366)
+        ast_ymd = leap_year, month, day
+        assert (
+            self.indian_cdt.ordinal_date_to_ast_ymd(
+                self.indian_cdt.ast_ymd_to_ordinal_date(ast_ymd)
+            )
+            == ast_ymd
+        )
+        assert (
+            self.indian_cdt.ast_ymd_to_ordinal_date(
+                self.indian_cdt.ordinal_date_to_ast_ymd(ordinal_date)
+            )
+            == ordinal_date
+        )
+
+    @patch(
+        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
         return_value=False,
     )
     def test_ordinal_date_to_ast_ymd_can_raise(self, _):
@@ -297,6 +397,26 @@ class IndianCivilTest(RealCalendarTestCase):
         assert self.indian_cdt.ast_to_hr(-1) == (2, 0)
         assert self.indian_cdt.ast_to_hr(ast_be_year) == (hr_be_year, 0)
         assert self.indian_cdt.ast_to_hr(ast_se_year) == (hr_se_year, 1)
+
+    def test_ast_to_hr_and_hr_to_ast_are_reversible(self):
+        ast_be_year = self.random_bce_year()
+        hr_be_year = abs(ast_be_year - 1)
+        ast_se_year = self.random_ce_year()
+        hr_se_year = ast_se_year - 1
+        assert (
+            self.indian_cdt.hr_to_ast(*self.indian_cdt.ast_to_hr(ast_be_year))
+            == ast_be_year
+        )
+        assert (
+            self.indian_cdt.hr_to_ast(*self.indian_cdt.ast_to_hr(ast_se_year))
+            == ast_se_year
+        )
+        assert self.indian_cdt.ast_to_hr(
+            self.indian_cdt.hr_to_ast(hr_be_year, 0)
+        ) == (hr_be_year, 0)
+        assert self.indian_cdt.ast_to_hr(
+            self.indian_cdt.hr_to_ast(hr_se_year, 1)
+        ) == (hr_se_year, 1)
 
     @patch("src.datetimes.ConvertibleDateTime.gen_years_before_era")
     def test_ast_to_hr_raise(self, _):

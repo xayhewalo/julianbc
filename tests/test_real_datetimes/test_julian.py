@@ -111,7 +111,11 @@ class JulianTest(RealCalendarTestCase):
     #
     # Ordinals
     #
-    def test_ordinal_to_ordinal_date(self):
+    @patch(
+        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        return_value=True,
+    )
+    def test_ordinal_to_ordinal_date(self, _):
         assert self.julian_cdt.ordinal_to_ordinal_date(791) == (3, 61)
         assert self.julian_cdt.ordinal_to_ordinal_date(730) == (2, 365)
         assert self.julian_cdt.ordinal_to_ordinal_date(366) == (2, 1)
@@ -123,7 +127,11 @@ class JulianTest(RealCalendarTestCase):
         assert self.julian_cdt.ordinal_to_ordinal_date(-466) == (-1, 265)
         assert self.julian_cdt.ordinal_to_ordinal_date(-731) == (-2, 365)
 
-    def test_ordinal_to_ordinal_date_for_last_proleptic_year(self):
+    @patch(
+        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        return_value=True,
+    )
+    def test_ordinal_to_ordinal_date_for_last_proleptic_year(self, _):
         assert self.julian_cdt.ordinal_to_ordinal_date(0) == (0, 366)
         assert self.julian_cdt.ordinal_to_ordinal_date(-100) == (0, 266)
         assert self.julian_cdt.ordinal_to_ordinal_date(-200) == (0, 166)

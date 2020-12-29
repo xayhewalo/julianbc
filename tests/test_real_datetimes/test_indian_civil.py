@@ -158,7 +158,11 @@ class IndianCivilTest(RealCalendarTestCase):
         with pytest.raises(ValueError):
             self.indian_cdt.ordinal_date_to_ordinal((year, day_of_year))
 
-    def test_ordinal_to_ordinal_date(self):
+    @patch(
+        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        return_value=True,
+    )
+    def test_ordinal_to_ordinal_date(self, _):
         assert self.indian_cdt.ordinal_to_ordinal_date(760) == (3, 30)
         assert self.indian_cdt.ordinal_to_ordinal_date(731) == (3, 1)
         assert self.indian_cdt.ordinal_to_ordinal_date(366) == (2, 1)
@@ -170,7 +174,11 @@ class IndianCivilTest(RealCalendarTestCase):
         assert self.indian_cdt.ordinal_to_ordinal_date(-731) == (-2, 365)
         assert self.indian_cdt.ordinal_to_ordinal_date(-808) == (-2, 288)
 
-    def test_ordinal_to_ordinal_date_for_last_proleptic_year(self):
+    @patch(
+        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        return_value=True,
+    )
+    def test_ordinal_to_ordinal_date_for_last_proleptic_year(self, _):
         assert self.indian_cdt.ordinal_to_ordinal_date(0) == (0, 365)
         assert self.indian_cdt.ordinal_to_ordinal_date(-60) == (0, 305)
         assert self.indian_cdt.ordinal_to_ordinal_date(-100) == (0, 265)
@@ -212,6 +220,10 @@ class IndianCivilTest(RealCalendarTestCase):
     @patch(
         "src.datetimes.ConvertibleDateTime.is_descending_era",
         return_value=False,
+    )
+    @patch(
+        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        return_value=True,
     )
     def test_ordinal_to_ordinal_date_is_reversible_for_se_year(self, *_):
         se_ordinal = FAKE.random_int()

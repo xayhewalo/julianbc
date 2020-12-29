@@ -188,7 +188,11 @@ class GregorianTest(RealCalendarTestCase):
         with pytest.raises(ValueError):
             self.gregorian_cdt.ordinal_date_to_ordinal(ordinal_date)
 
-    def test_ordinal_to_ordinal_date(self):
+    @patch(
+        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        return_value=True,
+    )
+    def test_ordinal_to_ordinal_date(self, _):
         bce_ordinal_n_ordinal_date = self.random_bce_ordinal_and_ordinal_date()
         bce_ordinal, bce_ordinal_date = bce_ordinal_n_ordinal_date
         ce_ordinal, ce_ordinal_date = self.random_ce_ordinal_and_ordinal_date()
@@ -208,7 +212,11 @@ class GregorianTest(RealCalendarTestCase):
             == ce_ordinal_date
         )
 
-    def test_ordinal_to_ordinal_date_for_last_proleptic_year(self):
+    @patch(
+        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        return_value=True,
+    )
+    def test_ordinal_to_ordinal_date_for_last_proleptic_year(self, _):
         year = 0
         _, month, day = self.random_leap_bce_ymd()
         _ordinal = self.gregorian_dc.from_gregorian(year, month, day) + 1

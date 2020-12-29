@@ -161,7 +161,11 @@ class CopticTest(RealCalendarTestCase):
         with pytest.raises(ValueError):
             self.l_hijri_cdt.ordinal_date_to_ordinal((year, day_of_year))
 
-    def test_ordinal_to_ordinal_date(self):
+    @patch(
+        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        return_value=True,
+    )
+    def test_ordinal_to_ordinal_date(self, _):
         assert self.coptic_cdt.ordinal_to_ordinal_date(829) == (3, 99)
         assert self.coptic_cdt.ordinal_to_ordinal_date(731) == (3, 1)
         assert self.coptic_cdt.ordinal_to_ordinal_date(366) == (2, 1)
@@ -172,7 +176,11 @@ class CopticTest(RealCalendarTestCase):
         assert self.coptic_cdt.ordinal_to_ordinal_date(-731) == (-2, 365)
         assert self.coptic_cdt.ordinal_to_ordinal_date(-791) == (-2, 305)
 
-    def test_ordinal_to_ordinal_date_for_last_proleptic_year(self):
+    @patch(
+        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        return_value=True,
+    )
+    def test_ordinal_to_ordinal_date_for_last_proleptic_year(self, _):
         assert self.coptic_cdt.ordinal_to_ordinal_date(0) == (0, 365)
         assert self.coptic_cdt.ordinal_to_ordinal_date(-90) == (0, 275)
         assert self.coptic_cdt.ordinal_to_ordinal_date(-170) == (0, 195)

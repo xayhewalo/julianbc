@@ -71,16 +71,11 @@ class ConvertibleDateTime(object):
             raise ValueError(f"{ordinal_date} is invalid for {self.calendar}")
 
         ast_year, day_of_year = ordinal_date
-        ay = 1
-        operation = "__add__"
-        if ast_year <= 0:
-            ay = 0
-            operation = "__sub__"
-
+        ay, sign = self._start_and_sign(ast_year)
         days_in_elapsed_years = 0
         while abs(ay) < abs(ast_year):
             days_in_elapsed_years += self.days_in_year(ay)
-            ay = getattr(ay, operation)(1)
+            ay = self._increment_by_one(ay, sign)
 
         ordinal = day_of_year + days_in_elapsed_years
         if self.is_descending_era(ast_year):
@@ -92,29 +87,38 @@ class ConvertibleDateTime(object):
         return ordinal
 
     def ordinal_to_ordinal_date(self, ordinal: int) -> tuple[int, int]:
-        operation = "__add__"
-        ast_year = 1
-        if ordinal <= 0:
-            operation = "__sub__"
-            ast_year = 0
+        ast_year, sign = self._start_and_sign(ordinal)
 
         days_in_years_passed = self.days_in_year(ast_year)
         while days_in_years_passed < abs(ordinal):
-            ast_year = getattr(ast_year, operation)(1)
+            ast_year = self._increment_by_one(ast_year, sign)
             days_in_years_passed += self.days_in_year(ast_year)
         days_in_years_passed -= self.days_in_year(ast_year)
 
         day_of_year = abs(ordinal) - days_in_years_passed
-        if operation == "__sub__":
+        if sign == -1:
             day_of_year = self.days_in_year(ast_year) - day_of_year
             if day_of_year == 0:
-                ast_year = getattr(ast_year, operation)(1)
+                ast_year = self._increment_by_one(ast_year, sign)
                 day_of_year = self.days_in_year(ast_year)
         assert self.is_valid_ordinal_date((ast_year, day_of_year)), (
             f"Ordinal, {ordinal}, produced invalid ordinal date, "
             f"{ast_year, day_of_year}, for the {self.calendar} calendar"
         )
         return ast_year, day_of_year
+
+    @staticmethod
+    def _start_and_sign(num: int) -> tuple[int, int]:
+        """Useful values for calendar calculations"""
+        start_value, sign = 1, 1
+        if num <= 0:
+            start_value, sign = 0, -1
+        return start_value, sign
+
+    @staticmethod
+    def _increment_by_one(num: int, sign: int) -> int:
+        """Add or subtract one based on the sign"""
+        return num + sign * 1
 
     def ast_ymd_to_ordinal_date(self, ast_ymd: tuple) -> tuple[int, int]:
         """:raises ValueError: for an invalid year, month, day"""

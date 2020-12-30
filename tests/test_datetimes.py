@@ -84,6 +84,21 @@ class ConvertibleDateTimeTest(CalendarTestCase):
     # ConvertibleDateTime.ordinal_date_to_ordinal in test_gregorian.py
     # ConvertibleDateTime.ordinal_to_ordinal_date in test_gregorian.py
 
+    def test__start_and_sign(self):
+        non_positive_num = FAKE.random_int(min=-9999, max=-1)
+        positive_num = FAKE.random_int(min=1)
+        cdt = ConvertibleDateTime(calendar=self.calendar_factory.build())
+        assert cdt._start_and_sign(non_positive_num) == (0, -1)
+        assert cdt._start_and_sign(positive_num) == (1, 1)
+
+    def test__increment_by_one(self):
+        num = FAKE.random_int(min=-9999)
+        positive_sign = 1
+        negative_sign = -1
+        cdt = ConvertibleDateTime(calendar=self.calendar_factory.build())
+        assert cdt._increment_by_one(num, positive_sign) == num + 1
+        assert cdt._increment_by_one(num, negative_sign) == num - 1
+
     @patch(
         "src.datetimes.ConvertibleDateTime.is_valid_ast_ymd",
         return_value=True,

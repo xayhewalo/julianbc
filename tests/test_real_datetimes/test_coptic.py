@@ -124,6 +124,10 @@ class CopticTest(RealCalendarTestCase):
         "src.datetimes.ConvertibleDateTime.is_descending_era",
         return_value=True,
     )
+    @patch(
+        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        return_value=(0, -1),
+    )
     def test_ordinal_date_to_ordinal_for_bc_year(self, *_):
         assert self.coptic_cdt.ordinal_date_to_ordinal((0, 365)) == 0
         assert self.coptic_cdt.ordinal_date_to_ordinal((0, 1)) == -364
@@ -139,6 +143,10 @@ class CopticTest(RealCalendarTestCase):
     @patch(
         "src.datetimes.ConvertibleDateTime.is_descending_era",
         return_value=False,
+    )
+    @patch(
+        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        return_value=(1, 1),
     )
     def test_ordinal_date_to_ordinal_for_am_year(self, *_):
         assert self.coptic_cdt.ordinal_date_to_ordinal((4, 187)) == 1283
@@ -165,12 +173,26 @@ class CopticTest(RealCalendarTestCase):
         "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
         return_value=True,
     )
-    def test_ordinal_to_ordinal_date(self, _):
+    @patch(
+        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        return_value=(1, 1),
+    )
+    def test_ordinal_to_ordinal_date_for_am_year(self, *_):
         assert self.coptic_cdt.ordinal_to_ordinal_date(829) == (3, 99)
         assert self.coptic_cdt.ordinal_to_ordinal_date(731) == (3, 1)
         assert self.coptic_cdt.ordinal_to_ordinal_date(366) == (2, 1)
         assert self.coptic_cdt.ordinal_to_ordinal_date(365) == (1, 365)
         assert self.coptic_cdt.ordinal_to_ordinal_date(1) == (1, 1)
+
+    @patch(
+        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        return_value=True,
+    )
+    @patch(
+        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        return_value=(0, -1),
+    )
+    def test_ordinal_to_ordinal_date_for_bc_year(self, *_):
         assert self.coptic_cdt.ordinal_to_ordinal_date(0) == (0, 365)
         assert self.coptic_cdt.ordinal_to_ordinal_date(-365) == (-1, 366)
         assert self.coptic_cdt.ordinal_to_ordinal_date(-731) == (-2, 365)
@@ -180,7 +202,11 @@ class CopticTest(RealCalendarTestCase):
         "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
         return_value=True,
     )
-    def test_ordinal_to_ordinal_date_for_last_proleptic_year(self, _):
+    @patch(
+        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        return_value=(0, -1),
+    )
+    def test_ordinal_to_ordinal_date_for_last_proleptic_year(self, *_):
         assert self.coptic_cdt.ordinal_to_ordinal_date(0) == (0, 365)
         assert self.coptic_cdt.ordinal_to_ordinal_date(-90) == (0, 275)
         assert self.coptic_cdt.ordinal_to_ordinal_date(-170) == (0, 195)
@@ -194,6 +220,10 @@ class CopticTest(RealCalendarTestCase):
     @patch(
         "src.datetimes.ConvertibleDateTime.is_descending_era",
         return_value=True,
+    )
+    @patch(
+        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        return_value=(0, -1),
     )
     def test_ordinal_to_ordinal_date_is_reversible_for_bce_year(self, *_):
         bce_ordinal = FAKE.random_int(min=-9999, max=0)
@@ -221,6 +251,10 @@ class CopticTest(RealCalendarTestCase):
     @patch(
         "src.datetimes.ConvertibleDateTime.is_descending_era",
         return_value=False,
+    )
+    @patch(
+        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        return_value=(1, 1),
     )
     def test_ordinal_to_ordinal_date_is_reversible_for_am_year(self, *_):
         am_ordinal = FAKE.random_int()

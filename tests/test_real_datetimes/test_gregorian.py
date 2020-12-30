@@ -147,6 +147,10 @@ class GregorianTest(RealCalendarTestCase):
         "src.datetimes.ConvertibleDateTime.is_descending_era",
         return_value=True,
     )
+    @patch(
+        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        return_value=(0, -1),
+    )
     def test_ordinal_date_to_ordinal_for_bce_year(self, *_):
         _ordinal, ordinal_date = self.random_bce_ordinal_and_ordinal_date()
         assert self.gregorian_cdt.ordinal_date_to_ordinal((0, 366)) == 0
@@ -166,6 +170,10 @@ class GregorianTest(RealCalendarTestCase):
     @patch(
         "src.datetimes.ConvertibleDateTime.is_descending_era",
         return_value=False,
+    )
+    @patch(
+        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        return_value=(1, 1),
     )
     def test_ordinal_date_to_ordinal_for_ce_year(self, *_):
         _ordinal, ordinal_date = self.random_ce_ordinal_and_ordinal_date()
@@ -192,14 +200,13 @@ class GregorianTest(RealCalendarTestCase):
         "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
         return_value=True,
     )
-    def test_ordinal_to_ordinal_date(self, _):
+    @patch(
+        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        return_value=(0, -1),
+    )
+    def test_ordinal_to_ordinal_date_for_bce_year(self, *_):
         bce_ordinal_n_ordinal_date = self.random_bce_ordinal_and_ordinal_date()
         bce_ordinal, bce_ordinal_date = bce_ordinal_n_ordinal_date
-        ce_ordinal, ce_ordinal_date = self.random_ce_ordinal_and_ordinal_date()
-        assert self.gregorian_cdt.ordinal_to_ordinal_date(730) == (2, 365)
-        assert self.gregorian_cdt.ordinal_to_ordinal_date(366) == (2, 1)
-        assert self.gregorian_cdt.ordinal_to_ordinal_date(365) == (1, 365)
-        assert self.gregorian_cdt.ordinal_to_ordinal_date(1) == (1, 1)
         assert self.gregorian_cdt.ordinal_to_ordinal_date(0) == (0, 366)
         assert self.gregorian_cdt.ordinal_to_ordinal_date(-366) == (-1, 365)
         assert self.gregorian_cdt.ordinal_to_ordinal_date(-731) == (-2, 365)
@@ -207,6 +214,21 @@ class GregorianTest(RealCalendarTestCase):
             self.gregorian_cdt.ordinal_to_ordinal_date(bce_ordinal)
             == bce_ordinal_date
         )
+
+    @patch(
+        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        return_value=True,
+    )
+    @patch(
+        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        return_value=(1, 1),
+    )
+    def test_ordinal_to_ordinal_date_for_ce_year(self, *_):
+        ce_ordinal, ce_ordinal_date = self.random_ce_ordinal_and_ordinal_date()
+        assert self.gregorian_cdt.ordinal_to_ordinal_date(730) == (2, 365)
+        assert self.gregorian_cdt.ordinal_to_ordinal_date(366) == (2, 1)
+        assert self.gregorian_cdt.ordinal_to_ordinal_date(365) == (1, 365)
+        assert self.gregorian_cdt.ordinal_to_ordinal_date(1) == (1, 1)
         assert (
             self.gregorian_cdt.ordinal_to_ordinal_date(ce_ordinal)
             == ce_ordinal_date
@@ -216,7 +238,11 @@ class GregorianTest(RealCalendarTestCase):
         "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
         return_value=True,
     )
-    def test_ordinal_to_ordinal_date_for_last_proleptic_year(self, _):
+    @patch(
+        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        return_value=(0, -1),
+    )
+    def test_ordinal_to_ordinal_date_for_last_proleptic_year(self, *_):
         year = 0
         _, month, day = self.random_leap_bce_ymd()
         _ordinal = self.gregorian_dc.from_gregorian(year, month, day) + 1
@@ -235,6 +261,10 @@ class GregorianTest(RealCalendarTestCase):
     @patch(
         "src.datetimes.ConvertibleDateTime.is_descending_era",
         return_value=True,
+    )
+    @patch(
+        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        return_value=(0, -1),
     )
     def test_ordinal_to_ordinal_date_is_reversible_for_bce_year(self, *_):
         bce_ymd = self.random_bce_ymd()
@@ -260,6 +290,10 @@ class GregorianTest(RealCalendarTestCase):
     @patch(
         "src.datetimes.ConvertibleDateTime.is_descending_era",
         return_value=False,
+    )
+    @patch(
+        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        return_value=(1, 1),
     )
     def test_ordinal_to_ordinal_date_is_reversible_for_ce_year(self, *_):
         ce_ymd = self.random_ce_ymd()

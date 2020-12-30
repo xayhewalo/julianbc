@@ -128,6 +128,10 @@ class LunarHijriTest(RealCalendarTestCase):
         "src.datetimes.ConvertibleDateTime.is_descending_era",
         return_value=True,
     )
+    @patch(
+        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        return_value=(0, -1),
+    )
     def test_ordinal_date_to_ordinal_for_bh_year(self, *_):
         assert self.l_hijri_cdt.ordinal_date_to_ordinal((0, 354)) == 0
         assert self.l_hijri_cdt.ordinal_date_to_ordinal((0, 1)) == -353
@@ -143,6 +147,10 @@ class LunarHijriTest(RealCalendarTestCase):
     @patch(
         "src.datetimes.ConvertibleDateTime.is_descending_era",
         return_value=False,
+    )
+    @patch(
+        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        return_value=(1, 1),
     )
     def test_ordinal_date_to_ordinal_for_ah_year(self, *_):
         assert self.l_hijri_cdt.ordinal_date_to_ordinal((3, 214)) == 923
@@ -162,18 +170,44 @@ class LunarHijriTest(RealCalendarTestCase):
         with pytest.raises(ValueError):
             self.l_hijri_cdt.ordinal_date_to_ordinal((year, day_of_year))
 
-    def test_ordinal_to_ordinal_date(self):
+    @patch(
+        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        return_value=True,
+    )
+    @patch(
+        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        return_value=(1, 1),
+    )
+    def test_ordinal_to_ordinal_date_for_ah_year(self, *_):
         assert self.l_hijri_cdt.ordinal_to_ordinal_date(836) == (3, 127)
         assert self.l_hijri_cdt.ordinal_to_ordinal_date(709) == (2, 355)
         assert self.l_hijri_cdt.ordinal_to_ordinal_date(355) == (2, 1)
         assert self.l_hijri_cdt.ordinal_to_ordinal_date(354) == (1, 354)
         assert self.l_hijri_cdt.ordinal_to_ordinal_date(1) == (1, 1)
+
+    @patch(
+        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        return_value=True,
+    )
+    @patch(
+        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        return_value=(0, -1),
+    )
+    def test_ordinal_to_ordinal_date_for_bh_year(self, *_):
         assert self.l_hijri_cdt.ordinal_to_ordinal_date(0) == (0, 354)
         assert self.l_hijri_cdt.ordinal_to_ordinal_date(-354) == (-1, 355)
         assert self.l_hijri_cdt.ordinal_to_ordinal_date(-709) == (-2, 354)
         assert self.l_hijri_cdt.ordinal_to_ordinal_date(-768) == (-2, 295)
 
-    def test_ordinal_to_ordinal_date_for_last_proleptic_year(self):
+    @patch(
+        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        return_value=True,
+    )
+    @patch(
+        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        return_value=(0, -1),
+    )
+    def test_ordinal_to_ordinal_date_for_last_proleptic_year(self, *_):
         assert self.l_hijri_cdt.ordinal_to_ordinal_date(0) == (0, 354)
         assert self.l_hijri_cdt.ordinal_to_ordinal_date(-135) == (0, 219)
         assert self.l_hijri_cdt.ordinal_to_ordinal_date(-199) == (0, 155)
@@ -187,6 +221,10 @@ class LunarHijriTest(RealCalendarTestCase):
     @patch(
         "src.datetimes.ConvertibleDateTime.is_descending_era",
         return_value=True,
+    )
+    @patch(
+        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        return_value=(0, -1),
     )
     def test_ordinal_to_ordinal_date_is_reversible_for_bh_year(self, *_):
         bh_ordinal = FAKE.random_int(min=-9999, max=0)
@@ -214,6 +252,10 @@ class LunarHijriTest(RealCalendarTestCase):
     @patch(
         "src.datetimes.ConvertibleDateTime.is_descending_era",
         return_value=False,
+    )
+    @patch(
+        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        return_value=(1, 1),
     )
     def test_ordinal_to_ordinal_date_is_reversible_for_ah_year(self, *_):
         ah_ordinal = FAKE.random_int()

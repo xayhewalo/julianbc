@@ -2,7 +2,7 @@
 import factory
 import factory.random
 
-from src.models import CalBase
+from src.models import CalBase, TimeBase
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from unittest import TestCase
@@ -17,21 +17,18 @@ FAKE = factory.faker.faker.Faker()
 class DatabaseTestCase(TestCase):
     def setUp(self):
         self.session = Session()
+        CalBase.metadata.create_all(self.session.bind)
+        TimeBase.metadata.create_all(self.session.bind)
 
     def tearDown(self):
+        CalBase.metadata.drop_all(self.session.bind)
+        TimeBase.metadata.create_all(self.session.bind)
+        self.session.rollback()
         self.session.close()
         Session.remove()
 
 
 class CalendarTestCase(DatabaseTestCase):
-    def setUp(self):
-        super(CalendarTestCase, self).setUp()
-        CalBase.metadata.create_all(self.session.bind)
-
-    def tearDown(self):
-        CalBase.metadata.drop_all(self.session.bind)
-        super(CalendarTestCase, self).tearDown()
-
     @staticmethod
     # fmt: off
     def random_common_month_and_day(calendar: "ConvertibleCalendar") -> tuple:  # noqa: F821, E501

@@ -1,0 +1,34 @@
+"""Time-tracking models"""
+#  Copyright (c) 2020 author(s) of JulianBC.
+#
+#  This file is part of JulianBC.
+#
+#  JulianBC is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  JulianBC is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
+from src.models import utils
+from sqlalchemy import Column, Integer, Unicode
+from sqlalchemy.orm import declarative_base
+
+TimeBase = declarative_base()
+TimeBase.metadata.naming_convention = utils.NAMING_CONVENTION
+
+
+class ConvertibleTime(TimeBase):
+    """User-defined time"""
+
+    __tablename__ = "convertible_time"
+    id = Column(Integer, primary_key=True)
+    name = Column(Unicode(255), nullable=False)
+    seconds_in_minute = Column(Integer, default=60, nullable=False)
+    minutes_in_hour = Column(Integer, default=60, nullable=False)
+    hours_in_day = Column(Integer, default=24, nullable=False)

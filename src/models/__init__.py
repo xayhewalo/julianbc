@@ -4,3 +4,7 @@ from .eon.customcalendar import (
     CalendarConversion,
     ConvertibleCalendar,
 )
+from .eon.customclock import (
+    ConvertibleTime,
+    TimeBase,
+)

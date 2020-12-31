@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
 from src.models import utils
-from sqlalchemy import Column, Integer, Unicode
+from sqlalchemy import CheckConstraint, Column, Integer, Unicode
 from sqlalchemy.orm import declarative_base
 
 TimeBase = declarative_base()
@@ -29,6 +29,21 @@ class ConvertibleTime(TimeBase):
     __tablename__ = "convertible_time"
     id = Column(Integer, primary_key=True)
     name = Column(Unicode(255), nullable=False)
-    seconds_in_minute = Column(Integer, default=60, nullable=False)
-    minutes_in_hour = Column(Integer, default=60, nullable=False)
-    hours_in_day = Column(Integer, default=24, nullable=False)
+    seconds_in_minute = Column(
+        Integer,
+        CheckConstraint("seconds_in_minute >= 1"),
+        default=60,
+        nullable=False,
+    )
+    minutes_in_hour = Column(
+        Integer,
+        CheckConstraint("minutes_in_hour >= 1"),
+        default=60,
+        nullable=False,
+    )
+    hours_in_day = Column(
+        Integer,
+        CheckConstraint("hours_in_day >= 1"),
+        default=24,
+        nullable=False,
+    )

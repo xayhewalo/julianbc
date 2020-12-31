@@ -16,8 +16,8 @@
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
 import itertools
-import uuid
 
+from src.models import utils
 from sqlalchemy import (
     BigInteger,
     Boolean,
@@ -38,26 +38,8 @@ from sqlalchemy.orm import (
 from typing import Union
 
 
-def auto_constraint_name(constraint, _):
-    """
-    hack to make naming convention work
-    https://github.com/sqlalchemy/sqlalchemy/issues/4784#issuecomment-516055394
-    """
-    if constraint.name is None or constraint.name == "_unnamed_":
-        return "sa_autoname_%s" % str(uuid.uuid4())[0:5]
-    else:
-        return constraint.name
-
-
 CalBase = declarative_base()
-CalBase.metadata.naming_convention = {
-    "auto_constraint_name": auto_constraint_name,
-    "ix": "ix_%(column_0_label)s",
-    "uq": "uq_%(table_name)s_%(column_0_name)s",
-    "ck": "ck_%(table_name)s_%(auto_constraint_name)s",
-    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
-    "pk": "pk_%(table_name)s",
-}
+CalBase.metadata.naming_convention = utils.NAMING_CONVENTION
 
 
 def default_eras() -> list[str, str]:

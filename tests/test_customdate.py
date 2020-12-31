@@ -1,6 +1,6 @@
 import pytest
 
-from src.datetimes import ConvertibleDateTime
+from src.customdate import ConvertibleDate
 from tests.factories import ConvertibleCalendarFactory
 from tests.utils import CalendarTestCase, FAKE
 from unittest.mock import patch
@@ -87,7 +87,7 @@ class ConvertibleDateTimeTest(CalendarTestCase):
     def test__start_and_sign(self):
         non_positive_num = FAKE.random_int(min=-9999, max=-1)
         positive_num = FAKE.random_int(min=1)
-        cdt = ConvertibleDateTime(calendar=self.calendar_factory.build())
+        cdt = ConvertibleDate(calendar=self.calendar_factory.build())
         assert cdt._start_and_sign(non_positive_num) == (0, -1)
         assert cdt._start_and_sign(positive_num) == (1, 1)
 
@@ -95,12 +95,12 @@ class ConvertibleDateTimeTest(CalendarTestCase):
         num = FAKE.random_int(min=-9999)
         positive_sign = 1
         negative_sign = -1
-        cdt = ConvertibleDateTime(calendar=self.calendar_factory.build())
+        cdt = ConvertibleDate(calendar=self.calendar_factory.build())
         assert cdt._increment_by_one(num, positive_sign) == num + 1
         assert cdt._increment_by_one(num, negative_sign) == num - 1
 
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ast_ymd",
+        "src.customdate.ConvertibleDate.is_valid_ast_ymd",
         return_value=True,
     )
     def test_ast_ymd_to_ordinal_date_with_no_months(self, _):
@@ -109,11 +109,11 @@ class ConvertibleDateTimeTest(CalendarTestCase):
         ast_year = FAKE.random_int()
         monthless_ast_ymd = ast_year, None, day_of_year
         ordinal_date = ast_year, day_of_year
-        cdt = ConvertibleDateTime(calendar=monthless_calendar)
+        cdt = ConvertibleDate(calendar=monthless_calendar)
         assert cdt.ast_ymd_to_ordinal_date(monthless_ast_ymd) == ordinal_date
 
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
     def test_ordinal_date_to_ast_ymd_with_no_months(self, _):
@@ -121,7 +121,7 @@ class ConvertibleDateTimeTest(CalendarTestCase):
         ast_year = FAKE.random_int()
         day_of_year = FAKE.random_int(min=1, max=days_in_year)
         ordinal_date = ast_year, day_of_year
-        cdt = ConvertibleDateTime(calendar=monthless_calendar)
+        cdt = ConvertibleDate(calendar=monthless_calendar)
         assert cdt.ordinal_date_to_ast_ymd(ordinal_date) == (
             ast_year,
             None,
@@ -134,7 +134,7 @@ class ConvertibleDateTimeTest(CalendarTestCase):
         ast_year = FAKE.random_int()
         monthless_ast_ymd = ast_year, None, day_of_year
         ordinal_date = ast_year, day_of_year
-        cdt = ConvertibleDateTime(calendar=monthless_calendar)
+        cdt = ConvertibleDate(calendar=monthless_calendar)
         assert cdt.ordinal_date_to_ast_ymd(ordinal_date) == monthless_ast_ymd
         assert cdt.ast_ymd_to_ordinal_date(monthless_ast_ymd) == ordinal_date
 
@@ -143,7 +143,7 @@ class ConvertibleDateTimeTest(CalendarTestCase):
     #
     def test_hr_to_ast(self):
         calendar = self.calendar_factory.build()
-        cdt = ConvertibleDateTime(calendar=calendar)
+        cdt = ConvertibleDate(calendar=calendar)
         era_range = FAKE.random_element(elements=calendar.era_ranges)
         era_idx = calendar.era_ranges.index(era_range)
         hr_year = self.random_hr_year(era_range)
@@ -162,7 +162,7 @@ class ConvertibleDateTimeTest(CalendarTestCase):
         ast_year = self.make_ast_year(
             era_range, hr_year, years_in_previous_eras
         )
-        cdt = ConvertibleDateTime(calendar=calendar)
+        cdt = ConvertibleDate(calendar=calendar)
         assert cdt.ast_to_hr(ast_year) == (hr_year, era_idx)
 
     def test_ast_to_hr_for_finite_ascending_era(self):
@@ -174,7 +174,7 @@ class ConvertibleDateTimeTest(CalendarTestCase):
         calendar.era_ranges.insert(1, ascending_era_range)
         hr_year = self.random_hr_year(ascending_era_range)
         ast_year = self.make_ast_year(ascending_era_range, hr_year, 0)
-        cdt = ConvertibleDateTime(calendar=calendar)
+        cdt = ConvertibleDate(calendar=calendar)
         assert cdt.ast_to_hr(ast_year) == (hr_year, 1)
 
     def test_ast_to_hr_for_finite_descending_era(self):
@@ -186,7 +186,7 @@ class ConvertibleDateTimeTest(CalendarTestCase):
         calendar.era_ranges.insert(1, descending_era_range)
         hr_year = self.random_hr_year(descending_era_range)
         ast_year = self.make_ast_year(descending_era_range, hr_year, 0)
-        cdt = ConvertibleDateTime(calendar=calendar)
+        cdt = ConvertibleDate(calendar=calendar)
         assert cdt.ast_to_hr(ast_year) == (hr_year, 1)
 
     def test_ast_to_hr_and_hr_to_ast_are_reversible(self):
@@ -196,7 +196,7 @@ class ConvertibleDateTimeTest(CalendarTestCase):
         era_idx = calendar.era_ranges.index(era_range)
         years_before_era = self.years_before_era(calendar, era_idx)
         ast_year = self.make_ast_year(era_range, hr_year, years_before_era)
-        cdt = ConvertibleDateTime(calendar=calendar)
+        cdt = ConvertibleDate(calendar=calendar)
         assert cdt.ast_to_hr(cdt.hr_to_ast(hr_year, era_idx)) == (
             hr_year,
             era_idx,
@@ -204,11 +204,11 @@ class ConvertibleDateTimeTest(CalendarTestCase):
         assert cdt.hr_to_ast(*cdt.ast_to_hr(ast_year)) == ast_year
 
     @patch(
-        "src.datetimes.ConvertibleDateTime.gen_years_before_era",
+        "src.customdate.ConvertibleDate.gen_years_before_era",
     )
     def test_ast_to_hr_can_raise(self, _):
         calendar = self.calendar_factory.build()
-        cdt = ConvertibleDateTime(calendar=calendar)
+        cdt = ConvertibleDate(calendar=calendar)
         ast_ce_year = FAKE.random_int(min=1)
         with pytest.raises(RuntimeError):
             cdt.ast_to_hr(ast_ce_year)
@@ -224,7 +224,7 @@ class ConvertibleDateTimeTest(CalendarTestCase):
             era_ranges=(("-inf", 1), (1, "inf")),
             eras=(FAKE.word(), FAKE.word()),
         )
-        cdt = ConvertibleDateTime(calendar=calendar)
+        cdt = ConvertibleDate(calendar=calendar)
         common_ce_ast_year = (FAKE.random_int(min=1) * 4) - 1
         common_ce_hr_year = common_ce_ast_year
         common_bce_ast_year = (FAKE.random_int(min=-9999, max=0) * 4) - 1
@@ -309,7 +309,7 @@ class ConvertibleDateTimeTest(CalendarTestCase):
         era_idx = monthless_calendar.era_ranges.index(era_range)
         years_before_era = self.years_before_era(monthless_calendar, era_idx)
         era = monthless_calendar.eras[era_idx]
-        cdt = ConvertibleDateTime(calendar=monthless_calendar)
+        cdt = ConvertibleDate(calendar=monthless_calendar)
         hr_date = cdt.date_sep.join([str(hr_year), str(day_of_year), era])
         ast_year = self.make_ast_year(era_range, hr_year, years_before_era)
         assert cdt.parse_hr_date(hr_date) == (ast_year, None, day_of_year)
@@ -323,7 +323,7 @@ class ConvertibleDateTimeTest(CalendarTestCase):
         ast_year = self.make_ast_year(era_range, hr_year, years_before_era)
         era = monthless_calendar.eras[era_idx]
 
-        cdt = ConvertibleDateTime(calendar=monthless_calendar)
+        cdt = ConvertibleDate(calendar=monthless_calendar)
         date_sep = cdt.date_sep
         hr_date = date_sep.join(
             [str(hr_year), str(None), str(day_of_year), str(era)]
@@ -344,7 +344,7 @@ class ConvertibleDateTimeTest(CalendarTestCase):
             era_range, hr_year, years_in_previous_eras
         )
         expected_era = calendar.eras[era_idx]
-        cdt = ConvertibleDateTime(calendar=calendar)
+        cdt = ConvertibleDate(calendar=calendar)
         assert cdt.era(ast_year) == expected_era
 
     def test_era_for_one_year_range(self):
@@ -375,20 +375,20 @@ class ConvertibleDateTimeTest(CalendarTestCase):
         calendar = self.calendar_factory.build(
             era_ranges=era_ranges, eras=eras
         )
-        cdt = ConvertibleDateTime(calendar=calendar)
+        cdt = ConvertibleDate(calendar=calendar)
         assert cdt.era(first_era_ast_year) == eras[0]
         assert cdt.era(second_era_ast_year) == eras[1]
         assert cdt.era(tiny_era_ast_year) == eras[2]
         assert cdt.era(final_era_ast_year) == eras[3]
 
     @patch(
-        "src.datetimes.ConvertibleDateTime.gen_years_before_era",
+        "src.customdate.ConvertibleDate.gen_years_before_era",
     )
     def test_era_can_raise(self, _):
         calendar = self.calendar_factory.build()
         year = FAKE.random_int(min=1)
         with pytest.raises(RuntimeError):
-            ConvertibleDateTime(calendar=calendar).era(year)
+            ConvertibleDate(calendar=calendar).era(year)
 
     #
     # ConvertibleDateTime.is_descending_era
@@ -404,7 +404,7 @@ class ConvertibleDateTimeTest(CalendarTestCase):
             era_range, hr_year, years_in_previous_eras
         )
 
-        cdt = ConvertibleDateTime(calendar=calendar)
+        cdt = ConvertibleDate(calendar=calendar)
         assert cdt.is_descending_era(ast_year) is (
             abs(era_range[0]) > abs(era_range[1])
         )
@@ -431,7 +431,7 @@ class ConvertibleDateTimeTest(CalendarTestCase):
             0, -2, -4, -5, -7, -9, -10, -12, -14, -16, -17, -19, -21, -22
         )
         # fmt: on
-        cdt = ConvertibleDateTime(calendar=calendar)
+        cdt = ConvertibleDate(calendar=calendar)
         for ce_leap_year in ce_leap_ast_years:
             assert cdt.is_leap_year(ce_leap_year)
         for bce_leap_year in bce_leap_ast_years:
@@ -460,7 +460,7 @@ class ConvertibleDateTimeTest(CalendarTestCase):
             0, -3, -4, -6, -7, -9, -10, -13, -14, -16, -17, -19, -20, -23
         )
         # fmt: on
-        cdt = ConvertibleDateTime(calendar=calendar)
+        cdt = ConvertibleDate(calendar=calendar)
         for ce_leap_year in ce_leap_ast_years:
             assert cdt.is_leap_year(ce_leap_year)
         for bce_leap_year in bce_leap_ast_years:
@@ -487,7 +487,7 @@ class ConvertibleDateTimeTest(CalendarTestCase):
             -1, -2, -4, -6, -8, -9, -11, -13, -15, -16, -18, -20
         )
         # fmt: on
-        cdt = ConvertibleDateTime(calendar=calendar)
+        cdt = ConvertibleDate(calendar=calendar)
         for ce_leap_year in ce_leap_ast_years:
             assert cdt.is_leap_year(ce_leap_year)
         for bce_leap_year in bce_leap_ast_years:
@@ -499,7 +499,7 @@ class ConvertibleDateTimeTest(CalendarTestCase):
 
     def test_is_leap_year_with_no_leap_year(self):
         calendar = self.calendar_factory.build(has_leap_year=False)
-        cdt = ConvertibleDateTime(calendar=calendar)
+        cdt = ConvertibleDate(calendar=calendar)
         year = FAKE.random_int(-9999, 9999)
         assert cdt.is_leap_year(year) is False
 
@@ -508,7 +508,7 @@ class ConvertibleDateTimeTest(CalendarTestCase):
         overruled_year = FAKE.random_element(
             elements=calendar.leap_year_overrules
         )
-        cdt = ConvertibleDateTime(calendar=calendar)
+        cdt = ConvertibleDate(calendar=calendar)
         assert cdt.is_leap_year(overruled_year)
 
     def test_is_leap_year_with_exceptions(self):
@@ -518,7 +518,7 @@ class ConvertibleDateTimeTest(CalendarTestCase):
         exception_year = FAKE.random_element(
             elements=calendar.leap_year_exceptions
         )
-        cdt = ConvertibleDateTime(calendar=calendar)
+        cdt = ConvertibleDate(calendar=calendar)
         assert cdt.is_leap_year(exception_year) is False
 
     #
@@ -534,7 +534,7 @@ class ConvertibleDateTimeTest(CalendarTestCase):
         monthless_ast_ymd = (FAKE.random_int(), None, day_of_year)
         negative_ast_ymd = (FAKE.random_int(), None, negative_day_of_year)
         too_large_ast_ymd = (FAKE.random_int(), None, too_large_day_of_year)
-        monthless_cdt = ConvertibleDateTime(calendar=monthless_calendar)
+        monthless_cdt = ConvertibleDate(calendar=monthless_calendar)
         assert monthless_cdt.is_valid_ast_ymd(monthless_ast_ymd) is True
         assert monthless_cdt.is_valid_ast_ymd(negative_ast_ymd) is False
         assert monthless_cdt.is_valid_ast_ymd(too_large_ast_ymd) is False
@@ -557,7 +557,7 @@ class ConvertibleDateTimeTest(CalendarTestCase):
         )
         too_small_ordinal_date = (FAKE.random_int(), too_small_day_of_year)
         too_big_ordinal_date = (FAKE.random_int(), too_big_day_of_year)
-        cdt = ConvertibleDateTime(calendar=monthless_calendar)
+        cdt = ConvertibleDate(calendar=monthless_calendar)
         assert cdt.is_valid_ordinal_date(too_small_ordinal_date) is False
         assert cdt.is_valid_ordinal_date(valid_ordinal_date) is True
         assert cdt.is_valid_ordinal_date(too_big_ordinal_date) is False
@@ -567,7 +567,7 @@ class ConvertibleDateTimeTest(CalendarTestCase):
     #
     def test_gen_years_in_eras(self):
         calendar = self.calendar_factory.build()
-        cdt = ConvertibleDateTime(calendar=calendar)
+        cdt = ConvertibleDate(calendar=calendar)
         for values in cdt.gen_years_before_era():
             fetched_hr_era_range = values["hr_range"]
             fetched_ast_era_range = values["ast_range"]
@@ -599,7 +599,7 @@ class ConvertibleDateTimeTest(CalendarTestCase):
 
     def test_gen_years_in_eras_start(self):
         calendar = self.calendar_factory.build()
-        cdt = ConvertibleDateTime(calendar=calendar)
+        cdt = ConvertibleDate(calendar=calendar)
         num_ranges = len(calendar.era_ranges)
         start = FAKE.random_int(min=0, max=num_ranges - 2)
         skipped_eras = calendar.eras[:start]
@@ -632,7 +632,7 @@ class ConvertibleDateTimeTest(CalendarTestCase):
     #
     # Weeks
     #
-    @patch("src.datetimes.ConvertibleDateTime.days_in_week", return_value=0)
+    @patch("src.customdate.ConvertibleDate.days_in_week", return_value=0)
     def test_day_of_week_with_no_weeks(self, _):
         weekless_calendar = self.calendar_factory.build(
             weekday_names=(),
@@ -641,7 +641,7 @@ class ConvertibleDateTimeTest(CalendarTestCase):
             epoch_weekday=(),
         )
         _ordinal = FAKE.random_int()
-        cdt = ConvertibleDateTime(calendar=weekless_calendar)
+        cdt = ConvertibleDate(calendar=weekless_calendar)
         assert cdt.day_of_week(_ordinal) is None
 
     def test_days_in_week(self):
@@ -651,5 +651,5 @@ class ConvertibleDateTimeTest(CalendarTestCase):
             weekends=(),
             epoch_weekday=(),
         )
-        cdt = ConvertibleDateTime(calendar=weekless_calendar)
+        cdt = ConvertibleDate(calendar=weekless_calendar)
         assert cdt.days_in_week() == 0

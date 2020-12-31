@@ -117,15 +117,15 @@ class CopticTest(RealCalendarTestCase):
     # Ordinals
     #
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_descending_era",
+        "src.customdate.ConvertibleDate.is_descending_era",
         return_value=True,
     )
     @patch(
-        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        "src.customdate.ConvertibleDate._start_and_sign",
         return_value=(0, -1),
     )
     def test_ordinal_date_to_ordinal_for_bc_year(self, *_):
@@ -137,15 +137,15 @@ class CopticTest(RealCalendarTestCase):
         assert self.coptic_cdt.ordinal_date_to_ordinal((-2, 300)) == -796
 
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_descending_era",
+        "src.customdate.ConvertibleDate.is_descending_era",
         return_value=False,
     )
     @patch(
-        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        "src.customdate.ConvertibleDate._start_and_sign",
         return_value=(1, 1),
     )
     def test_ordinal_date_to_ordinal_for_am_year(self, *_):
@@ -159,7 +159,7 @@ class CopticTest(RealCalendarTestCase):
         assert self.coptic_cdt.ordinal_date_to_ordinal((1, 1)) == 1
 
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=False,
     )
     def test_ordinal_date_ordinal_raises(self, _):
@@ -170,11 +170,11 @@ class CopticTest(RealCalendarTestCase):
             self.l_hijri_cdt.ordinal_date_to_ordinal((year, day_of_year))
 
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
     @patch(
-        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        "src.customdate.ConvertibleDate._start_and_sign",
         return_value=(1, 1),
     )
     def test_ordinal_to_ordinal_date_for_am_year(self, *_):
@@ -185,11 +185,11 @@ class CopticTest(RealCalendarTestCase):
         assert self.coptic_cdt.ordinal_to_ordinal_date(1) == (1, 1)
 
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
     @patch(
-        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        "src.customdate.ConvertibleDate._start_and_sign",
         return_value=(0, -1),
     )
     def test_ordinal_to_ordinal_date_for_bc_year(self, *_):
@@ -199,11 +199,11 @@ class CopticTest(RealCalendarTestCase):
         assert self.coptic_cdt.ordinal_to_ordinal_date(-791) == (-2, 305)
 
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
     @patch(
-        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        "src.customdate.ConvertibleDate._start_and_sign",
         return_value=(0, -1),
     )
     def test_ordinal_to_ordinal_date_for_last_proleptic_year(self, *_):
@@ -214,15 +214,15 @@ class CopticTest(RealCalendarTestCase):
         assert self.coptic_cdt.ordinal_to_ordinal_date(-364) == (0, 1)
 
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_descending_era",
+        "src.customdate.ConvertibleDate.is_descending_era",
         return_value=True,
     )
     @patch(
-        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        "src.customdate.ConvertibleDate._start_and_sign",
         return_value=(0, -1),
     )
     def test_ordinal_to_ordinal_date_is_reversible_for_bce_year(self, *_):
@@ -245,15 +245,15 @@ class CopticTest(RealCalendarTestCase):
         )
 
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_descending_era",
+        "src.customdate.ConvertibleDate.is_descending_era",
         return_value=False,
     )
     @patch(
-        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        "src.customdate.ConvertibleDate._start_and_sign",
         return_value=(1, 1),
     )
     def test_ordinal_to_ordinal_date_is_reversible_for_am_year(self, *_):
@@ -276,11 +276,11 @@ class CopticTest(RealCalendarTestCase):
     # ConvertibleDateTime.ast_ymd_to_ordinal_date
     #
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
     @patch(
-        "src.datetimes.ConvertibleDateTime.days_in_months",
+        "src.customdate.ConvertibleDate.days_in_months",
         return_value=(30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 5),
     )
     def test_ast_ymd_to_ordinal_date_for_common_year(self, *_):
@@ -293,11 +293,11 @@ class CopticTest(RealCalendarTestCase):
         assert coptic_cdt.ast_ymd_to_ordinal_date((-200, 3, 29)) == (-200, 89)
 
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
     @patch(
-        "src.datetimes.ConvertibleDateTime.days_in_months",
+        "src.customdate.ConvertibleDate.days_in_months",
         return_value=(30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 6),
     )
     def test_ast_ymd_to_ordinal_date_for_leap_year(self, *_):
@@ -310,7 +310,7 @@ class CopticTest(RealCalendarTestCase):
         assert coptic_cdt.ast_ymd_to_ordinal_date((-101, 5, 22)) == (-101, 142)
 
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ast_ymd",
+        "src.customdate.ConvertibleDate.is_valid_ast_ymd",
         return_value=False,
     )
     def test_ast_ymd_to_ordinal_date_raises(self, _):
@@ -321,12 +321,12 @@ class CopticTest(RealCalendarTestCase):
     # ConvertibleDateTime.ordinal_date_to_ast_ymd
     #
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
-    @patch("src.datetimes.ConvertibleDateTime.months_in_year", return_value=13)
+    @patch("src.customdate.ConvertibleDate.months_in_year", return_value=13)
     @patch(
-        "src.datetimes.ConvertibleDateTime.days_in_months",
+        "src.customdate.ConvertibleDate.days_in_months",
         return_value=(30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 5),
     )
     def test_ordinal_date_to_ast_ymd_for_common_year(self, *_):
@@ -339,12 +339,12 @@ class CopticTest(RealCalendarTestCase):
         assert coptic_cdt.ordinal_date_to_ast_ymd((-80, 115)) == (-80, 4, 25)
 
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
-    @patch("src.datetimes.ConvertibleDateTime.months_in_year", return_value=13)
+    @patch("src.customdate.ConvertibleDate.months_in_year", return_value=13)
     @patch(
-        "src.datetimes.ConvertibleDateTime.days_in_months",
+        "src.customdate.ConvertibleDate.days_in_months",
         return_value=(30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 6),
     )
     def test_ordinal_date_to_ast_ymd_for_leap_year(self, *_):
@@ -357,12 +357,12 @@ class CopticTest(RealCalendarTestCase):
         assert coptic_cdt.ordinal_date_to_ast_ymd((-21, 300)) == (-21, 10, 30)
 
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
-    @patch("src.datetimes.ConvertibleDateTime.months_in_year", return_value=13)
+    @patch("src.customdate.ConvertibleDate.months_in_year", return_value=13)
     @patch(
-        "src.datetimes.ConvertibleDateTime.days_in_months",
+        "src.customdate.ConvertibleDate.days_in_months",
         return_value=(30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 5),
     )
     def test_ordinal_date_to_ast_ymd_is_reversible_for_common_year(self, *_):
@@ -383,12 +383,12 @@ class CopticTest(RealCalendarTestCase):
         )
 
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
-    @patch("src.datetimes.ConvertibleDateTime.months_in_year", return_value=13)
+    @patch("src.customdate.ConvertibleDate.months_in_year", return_value=13)
     @patch(
-        "src.datetimes.ConvertibleDateTime.days_in_months",
+        "src.customdate.ConvertibleDate.days_in_months",
         return_value=(30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 6),
     )
     def test_ordinal_date_to_ast_ymd_is_reversible_for_leap_year(self, *_):
@@ -409,7 +409,7 @@ class CopticTest(RealCalendarTestCase):
         )
 
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=False,
     )
     def test_ordinal_date_to_ast_ymd_can_raise(self, _):
@@ -459,7 +459,7 @@ class CopticTest(RealCalendarTestCase):
             self.coptic_cdt.hr_to_ast(hr_am_year, 1)
         ) == (hr_am_year, 1)
 
-    @patch("src.datetimes.ConvertibleDateTime.gen_years_before_era")
+    @patch("src.customdate.ConvertibleDate.gen_years_before_era")
     def test_ast_to_hr_raise(self, _):
         ast_ah_year = self.random_ce_year()
         with pytest.raises(RuntimeError):
@@ -534,27 +534,27 @@ class CopticTest(RealCalendarTestCase):
     #
     # ConvertibleDateTime.is_valid_ast_ymd
     #
-    @patch("src.datetimes.ConvertibleDateTime.days_in_year", return_value=365)
-    @patch("src.datetimes.ConvertibleDateTime.months_in_year", return_value=13)
+    @patch("src.customdate.ConvertibleDate.days_in_year", return_value=365)
+    @patch("src.customdate.ConvertibleDate.months_in_year", return_value=13)
     @patch(
-        "src.datetimes.ConvertibleDateTime.days_in_months",
+        "src.customdate.ConvertibleDate.days_in_months",
         return_value=(30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 5),
     )
     def test_is_valid_ast_ymd_for_valid_common_ast_ymd(self, *_):
         year, month, day = self.random_common_ymd()
         assert self.coptic_cdt.is_valid_ast_ymd((year, month, day))
 
-    @patch("src.datetimes.ConvertibleDateTime.days_in_year", return_value=366)
-    @patch("src.datetimes.ConvertibleDateTime.months_in_year", return_value=13)
+    @patch("src.customdate.ConvertibleDate.days_in_year", return_value=366)
+    @patch("src.customdate.ConvertibleDate.months_in_year", return_value=13)
     @patch(
-        "src.datetimes.ConvertibleDateTime.days_in_months",
+        "src.customdate.ConvertibleDate.days_in_months",
         return_value=(30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 6),
     )
     def test_is_valid_ast_ymd_for_valid_leap_ast_ymd(self, *_):
         year, month, day = self.random_leap_ymd()
         assert self.coptic_cdt.is_valid_ast_ymd((year, month, day))
 
-    @patch("src.datetimes.ConvertibleDateTime.months_in_year", return_value=13)
+    @patch("src.customdate.ConvertibleDate.months_in_year", return_value=13)
     def test_is_valid_ast_ymd_for_invalid_ast_ymd(self, _):
         year, month, day = self.random_ymd()
         bad_month = FAKE.random_int(min=14)
@@ -565,7 +565,7 @@ class CopticTest(RealCalendarTestCase):
     #
     # ConvertibleDateTime.is_valid_ordinal_date
     #
-    @patch("src.datetimes.ConvertibleDateTime.days_in_year", return_value=365)
+    @patch("src.customdate.ConvertibleDate.days_in_year", return_value=365)
     def test_is_valid_ordinal_date_for_common_year(self, _):
         year = self.random_common_year()
         valid_day_of_year = FAKE.random_int(min=1, max=365)
@@ -575,7 +575,7 @@ class CopticTest(RealCalendarTestCase):
         assert coptic_cdt.is_valid_ordinal_date((year, valid_day_of_year))
         assert not coptic_cdt.is_valid_ordinal_date((year, bad_day_of_year))
 
-    @patch("src.datetimes.ConvertibleDateTime.days_in_year", return_value=365)
+    @patch("src.customdate.ConvertibleDate.days_in_year", return_value=365)
     def test_is_valid_ordinal_date_for_leap_year(self, _):
         year = self.random_leap_year()
         valid_day_of_year = FAKE.random_int(min=1, max=366)
@@ -590,9 +590,7 @@ class CopticTest(RealCalendarTestCase):
     #
     # ConvertibleDateTime.days_in_months
     #
-    @patch(
-        "src.datetimes.ConvertibleDateTime.is_leap_year", return_value=False
-    )
+    @patch("src.customdate.ConvertibleDate.is_leap_year", return_value=False)
     def test_days_in_months_for_common_year(self, _):
         common_year = self.random_common_year()
         assert (
@@ -602,7 +600,7 @@ class CopticTest(RealCalendarTestCase):
             # fmt: on
         )
 
-    @patch("src.datetimes.ConvertibleDateTime.is_leap_year", return_value=True)
+    @patch("src.customdate.ConvertibleDate.is_leap_year", return_value=True)
     def test_days_in_months_for_leap(self, _):
         leap_year = self.random_leap_year()
         assert (
@@ -615,14 +613,12 @@ class CopticTest(RealCalendarTestCase):
     #
     # ConvertibleDateTime.days_in_year
     #
-    @patch(
-        "src.datetimes.ConvertibleDateTime.is_leap_year", return_value=False
-    )
+    @patch("src.customdate.ConvertibleDate.is_leap_year", return_value=False)
     def test_days_in_common_year(self, _):
         common_year = self.random_common_year()
         assert self.coptic_cdt.days_in_year(common_year) == 365
 
-    @patch("src.datetimes.ConvertibleDateTime.is_leap_year", return_value=True)
+    @patch("src.customdate.ConvertibleDate.is_leap_year", return_value=True)
     def test_days_in_leap_year(self, _):
         leap_year = self.random_leap_year()
         assert self.coptic_cdt.days_in_year(leap_year) == 366
@@ -630,14 +626,12 @@ class CopticTest(RealCalendarTestCase):
     #
     # ConvertibleDateTime.months_in_year
     #
-    @patch(
-        "src.datetimes.ConvertibleDateTime.is_leap_year", return_value=False
-    )
+    @patch("src.customdate.ConvertibleDate.is_leap_year", return_value=False)
     def test_months_in_common_year(self, _):
         common_year = self.random_common_year()
         assert self.coptic_cdt.months_in_year(common_year) == 13
 
-    @patch("src.datetimes.ConvertibleDateTime.is_leap_year", return_value=True)
+    @patch("src.customdate.ConvertibleDate.is_leap_year", return_value=True)
     def test_months_in_leap_year(self, _):
         leap_year = self.random_leap_year()
         assert self.coptic_cdt.months_in_year(leap_year) == 13
@@ -645,7 +639,7 @@ class CopticTest(RealCalendarTestCase):
     #
     # Weeks
     #
-    @patch("src.datetimes.ConvertibleDateTime.days_in_week", return_value=7)
+    @patch("src.customdate.ConvertibleDate.days_in_week", return_value=7)
     def test_day_of_week(self, _):
         bc_year, bc_month, bc_day = self.random_bce_ymd()
         bc_julian_day = convertdate.coptic.to_jd(bc_year, bc_month, bc_day)

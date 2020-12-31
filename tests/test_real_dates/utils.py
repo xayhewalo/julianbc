@@ -1,7 +1,7 @@
 import convertdate
 
 from src.models import ConvertibleCalendar, CalendarConversion
-from src.datetimes import ConvertibleDateTime
+from src.customdate import ConvertibleDate
 from tests.utils import CalendarTestCase, FAKE
 
 
@@ -89,7 +89,7 @@ class RealCalendarTestCase(CalendarTestCase):
             era_ranges=[("-inf", 1), (1, "inf")],
             jd_epoch=1721426,
         )
-        self.gregorian_cdt = ConvertibleDateTime(calendar=self.gregorian)
+        self.gregorian_cdt = ConvertibleDate(calendar=self.gregorian)
         self.gregorian_dc = convertdate.daycount.DayCount(
             convertdate.gregorian.EPOCH
         )
@@ -159,7 +159,7 @@ class RealCalendarTestCase(CalendarTestCase):
             era_ranges=(("-inf", 1), (1, "inf")),
             jd_epoch=1825030,
         )
-        self.coptic_cdt = ConvertibleDateTime(calendar=self.coptic)
+        self.coptic_cdt = ConvertibleDate(calendar=self.coptic)
         self.coptic_dc = convertdate.daycount.DayCount(
             convertdate.coptic.EPOCH
         )
@@ -248,7 +248,7 @@ class RealCalendarTestCase(CalendarTestCase):
             source_sync_ordinal=1,
             target_sync_ordinal=-28203,
         )
-        self.indian_cdt = ConvertibleDateTime(calendar=self.indian)
+        self.indian_cdt = ConvertibleDate(calendar=self.indian)
         self.indian_dc = convertdate.daycount.DayCount(1749630 - 0.5)
 
         self.l_hijri = ConvertibleCalendar(  # lunar hijri
@@ -312,7 +312,7 @@ class RealCalendarTestCase(CalendarTestCase):
             era_ranges=(("-inf", 1), (1, "inf")),
             jd_epoch=1948440,
         )
-        self.l_hijri_cdt = ConvertibleDateTime(calendar=self.l_hijri)
+        self.l_hijri_cdt = ConvertibleDate(calendar=self.l_hijri)
         self.l_hijri_dc = convertdate.daycount.DayCount(
             convertdate.islamic.EPOCH
         )
@@ -390,7 +390,7 @@ class RealCalendarTestCase(CalendarTestCase):
             source_sync_ordinal=1,
             target_sync_ordinal=3,
         )
-        self.julian_cdt = ConvertibleDateTime(calendar=self.julian)
+        self.julian_cdt = ConvertibleDate(calendar=self.julian)
         self.julian_dc = convertdate.daycount.DayCount(
             convertdate.julian.JULIAN_EPOCH
         )
@@ -473,7 +473,7 @@ class RealCalendarTestCase(CalendarTestCase):
             source_sync_ordinal=1,
             target_sync_ordinal=3,
         )
-        self.s_hijri_cdt = ConvertibleDateTime(calendar=self.s_hijri)
+        self.s_hijri_cdt = ConvertibleDate(calendar=self.s_hijri)
         self.s_hijri_dc = convertdate.daycount.DayCount(
             convertdate.persian.EPOCH
         )

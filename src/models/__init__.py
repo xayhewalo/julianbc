@@ -1,5 +1,5 @@
 # flake8: noqa E401
-from .convertiblecalendar.calendars import (
+from .eon.customcalendar import (
     CalBase,
     CalendarConversion,
     ConvertibleCalendar,

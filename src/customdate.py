@@ -23,7 +23,7 @@ from collections import deque
 from typing import Union
 
 
-class ConvertibleDateTime(object):
+class ConvertibleDate:
     """
     Manipulates dates using database calendars
     **Not** a drop in replacement for :mod:`datetime`.
@@ -32,13 +32,13 @@ class ConvertibleDateTime(object):
     def __init__(self, calendar, date_sep="/"):
         self.date_sep = date_sep
         # fmt: off
-        self.calendar = calendar  # type: from src.models.convertiblecalendar.calendars import ConvertibleCalendar # noqa: E501, F723
+        self.calendar = calendar  # type: from src.models.eon.customcalendar import ConvertibleCalendar # noqa: E501, F723
         # fmt: on
 
     def convert_ast_ymd(
         self,
         foreign_ast_ymd: tuple,
-        foreign_datetime: "ConvertibleDateTime",
+        foreign_datetime: "ConvertibleDate",
     ) -> tuple[int, Union[int, None], int]:
         """:returns: native ast_ymd equivalent to the foreign ast_ymd"""
         foreign_ordinal_date = foreign_datetime.ast_ymd_to_ordinal_date(

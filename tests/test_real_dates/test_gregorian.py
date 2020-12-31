@@ -140,15 +140,15 @@ class GregorianTest(RealCalendarTestCase):
     # Ordinals
     #
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_descending_era",
+        "src.customdate.ConvertibleDate.is_descending_era",
         return_value=True,
     )
     @patch(
-        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        "src.customdate.ConvertibleDate._start_and_sign",
         return_value=(0, -1),
     )
     def test_ordinal_date_to_ordinal_for_bce_year(self, *_):
@@ -164,15 +164,15 @@ class GregorianTest(RealCalendarTestCase):
         )
 
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_descending_era",
+        "src.customdate.ConvertibleDate.is_descending_era",
         return_value=False,
     )
     @patch(
-        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        "src.customdate.ConvertibleDate._start_and_sign",
         return_value=(1, 1),
     )
     def test_ordinal_date_to_ordinal_for_ce_year(self, *_):
@@ -187,7 +187,7 @@ class GregorianTest(RealCalendarTestCase):
         )
 
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=False,
     )
     def test_ordinal_date_to_ordinal_raises(self, *_):
@@ -197,11 +197,11 @@ class GregorianTest(RealCalendarTestCase):
             self.gregorian_cdt.ordinal_date_to_ordinal(ordinal_date)
 
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
     @patch(
-        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        "src.customdate.ConvertibleDate._start_and_sign",
         return_value=(0, -1),
     )
     def test_ordinal_to_ordinal_date_for_bce_year(self, *_):
@@ -216,11 +216,11 @@ class GregorianTest(RealCalendarTestCase):
         )
 
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
     @patch(
-        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        "src.customdate.ConvertibleDate._start_and_sign",
         return_value=(1, 1),
     )
     def test_ordinal_to_ordinal_date_for_ce_year(self, *_):
@@ -235,11 +235,11 @@ class GregorianTest(RealCalendarTestCase):
         )
 
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
     @patch(
-        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        "src.customdate.ConvertibleDate._start_and_sign",
         return_value=(0, -1),
     )
     def test_ordinal_to_ordinal_date_for_last_proleptic_year(self, *_):
@@ -255,15 +255,15 @@ class GregorianTest(RealCalendarTestCase):
         )
 
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_descending_era",
+        "src.customdate.ConvertibleDate.is_descending_era",
         return_value=True,
     )
     @patch(
-        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        "src.customdate.ConvertibleDate._start_and_sign",
         return_value=(0, -1),
     )
     def test_ordinal_to_ordinal_date_is_reversible_for_bce_year(self, *_):
@@ -284,15 +284,15 @@ class GregorianTest(RealCalendarTestCase):
         )
 
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_descending_era",
+        "src.customdate.ConvertibleDate.is_descending_era",
         return_value=False,
     )
     @patch(
-        "src.datetimes.ConvertibleDateTime._start_and_sign",
+        "src.customdate.ConvertibleDate._start_and_sign",
         return_value=(1, 1),
     )
     def test_ordinal_to_ordinal_date_is_reversible_for_ce_year(self, *_):
@@ -316,11 +316,11 @@ class GregorianTest(RealCalendarTestCase):
     # ConvertibleDateTime.ast_ymd_to_ordinal_date
     #
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ast_ymd",
+        "src.customdate.ConvertibleDate.is_valid_ast_ymd",
         return_value=True,
     )
     @patch(
-        "src.datetimes.ConvertibleDateTime.days_in_months",
+        "src.customdate.ConvertibleDate.days_in_months",
         return_value=(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31),
     )
     def test_ast_ymd_to_ordinal_date_for_common_year(self, *_):
@@ -330,11 +330,11 @@ class GregorianTest(RealCalendarTestCase):
         ) == ordinal.from_gregorian(year, month, day)
 
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ast_ymd",
+        "src.customdate.ConvertibleDate.is_valid_ast_ymd",
         return_value=True,
     )
     @patch(
-        "src.datetimes.ConvertibleDateTime.days_in_months",
+        "src.customdate.ConvertibleDate.days_in_months",
         return_value=(31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31),
     )
     def test_ast_ymd_to_ordinal_date_for_leap_year(self, *_):
@@ -344,7 +344,7 @@ class GregorianTest(RealCalendarTestCase):
         ) == ordinal.from_gregorian(year, month, day)
 
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ast_ymd",
+        "src.customdate.ConvertibleDate.is_valid_ast_ymd",
         return_value=False,
     )
     def test_ast_ymd_to_ordinal_date_raises(self, _):
@@ -355,12 +355,12 @@ class GregorianTest(RealCalendarTestCase):
     # ConvertibleDateTime.ordinal_date_to_ast_ymd
     #
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
-    @patch("src.datetimes.ConvertibleDateTime.months_in_year", return_value=12)
+    @patch("src.customdate.ConvertibleDate.months_in_year", return_value=12)
     @patch(
-        "src.datetimes.ConvertibleDateTime.days_in_months",
+        "src.customdate.ConvertibleDate.days_in_months",
         return_value=(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31),
     )
     def test_ordinal_date_to_ast_ymd_for_common_year(self, *_):
@@ -373,12 +373,12 @@ class GregorianTest(RealCalendarTestCase):
         )
 
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
-    @patch("src.datetimes.ConvertibleDateTime.months_in_year", return_value=12)
+    @patch("src.customdate.ConvertibleDate.months_in_year", return_value=12)
     @patch(
-        "src.datetimes.ConvertibleDateTime.days_in_months",
+        "src.customdate.ConvertibleDate.days_in_months",
         return_value=(31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31),
     )
     def test_ordinal_date_to_ast_ymd_for_leap_year(self, *_):
@@ -395,12 +395,12 @@ class GregorianTest(RealCalendarTestCase):
         )
 
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
-    @patch("src.datetimes.ConvertibleDateTime.months_in_year", return_value=12)
+    @patch("src.customdate.ConvertibleDate.months_in_year", return_value=12)
     @patch(
-        "src.datetimes.ConvertibleDateTime.days_in_months",
+        "src.customdate.ConvertibleDate.days_in_months",
         return_value=(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31),
     )
     def test_ordinal_date_to_ast_ymd_is_reversible_for_common_year(self, *_):
@@ -421,12 +421,12 @@ class GregorianTest(RealCalendarTestCase):
         )
 
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
-    @patch("src.datetimes.ConvertibleDateTime.months_in_year", return_value=12)
+    @patch("src.customdate.ConvertibleDate.months_in_year", return_value=12)
     @patch(
-        "src.datetimes.ConvertibleDateTime.days_in_months",
+        "src.customdate.ConvertibleDate.days_in_months",
         return_value=(31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31),
     )
     def test_ordinal_date_to_ast_ymd_is_reversible_for_leap_year(self, *_):
@@ -447,7 +447,7 @@ class GregorianTest(RealCalendarTestCase):
         )
 
     @patch(
-        "src.datetimes.ConvertibleDateTime.is_valid_ordinal_date",
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=False,
     )
     def test_ordinal_date_to_ast_ymd_can_raise(self, *_):
@@ -502,7 +502,7 @@ class GregorianTest(RealCalendarTestCase):
             self.gregorian_cdt.hr_to_ast(hr_ce_year, 1)
         ) == (hr_ce_year, 1)
 
-    @patch("src.datetimes.ConvertibleDateTime.gen_years_before_era")
+    @patch("src.customdate.ConvertibleDate.gen_years_before_era")
     def test_ast_to_hr_raise(self, _):
         ast_ce_year = self.random_ce_year()
         with pytest.raises(RuntimeError):
@@ -573,27 +573,27 @@ class GregorianTest(RealCalendarTestCase):
     #
     # ConvertibleDateTime.is_valid_ast_ymd
     #
-    @patch("src.datetimes.ConvertibleDateTime.days_in_year", return_value=365)
-    @patch("src.datetimes.ConvertibleDateTime.months_in_year", return_value=12)
+    @patch("src.customdate.ConvertibleDate.days_in_year", return_value=365)
+    @patch("src.customdate.ConvertibleDate.months_in_year", return_value=12)
     @patch(
-        "src.datetimes.ConvertibleDateTime.days_in_months",
+        "src.customdate.ConvertibleDate.days_in_months",
         return_value=(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31),
     )
     def test_is_valid_ast_ymd_for_valid_common_ast_ymd(self, *_):
         ast_year, month, day = self.random_common_ymd()
         assert self.gregorian_cdt.is_valid_ast_ymd((ast_year, month, day))
 
-    @patch("src.datetimes.ConvertibleDateTime.days_in_year", return_value=366)
-    @patch("src.datetimes.ConvertibleDateTime.months_in_year", return_value=12)
+    @patch("src.customdate.ConvertibleDate.days_in_year", return_value=366)
+    @patch("src.customdate.ConvertibleDate.months_in_year", return_value=12)
     @patch(
-        "src.datetimes.ConvertibleDateTime.days_in_months",
+        "src.customdate.ConvertibleDate.days_in_months",
         return_value=(31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31),
     )
     def test_is_valid_ast_ymd_for_valid_leap_ast_ymd(self, *_):
         ast_year, month, day = self.random_leap_ymd()
         assert self.gregorian_cdt.is_valid_ast_ymd((ast_year, month, day))
 
-    @patch("src.datetimes.ConvertibleDateTime.months_in_year", return_value=12)
+    @patch("src.customdate.ConvertibleDate.months_in_year", return_value=12)
     def test_is_valid_ast_ymd_for_invalid_ast_ymd(self, _):
         year, month, day = self.random_ymd()
         bad_month = FAKE.random_int(min=13)
@@ -604,7 +604,7 @@ class GregorianTest(RealCalendarTestCase):
     #
     # ConvertibleDateTime.is_valid_ordinal_date
     #
-    @patch("src.datetimes.ConvertibleDateTime.days_in_year", return_value=365)
+    @patch("src.customdate.ConvertibleDate.days_in_year", return_value=365)
     def test_is_valid_ordinal_date_for_common_year(self, _):
         valid_ordinal_date = ordinal.from_gregorian(*self.random_common_ymd())
         invalid_ordinal_date = (FAKE.random_int(), FAKE.random_int(min=366))
@@ -613,7 +613,7 @@ class GregorianTest(RealCalendarTestCase):
             invalid_ordinal_date
         )
 
-    @patch("src.datetimes.ConvertibleDateTime.days_in_year", return_value=366)
+    @patch("src.customdate.ConvertibleDate.days_in_year", return_value=366)
     def test_is_valid_ordinal_date_for_leap_year(self, _):
         valid_ordinal_date = ordinal.from_gregorian(*self.random_leap_ymd())
         invalid_ordinal_date = (FAKE.random_int(), FAKE.random_int(min=367))
@@ -627,9 +627,7 @@ class GregorianTest(RealCalendarTestCase):
     #
     # ConvertibleDateTime.days_in_months
     #
-    @patch(
-        "src.datetimes.ConvertibleDateTime.is_leap_year", return_value=False
-    )
+    @patch("src.customdate.ConvertibleDate.is_leap_year", return_value=False)
     def test_days_in_months_for_common_year(self, _):
         common_year = self.random_common_year()
         assert (
@@ -639,7 +637,7 @@ class GregorianTest(RealCalendarTestCase):
             # fmt: on
         )
 
-    @patch("src.datetimes.ConvertibleDateTime.is_leap_year", return_value=True)
+    @patch("src.customdate.ConvertibleDate.is_leap_year", return_value=True)
     def test_days_in_months_for_leap_year(self, _):
         leap_year = self.random_leap_year()
         assert (
@@ -652,14 +650,12 @@ class GregorianTest(RealCalendarTestCase):
     #
     # ConvertibleDateTime.days_in_year
     #
-    @patch(
-        "src.datetimes.ConvertibleDateTime.is_leap_year", return_value=False
-    )
+    @patch("src.customdate.ConvertibleDate.is_leap_year", return_value=False)
     def test_days_in_common_year(self, _):
         common_year = self.random_common_year()
         assert self.gregorian_cdt.days_in_year(common_year) == 365
 
-    @patch("src.datetimes.ConvertibleDateTime.is_leap_year", return_value=True)
+    @patch("src.customdate.ConvertibleDate.is_leap_year", return_value=True)
     def test_days_in_leap_year(self, _):
         leap_year = self.random_leap_year()
         assert self.gregorian_cdt.days_in_year(leap_year) == 366
@@ -667,14 +663,12 @@ class GregorianTest(RealCalendarTestCase):
     #
     # ConvertibleDateTime.months_in_year
     #
-    @patch(
-        "src.datetimes.ConvertibleDateTime.is_leap_year", return_value=False
-    )
+    @patch("src.customdate.ConvertibleDate.is_leap_year", return_value=False)
     def test_months_in_common_year(self, _):
         common_ast_year = self.random_common_year()
         assert self.gregorian_cdt.months_in_year(common_ast_year) == 12
 
-    @patch("src.datetimes.ConvertibleDateTime.is_leap_year", return_value=True)
+    @patch("src.customdate.ConvertibleDate.is_leap_year", return_value=True)
     def test_months_in_leap_year(self, _):
         leap_ast_year = self.random_leap_year()
         assert self.gregorian_cdt.months_in_year(leap_ast_year) == 12
@@ -695,7 +689,7 @@ class GregorianTest(RealCalendarTestCase):
             0, 3, 0  # Thursday before Sunday December 31st 1 BCE
         ) == -3"""
 
-    @patch("src.datetimes.ConvertibleDateTime.days_in_week", return_value=7)
+    @patch("src.customdate.ConvertibleDate.days_in_week", return_value=7)
     def test_day_of_week(self, _):
         daycount = self.gregorian_dc
         bce_year, bce_month, bce_day = self.random_bce_ymd()

@@ -151,7 +151,8 @@ class ConvertibleTimeTest(DatabaseTestCase):
         "src.customtime.ConvertibleTime.day_demarcations",
         return_value=[0, 12, 24],
     )
-    def test_labeled_hour(self, _):
+    @patch("src.customtime.ConvertibleTime.max_hr_hour", return_value=12)
+    def test_labeled_hour(self, *_):
         hour_label = self.py_dt.time().strftime("%p")
         hour = int(self.py_dt.time().strftime("%H"))
         labeled_hour = int(self.py_dt.time().strftime("%I"))
@@ -175,11 +176,12 @@ class ConvertibleTimeTest(DatabaseTestCase):
         with pytest.raises(RuntimeError):
             ct.labeled_hour(hours_in_day + 1)
 
-    def test_day_demarcations(self):
+    @patch("src.customtime.ConvertibleTime.max_hr_hour", return_value=12)
+    def test_day_demarcations(self, _):
         assert self.earth_time.day_demarcations() == [0, 12, 24]
 
     def test_max_hr_hour(self):
-        raise NotImplementedError
+        assert self.earth_time.max_hr_hour() == 12
 
     def test_are_valid_hour_labels(self):
         hours_in_day = FAKE.random_int(min=1, max=100)

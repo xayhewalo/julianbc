@@ -54,15 +54,15 @@ class ConvertibleTime:
     def hms_to_seconds(self, hms: tuple[int, int, int]) -> int:
         hour, minute, second = hms
         return (
-            (hour * self.seconds_in_hour())
+            (hour * self.clock.seconds_in_hour)
             + (minute * self.clock.seconds_in_minute)
             + second
         )
 
     def seconds_to_hms(self, seconds: int) -> tuple[int, int, int]:
-        seconds = seconds % self.seconds_in_day()
+        seconds = seconds % self.clock.seconds_in_day
         hour = self.hour(seconds)
-        seconds = seconds % self.seconds_in_hour()
+        seconds = seconds % self.clock.seconds_in_hour
         minute = self.minute(seconds)
         second = seconds % self.clock.seconds_in_minute
         hms = hour, minute, second
@@ -71,7 +71,7 @@ class ConvertibleTime:
 
     def hour(self, seconds: int) -> int:
         """hour of the day"""
-        hour = math.trunc(seconds / self.seconds_in_hour())
+        hour = math.trunc(seconds / self.clock.seconds_in_hour)
         assert self.is_valid_hour(hour), f"{hour} is invalid"
         return hour
 
@@ -81,12 +81,6 @@ class ConvertibleTime:
         minute = math.trunc(seconds / seconds_in_minute) % seconds_in_minute
         assert self.is_valid_minute(minute), f"{minute} is invalid"
         return minute
-
-    def seconds_in_hour(self) -> int:
-        return self.clock.seconds_in_minute * self.clock.minutes_in_hour
-
-    def seconds_in_day(self) -> int:
-        return self.seconds_in_hour() * self.clock.hours_in_day
 
     def is_valid_hms(self, hms: tuple[int, int, int]) -> bool:
         hour, minute, second = hms

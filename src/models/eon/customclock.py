@@ -17,7 +17,7 @@
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
 from src.models import utils
 from sqlalchemy import CheckConstraint, Column, Integer, Unicode
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import column_property, declarative_base
 
 ClockBase = declarative_base()
 ClockBase.metadata.naming_convention = utils.NAMING_CONVENTION
@@ -47,3 +47,5 @@ class ConvertibleClock(ClockBase):
         default=24,
         nullable=False,
     )
+    seconds_in_hour = column_property(seconds_in_minute * minutes_in_hour)
+    seconds_in_day = column_property(seconds_in_hour * hours_in_day)

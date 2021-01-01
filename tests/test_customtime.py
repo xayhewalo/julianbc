@@ -2,8 +2,7 @@ import datetime
 import pytest
 
 from tests.factories import ConvertibleTimeFactory, ConvertibleClockFactory
-from tests.utils import FAKE
-from unittest import TestCase
+from tests.utils import DatabaseTestCase, FAKE
 from unittest.mock import patch
 
 
@@ -24,16 +23,23 @@ def test___init__(patch_are_valid_hour_labels):
     patch_are_valid_hour_labels.assert_called_once_with(hour_labels)
 
 
-class ConvertibleTimeTest(TestCase):
+@pytest.mark.db
+class ConvertibleTimeTest(DatabaseTestCase):
     def setUp(self):
+        super(ConvertibleTimeTest, self).setUp()
         self.time_factory = ConvertibleTimeFactory
         self.clock_factory = ConvertibleClockFactory
-        self.earth_time = ConvertibleTimeFactory(
-            clock=self.clock_factory.build(
-                seconds_in_minute=60,
-                minutes_in_hour=60,
-                hours_in_day=24,
-            ),
+
+        earth_clock = self.clock_factory.create(
+            seconds_in_minute=60,
+            minutes_in_hour=60,
+            hours_in_day=24,
+        )
+        self.session.add(earth_clock)
+        self.session.commit()
+
+        self.earth_time = self.time_factory.build(
+            clock=earth_clock,
             hour_labels=["AM", "PM"],
             clock_sep=":",
         )
@@ -44,18 +50,13 @@ class ConvertibleTimeTest(TestCase):
         self.seconds = (self.py_dt - midnight).seconds
         self.hms = self.py_dt.hour, self.py_dt.minute, self.py_dt.second
 
-    @patch("src.customtime.ConvertibleTime.seconds_in_hour", return_value=3600)
-    def test_hms_to_seconds(self, _):
+    def test_hms_to_seconds(self):
         assert self.earth_time.hms_to_seconds(self.hms) == self.seconds
 
-    @patch("src.customtime.ConvertibleTime.seconds_in_day", return_value=86400)
-    @patch("src.customtime.ConvertibleTime.seconds_in_hour", return_value=3600)
     @patch("src.customtime.ConvertibleTime.is_valid_hms", return_value=True)
     def test_seconds_to_hms(self, *_):
         assert self.earth_time.seconds_to_hms(self.seconds) == self.hms
 
-    @patch("src.customtime.ConvertibleTime.seconds_in_day", return_value=86400)
-    @patch("src.customtime.ConvertibleTime.seconds_in_hour", return_value=3600)
     @patch("src.customtime.ConvertibleTime.is_valid_hms", return_value=True)
     def test_seconds_to_hms_and_hms_to_seconds_are_reversible(self, *_):
         assert (
@@ -71,7 +72,6 @@ class ConvertibleTimeTest(TestCase):
             == self.seconds
         )
 
-    @patch("src.customtime.ConvertibleTime.seconds_in_hour", return_value=3600)
     @patch("src.customtime.ConvertibleTime.is_valid_hour", return_value=True)
     def test_hour(self, *_):
         assert self.earth_time.hour(self.seconds) == self.py_dt.hour
@@ -79,13 +79,6 @@ class ConvertibleTimeTest(TestCase):
     @patch("src.customtime.ConvertibleTime.is_valid_minute", return_value=True)
     def test_minute(self, _):
         assert self.earth_time.minute(self.seconds) == self.py_dt.minute
-
-    def test_seconds_in_hour(self):
-        assert self.earth_time.seconds_in_hour() == 3600
-
-    @patch("src.customtime.ConvertibleTime.seconds_in_hour", return_value=3600)
-    def test_seconds_in_day(self, _):
-        assert self.earth_time.seconds_in_day() == 86400
 
     @patch("src.customtime.ConvertibleTime.is_valid_hour", return_value=True)
     @patch("src.customtime.ConvertibleTime.is_valid_minute", return_value=True)
@@ -141,7 +134,7 @@ class ConvertibleTimeTest(TestCase):
     def test_labeled_hour_raises(self):
         num_hour_labels = FAKE.random_int(min=1, max=20)
         hours_in_day = FAKE.random_int(min=1, max=100) * num_hour_labels
-        clock = ConvertibleClockFactory.build(hours_in_day=hours_in_day)
+        clock = self.clock_factory.create(hours_in_day=hours_in_day)
         no_hour_label_ct = self.time_factory.build(
             clock=clock, hour_labels=list()
         )
@@ -166,3 +159,4 @@ class ConvertibleTimeTest(TestCase):
         )
         assert ct.are_valid_hour_labels(bad_hour_labels) is False
         assert ct.are_valid_hour_labels([]) is True
+        assert self.earth_time.are_valid_hour_labels(["AM", "PM"]) is True

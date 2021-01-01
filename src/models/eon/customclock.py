@@ -19,11 +19,11 @@ from src.models import utils
 from sqlalchemy import CheckConstraint, Column, Integer, Unicode
 from sqlalchemy.orm import declarative_base
 
-TimeBase = declarative_base()
-TimeBase.metadata.naming_convention = utils.NAMING_CONVENTION
+ClockBase = declarative_base()
+ClockBase.metadata.naming_convention = utils.NAMING_CONVENTION
 
 
-class ConvertibleTime(TimeBase):
+class ConvertibleClock(ClockBase):
     """User-defined time"""
 
     __tablename__ = "convertible_time"

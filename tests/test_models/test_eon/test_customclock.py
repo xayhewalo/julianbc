@@ -1,23 +1,23 @@
 import pytest
 
 from sqlalchemy.exc import IntegrityError
-from tests.factories import ConvertibleTimeFactory
+from tests.factories import ConvertibleClockFactory
 from tests.utils import DatabaseTestCase, FAKE
 
 
 @pytest.mark.db
-def test_convertible_time_factory():
+def test_convertible_clock_factory():
     # noinspection PyBroadException
     try:
-        ConvertibleTimeFactory()
+        ConvertibleClockFactory()
     except Exception:
-        assert False, "default ConvertibleTimeFactory raised an error"
+        assert False, "default ConvertibleClockFactory raised an error"
 
 
 class ConvertibleTimeTest(DatabaseTestCase):
     def setUp(self):
         super(ConvertibleTimeTest, self).setUp()
-        self.time_factory = ConvertibleTimeFactory
+        self.time_factory = ConvertibleClockFactory
 
     @pytest.mark.db
     def test_validate_positive(self):

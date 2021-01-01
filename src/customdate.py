@@ -1,4 +1,4 @@
-"""Where the User-interface and the backend meet"""
+"""Where the User-interface and database date-keeping meet"""
 #  Copyright (c) 2020 author(s) of JulianBC.
 #
 #  This file is part of JulianBC.
@@ -32,7 +32,7 @@ class ConvertibleDate:
     def __init__(self, calendar, date_sep="/"):
         self.date_sep = date_sep
         # fmt: off
-        self.calendar = calendar  # type: from src.models.eon.customcalendar import ConvertibleCalendar # noqa: E501, F723
+        self.calendar = calendar  # type: from src.models import ConvertibleCalendar # noqa: E501, F723
         # fmt: on
 
     def convert_ast_ymd(

@@ -1,11 +1,7 @@
-import factory
-
-from tests.factories.utils import BaseFactory
-from tests.factories.providers import Provider
+from tests.factories.utils import BaseFactory, factory
 from tests.utils import FAKE
 from src.models import CalendarConversion, ConvertibleCalendar
 
-factory.Faker.add_provider(Provider)
 num_weekdays = FAKE.random_int(min=1, max=20)
 weekday_indexes = [x for x in range(num_weekdays)]
 num_common_year_months = FAKE.random_int(min=1, max=20)

@@ -5,6 +5,6 @@ from .eon.customcalendar import (
     ConvertibleCalendar,
 )
 from .eon.customclock import (
-    ConvertibleTime,
-    TimeBase,
+    ConvertibleClock,
+    ClockBase,
 )

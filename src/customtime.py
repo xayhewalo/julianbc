@@ -17,6 +17,10 @@
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
 import math
 
+from sqlalchemy.future import select
+from sqlalchemy.orm import object_session
+from src.models import ConvertibleClock
+
 
 class ConvertibleTime:
     """
@@ -34,10 +38,10 @@ class ConvertibleTime:
     **not** a drop-in replacement for datetime.clock
     """
 
-    def __init__(self, clock, clock_sep=":", hour_labels=None):
-        # fmt: off
-        self.clock = clock  # type: from src.models import ConvertibleClock  # noqa: F723, E501
-        # fmt: on
+    def __init__(
+        self, clock: ConvertibleClock, clock_sep=":", hour_labels=None
+    ):
+        self.clock = clock
         self.clock_sep = clock_sep
         self.hour_labels = hour_labels or list()
         """I.e AM or PM"""
@@ -48,8 +52,19 @@ class ConvertibleTime:
     def convert_hms(self):
         raise NotImplementedError
 
-    def convertible_clocks(self):
-        raise NotImplementedError
+    def convertible_clocks(self) -> list:
+        session = object_session(self.clock)
+        return (
+            session.execute(
+                select(ConvertibleClock).filter(
+                    ConvertibleClock.seconds_in_day
+                    == self.clock.seconds_in_day,
+                    ConvertibleClock.id != self.clock.id,
+                )
+            )
+            .scalars()
+            .all()
+        )
 
     def hms_to_seconds(self, hms: tuple[int, int, int]) -> int:
         hour, minute, second = hms

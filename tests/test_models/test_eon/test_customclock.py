@@ -19,6 +19,9 @@ class ConvertibleTimeTest(DatabaseTestCase):
         super(ConvertibleTimeTest, self).setUp()
         self.time_factory = ConvertibleClockFactory
 
+    def test___repr__(self):
+        raise NotImplementedError
+
     @pytest.mark.db
     def test_validate_positive(self):
         negative_seconds_time = self.time_factory.build(

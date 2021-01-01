@@ -21,13 +21,14 @@ import math
 class ConvertibleTime:
     """
     Manipulate seconds with database clocks.
-    `Seconds` (plural) refers to seconds into a day, not seconds from a
-    calendar's epoch.
-    `Second` (singular) refers to the second in a minute.
-    `HMS` stands for hour, minute, second of a day.
-    `Hour` is always in military time, i.e 24-hour clock on Earth.
-    `HR time` is human-readable time.
-    `Hour labels` are string like "AM" or "PM"
+
+    * `Seconds` (plural) refers to seconds into a day, not seconds from a
+      calendar's epoch.
+    * `Second` (singular) refers to the second in a minute.
+    * `HMS` stands for the hour, minute, second of a day.
+    * `Hour` is always in military time, i.e 24-hour clock on Earth.
+    * `HR time` is human-readable time, which may or may not have hour labels
+    * `Hour labels` are string like "AM" or "PM"
     Clocks can only be converted if they have the same seconds in a day.
 
     **not** a drop-in replacement for datetime.clock

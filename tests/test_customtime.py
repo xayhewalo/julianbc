@@ -156,6 +156,7 @@ class ConvertibleTimeTest(DatabaseTestCase):
         hour = int(self.py_dt.time().strftime("%H"))
         labeled_hour = int(self.py_dt.time().strftime("%I"))
         assert self.earth_time.labeled_hour(hour) == (labeled_hour, hour_label)
+        assert self.earth_time.labeled_hour(0) == (12, "AM")
 
     def test_labeled_hour_raises(self):
         num_hour_labels = FAKE.random_int(min=1, max=20)
@@ -176,6 +177,9 @@ class ConvertibleTimeTest(DatabaseTestCase):
 
     def test_day_demarcations(self):
         assert self.earth_time.day_demarcations() == [0, 12, 24]
+
+    def test_max_hr_hour(self):
+        raise NotImplementedError
 
     def test_are_valid_hour_labels(self):
         hours_in_day = FAKE.random_int(min=1, max=100)

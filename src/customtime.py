@@ -170,18 +170,24 @@ class ConvertibleTime:
         if hour_label_index is None:
             raise RuntimeError(f"Unable to find hour label for hour: {hour}")
 
-        labeled_hour = hour - demarcations[hour_label_index]
+        max_hr_hour = self.max_hr_hour()
+        hour_index = (hour % max_hr_hour) - 1
+        labeled_hour = range(1, max_hr_hour + 1)[hour_index]
         return labeled_hour, self.hour_labels[hour_label_index]
 
     def day_demarcations(self) -> list:
         """i.e [0, 12, 24] for a 12-hour clock"""
-        num_labels = len(self.hour_labels)
         hours_in_day = self.clock.hours_in_day
-        division_length = int(hours_in_day / num_labels)
+        max_hr_hour = self.max_hr_hour()
+        return [hour for hour in range(0, hours_in_day + 1, max_hr_hour)]
+
+    def max_hr_hour(self) -> int:
+        """:raises AssertionError: if max_hr_hour is not a whole number"""
+        max_hr_hour = self.clock.hours_in_day / len(self.hour_labels)
         assert (
-            int(division_length) == division_length
-        ), f"{self.hour_labels} cannot evenly divide {hours_in_day} hours"
-        return [hour for hour in range(0, hours_in_day + 1, division_length)]
+            int(max_hr_hour) == max_hr_hour
+        ), f"Max hr hour must be a whole number: {max_hr_hour} is not"
+        return int(max_hr_hour)
 
     def are_valid_hour_labels(self, hour_label: list) -> bool:
         num_labels = len(hour_label)

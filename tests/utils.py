@@ -21,10 +21,6 @@ class DatabaseTestCase(TestCase):
         ClockBase.metadata.create_all(self.session.bind)
 
     def tearDown(self):
-        CalBase.metadata.drop_all(self.session.bind)
-        ClockBase.metadata.create_all(self.session.bind)
-        self.session.rollback()
-        self.session.close()
         Session.remove()
 
 

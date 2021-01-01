@@ -49,8 +49,17 @@ class ConvertibleTime:
             self.hour_labels
         ), f"{self.hour_labels} are invalid day labels"
 
-    def convert_hms(self):
-        raise NotImplementedError
+    def convert_hms(
+        self,
+        foreign_hms: tuple[int, int, int],
+        foreign_time: "ConvertibleTime",
+    ) -> tuple[int, int, int]:
+        foreign_clock = foreign_time.clock
+        if foreign_clock not in self.convertible_clocks():
+            raise ValueError(f"{foreign_clock} cannot be converted to {self}")
+
+        seconds = foreign_time.hms_to_seconds(foreign_hms)
+        return self.seconds_to_hms(seconds)
 
     def convertible_clocks(self) -> list:
         session = object_session(self.clock)

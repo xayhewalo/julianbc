@@ -50,6 +50,30 @@ class ConvertibleTimeTest(DatabaseTestCase):
         self.seconds = (self.py_dt - midnight).seconds
         self.hms = self.py_dt.hour, self.py_dt.minute, self.py_dt.second
 
+    @patch("src.customtime.ConvertibleTime.convertible_clocks")
+    @patch("src.customtime.ConvertibleTime.hms_to_seconds")
+    @patch("src.customtime.ConvertibleTime.seconds_to_hms")
+    def test_convert_hms(self, p_seconds_to_hms, p_hms_to_seconds, p_cc):
+        patch_convertible_clocks = p_cc
+        patch_hms_to_seconds = p_hms_to_seconds
+        patch_seconds_to_hms = p_seconds_to_hms
+
+        foreign_clock = self.clock_factory.build(
+            seconds_in_minute=86400,
+            minutes_in_hour=1,
+            hours_in_day=1,
+        )
+        foreign_time = self.time_factory.build(clock=foreign_clock)
+        seconds = FAKE.random_int(min=0, max=85399)
+        foreign_hms = 0, 0, seconds
+        patch_convertible_clocks.return_value = [foreign_clock]
+        patch_hms_to_seconds.return_value = seconds
+        self.earth_time.convert_hms(foreign_hms, foreign_time)
+
+        patch_convertible_clocks.assert_called_once()
+        patch_hms_to_seconds.assert_called_once_with(foreign_hms)
+        patch_seconds_to_hms.assert_called_once_with(seconds)
+
     def test_convertible_clocks(self):
         convertible_clocks = set(
             self.clock_factory.create_batch(

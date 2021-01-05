@@ -11,11 +11,15 @@ JulianBC will be a visual-timeline program in the near future
 - [X] Add convertible clock
 - [X] Add convertible time
 - [ ] Add infinitely scrolling timeline
+    - [ ] Prevent scroll_x from approaching infinity
 - [ ] Add zoom to timeline
 - [ ] Label timeline
     - [ ] with dates
     - [ ] with time
     - [ ] move dates and times dynamically with scroll and zoom
+    - [ ] widen interval labels based on label text with
+    - [ ] Set intervals by strings? I.e "week", "month", "year", etc.
+    - [ ] Convert Timeline days to label x position
 - [ ] Add event containers to timeline
 - [ ] Link event container locations to dates and times
     - [ ] Add event container detail window (inspect)

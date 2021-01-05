@@ -1,26 +1,34 @@
 """Where the User-interface and database date-keeping meet"""
-#  Copyright (c) 2020 author(s) of JulianBC.
+#  Copyright (c) 2020 author(s) of MainApp.
 #
-#  This file is part of JulianBC.
+#  This file is part of MainApp.
 #
-#  JulianBC is free software: you can redistribute it and/or modify
+#  MainApp is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
 #
-#  JulianBC is distributed in the hope that it will be useful,
+#  MainApp is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
+#  along with MainApp.  If not, see <https://www.gnu.org/licenses/>.
 
 import math
 import itertools
 
 from collections import deque
+from enum import Enum, unique
 from typing import Union
+
+
+@unique
+class DateUnits(Enum):
+    YEAR = 0
+    MONTH = 1
+    DAY = 2
 
 
 class ConvertibleDate:
@@ -85,6 +93,83 @@ class ConvertibleDate:
             new_native_ordinal
         )
         return self.ordinal_date_to_ast_ymd(new_native_ordinal_date)
+
+    # and probabs should be increment ordinal decimal
+    def increment_ast_ymd(  # todo break up into year, month, etc. increments, should probs be in datetime
+        self, ast_ymd: tuple[int, int, int], intervals: list
+    ) -> tuple[int, int, int]:
+        """
+        :param ast_ymd: astronomical year, month day
+        :param intervals: how many DateUnits to increment by
+        :returns: an astronomical year, month, day
+        """
+        def return_one(*_):
+            return 1
+
+        year, month, day = ast_ymd
+
+        for interval in intervals:
+            delta, interval = interval
+            if delta == 0:  # if delta is zero
+                continue
+
+            direction = math.copysign(1, delta)
+
+            if interval == DateUnits.YEAR:
+                year += delta
+            elif interval == DateUnits.MONTH and month:
+                new_month = month + delta
+                if self.is_valid_ast_ymd((year, month, day)):
+                    month = new_month
+                else:  # invalid month, increment year
+                    get_terminal_month = self.months_in_year
+                    if direction == -1:
+                        get_terminal_month = return_one
+
+                    while not self.is_valid_ast_ymd((year, month, day)):
+                        terminal_month = get_terminal_month(year)
+
+                        year += direction
+                        delta = terminal_month - month  # fix me wrong
+                        month += delta
+            elif interval == DateUnits.DAY:
+                new_day = day + delta
+                if self.is_valid_ast_ymd((year, month, new_day)):
+                    day = new_day
+                else:  # invalid day, increment month or year
+                    if month:
+                        get_terminal_day = self.days_in_month
+                        if direction == -1:
+                            get_terminal_day = return_one
+
+                        while not self.is_valid_ast_ymd((year, month, day)):
+                            month += direction
+                            if not self.is_valid_month(year, month):
+                                year += direction
+
+                            terminal_day = get_terminal_day(year, month)
+                            new_delta = delta - (terminal_day - day)
+                            day = 1 + new_delta
+                            if direction == -1:
+                                new_delta = delta - day
+                                day = terminal_day + new_delta
+                    else:  # no months
+                        get_terminal_day = self.days_in_year
+                        if direction == -1:
+                            get_terminal_day = return_one
+
+                        while not self.is_valid_ast_ymd((year, month, day)):
+                            year += direction
+
+                            terminal_day = get_terminal_day(year)
+                            new_delta = terminal_day - day
+                            day = 1 + new_delta
+                            if direction == -1:  # fixme DRY, correct?
+                                new_delta = delta - day
+                                day = terminal_day + new_delta
+            else:
+                raise ValueError(f"{interval} is in DateUnits")
+        return year, month, day
 
     def ordinal_date_to_ordinal(self, ordinal_date: tuple) -> int:
         """
@@ -155,7 +240,7 @@ class ConvertibleDate:
 
         ast_year, month, day = ast_ymd
         day_of_year = day
-        if month:
+        if month:  # todo days_in_month
             day_of_year = sum(self.days_in_months(ast_year)[: month - 1]) + day
         return ast_year, day_of_year
 
@@ -339,10 +424,16 @@ class ConvertibleDate:
         max_days = self.days_in_year(ast_year)
         if month:
             max_months = self.months_in_year(ast_year)
-            if not 1 <= month <= max_months:
+            if not 1 <= month <= max_months:  # todo is valid month
                 return False
-            max_days = self.days_in_months(ast_year)[month - 1]
-        return 1 <= day <= max_days
+            max_days = self.days_in_months(ast_year)[month - 1]  # todo days in Months
+        return 1 <= day <= max_days  # todo is valid day
+
+    def is_valid_month(self, ast_year: int,  month: int) -> bool:
+        months_in_year = self.months_in_year(ast_year)
+        if month is None and months_in_year == 0:
+            return True
+        return 1 <= month <= months_in_year
 
     def is_valid_ordinal_date(self, ordinal_date: tuple) -> bool:
         """assumes astronomical year numbering"""
@@ -390,12 +481,15 @@ class ConvertibleDate:
             return self.calendar.days_in_leap_year_months
         return self.calendar.days_in_common_year_months
 
+    def days_in_month(self, ast_year: int, month: int) -> int:
+        return self.days_in_months(ast_year)[month - 1]
+
     def days_in_year(self, ast_year: int) -> int:
         if self.is_leap_year(ast_year):
             return sum(self.calendar.days_in_leap_year_months)
         return sum(self.calendar.days_in_common_year_months)
 
-    def months_in_year(self, ast_year: int) -> int:
+    def months_in_year(self, ast_year: int) -> int:  # todo move to db
         if self.is_leap_year(ast_year):
             return len(self.calendar.leap_year_month_names)
         return len(self.calendar.common_year_month_names)
@@ -460,5 +554,5 @@ class ConvertibleDate:
         if days_in_weeks:
             return (ordinal + self.calendar.epoch_weekday - 1) % days_in_weeks
 
-    def days_in_week(self) -> int:
+    def days_in_week(self) -> int:  # todo move to db
         return len(self.calendar.weekday_names)

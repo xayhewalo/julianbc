@@ -38,9 +38,7 @@ from typing import Union
 class BaseTimeline(FloatLayout, InfiniteHorScroll):
     """Abstract class for timelines"""
 
-    # fmt :off
     datetime = ObjectProperty(gregorian_datetime)
-    # fmt: on
 
     start_moment = ListProperty(  # todo make ordinal decimal
         [py_datetime.now(timezone.utc).astimezone().toordinal(), 0]
@@ -83,7 +81,8 @@ class BaseTimeline(FloatLayout, InfiniteHorScroll):
         """Scroll all marks when BaseTimeline scrolls"""
         """for mark in self.marks:
             mark.scroll_by = self.scroll_by"""
-        ordinal_decimal_shift = self.dx_to_dod(self.scroll_by)
+        print(self.scroll_by)
+        ordinal_decimal_shift = self.dx_to_dod(self.scroll_by * 30)
         ord_n_secs = self.datetime.split_ordinal_decimal(ordinal_decimal_shift)
         ordinal, seconds = ord_n_secs
         self.start_moment = self.start_moment[0] - ordinal, self.start_moment[1] - seconds
@@ -155,8 +154,8 @@ class Timeline(BaseTimeline):
     # todo remake moments if scroll hits threshold
 
     def __init__(self, **kwargs):
-        primary_moments = self.make_moments(self.primary_mark_interval)
-        self.primary_mark = Mark(moments=primary_moments)
+        # primary_moments = self.make_moments(self.primary_mark_interval)
+        self.primary_mark = Mark(interval=self.primary_mark_interval)
         self.secondary_mark = Mark(
             label_align=Mark.LABEL_CENTER,
             mark=Ellipse,
@@ -172,8 +171,8 @@ class Timeline(BaseTimeline):
         self.bind(size=self.draw_marks_trigger)
 
     def on_start_moment(self, *_) -> None:
-        # self.draw_marks_trigger()
-        self.set_primary_moments()
+        self.draw_marks_trigger()
+        # self.set_primary_moments()
 
     def set_primary_moments(self, *_) -> None:
         self.primary_mark.moments = self.make_moments(
@@ -212,7 +211,6 @@ class Timeline(BaseTimeline):
 
         end_ordinal_decimal = self.datetime.moment_to_ordinal_decimal(self.end_moment)
         while ordinal_decimal < end_ordinal_decimal:
-            print(ordinal_decimal)
             ordinal_decimal, ast_ymd = append_next_moment(moments, ast_ymd)
         _ = append_next_moment(moments, ast_ymd)  # add moment offscreen
         return moments

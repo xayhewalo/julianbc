@@ -46,18 +46,17 @@ class Mark(Widget):
     mark_height = NumericProperty("800sp")
     mark_color = ObjectProperty(defaultvalue=Color(*ON_BACKGROUND_COLOR))
     font_size = BoundedNumericProperty(sp(10), min=sp(10))
-    moments = ListProperty(list())
+    # moments = ListProperty(list())
     # spacing = BoundedNumericProperty(sp(50), min=sp(1))  # in pixels
     """YEAR_INTERVAL = "year"
     MONTH_INTERVAL = "month"
     time_interval = OptionProperty()"""
-
-    scroll_by = NumericProperty(0)
+    interval = ListProperty([])
 
     def __init__(self, **kwargs):
         self.draw_marks_trigger = Clock.create_trigger(self.draw_marks)
         super(Mark, self).__init__(**kwargs)
-        self.bind(moments=self.draw_marks_trigger)
+        self.bind(interval=self.draw_marks_trigger)
 
     """def __init__(self, **kwargs):
         self.draw_mark_trigger = Clock.create_trigger(self.draw_marks)
@@ -87,7 +86,7 @@ class Mark(Widget):
             )
             next_band_x += self.spacing"""
 
-    def draw_marks(self, *_) -> None:
+    """def draw_marks(self, *_) -> None:
         self.canvas.clear()
 
         self.canvas.add(self.mark_color)
@@ -105,7 +104,56 @@ class Mark(Widget):
                     size=label.texture_size,
                     texture=label.texture,
                 )
+            )"""
+
+    def draw_marks(self, *_) -> None:
+        self.canvas.clear()
+        self.canvas.add(self.mark_color)
+
+        start_ast_ymd = self.parent.datetime.moment_to_ast_ymd(
+            self.parent.start_moment
+        )
+        next_band_ast_ymd = self.parent.datetime.date.increment_ast_ymd(
+            start_ast_ymd, [self.interval]
+        )
+        hr_date = self.parent.datetime.date.format_hr_date(
+            next_band_ast_ymd
+        )
+        next_band_moment = self.parent.datetime.ast_ymd_to_moment(
+            next_band_ast_ymd
+        )
+        next_band_x = self.parent.moment_to_x(next_band_moment)
+        next_band_ordinal_decimal = self.parent.datetime.moment_to_ordinal_decimal(next_band_moment)
+        end_ordinal_decimal = self.parent.datetime.moment_to_ordinal_decimal(
+            self.parent.end_moment
+        )
+        while next_band_ordinal_decimal <= end_ordinal_decimal:
+            label = self.make_label(
+                next_band_x, hr_date, self.label_align
             )
+            rect_pos = sp(next_band_x), sp(self.mark_y)
+            size = sp(self.mark_width), sp(self.mark_height)
+            self.canvas.add(self.mark(pos=rect_pos, size=size))
+            self.canvas.add(
+                Rectangle(
+                    pos=label.pos,
+                    size=label.texture_size,
+                    texture=label.texture,
+                )
+            )
+
+            next_band_ast_ymd = self.parent.datetime.date.increment_ast_ymd(
+                next_band_ast_ymd, [self.interval]
+            )
+
+            hr_date = self.parent.datetime.date.format_hr_date(
+                next_band_ast_ymd
+            )
+            next_band_moment = self.parent.datetime.ast_ymd_to_moment(
+                next_band_ast_ymd
+            )
+            next_band_x = self.parent.moment_to_x(next_band_moment)
+            next_band_ordinal_decimal = self.parent.datetime.moment_to_ordinal_decimal(next_band_moment)
 
     def make_label(self, x: int, text: str, alignment: str) -> TextBoundLabel:
         """

@@ -19,8 +19,9 @@
 import math
 import itertools
 
-from collections import deque
 from enum import Enum, unique
+from collections import deque
+from src.models import ConvertibleCalendar
 from typing import Union
 
 
@@ -62,32 +63,28 @@ class ConvertibleDate:
     **Not** a drop in replacement for :mod:`date`.
     """
 
-    def __init__(self, calendar, date_sep="/"):
+    def __init__(self, calendar: ConvertibleCalendar, date_sep="/"):
         self.date_sep = date_sep
-        # fmt: off
-        self.calendar = calendar  # type: from src.models import ConvertibleCalendar # noqa: E501, F723
-        # fmt: on
+        self.calendar = calendar
 
     def convert_ast_ymd(
         self,
         foreign_ast_ymd: tuple,
-        foreign_datetime: "ConvertibleDate",
+        foreign_date: "ConvertibleDate",
     ) -> tuple[int, Union[int, None], int]:
         """:returns: native ast_ymd equivalent to the foreign ast_ymd"""
-        foreign_ordinal_date = foreign_datetime.ast_ymd_to_ordinal_date(
+        foreign_ordinal_date = foreign_date.ast_ymd_to_ordinal_date(
             foreign_ast_ymd
         )
-        foreign_ordinal = foreign_datetime.ordinal_date_to_ordinal(
+        foreign_ordinal = foreign_date.ordinal_date_to_ordinal(
             foreign_ordinal_date
         )
-        foreign_sync_ordinal = foreign_datetime.calendar.sync_ordinal(
+        foreign_sync_ordinal = foreign_date.calendar.sync_ordinal(
             self.calendar
         )
         elapsed_days = foreign_ordinal - foreign_sync_ordinal
 
-        native_sync_ordinal = self.calendar.sync_ordinal(
-            foreign_datetime.calendar
-        )
+        native_sync_ordinal = self.calendar.sync_ordinal(foreign_date.calendar)
         new_native_ordinal = native_sync_ordinal + elapsed_days
         new_native_ordinal_date = self.ordinal_to_ordinal_date(
             new_native_ordinal
@@ -335,7 +332,7 @@ class ConvertibleDate:
         """
         inverse operation of :py:meth:`format_hr_date`
 
-        :returns: ast_year, month, date. Month is None for monthless calendar
+        :returns: ast_year, month, day. Month is None for monthless calendar
         """
         month = None
         try:
@@ -351,11 +348,17 @@ class ConvertibleDate:
         ast_year = self.hr_to_ast(hr_year, era_idx)
         return ast_year, month, day
 
-    def format_hr_date(self, ast_ymd: tuple) -> str:
+    def format_hr_date(self, ast_ymd: tuple, dateunit=None) -> str:
         """inverse operation of :py:meth:`parse_hr_date`"""
         ast_year, month, day = ast_ymd
         hr_year, _ = self.ast_to_hr(ast_year)
         era = self.era(ast_year)
+        if dateunit == DateUnits.YEAR:
+            return str(hr_year)
+        elif dateunit == DateUnits.MONTH:
+            return str(month)
+        elif dateunit == DateUnits.DAY:
+            return str(day)
         return self.date_sep.join([str(hr_year), str(month), str(day), era])
 
     def era(self, ast_year: int) -> str:
@@ -422,23 +425,21 @@ class ConvertibleDate:
     def is_valid_ast_ymd(self, ast_ymd: tuple) -> bool:
         ast_year, month, day = ast_ymd
         max_days = self.days_in_year(ast_year)
-        if month:
+        if month:  # fixme use is_valid_month
             max_months = self.months_in_year(ast_year)
             if not 1 <= month <= max_months:  # todo is valid month
                 return False
-            max_days = self.days_in_months(ast_year)[month - 1]  # todo days in Months
-        return 1 <= day <= max_days  # todo is valid day
-
-    def is_valid_month(self, ast_year: int,  month: int) -> bool:
-        months_in_year = self.months_in_year(ast_year)
-        if month is None and months_in_year == 0:
-            return True
-        return 1 <= month <= months_in_year
+            max_days = self.days_in_months(ast_year)[month - 1]  # todo days_in_month
+        return 1 <= day <= max_days
 
     def is_valid_ordinal_date(self, ordinal_date: tuple) -> bool:
         """assumes astronomical year numbering"""
         ast_year, day_of_year = ordinal_date
         return 1 <= day_of_year <= self.days_in_year(ast_year)
+
+    def is_valid_month(self, ast_year: int, month: int) -> bool:
+        max_months = self.months_in_year(ast_year)
+        return 1 <= month <= max_months
 
     def gen_years_before_era(self, start: int = 0) -> dict:
         """

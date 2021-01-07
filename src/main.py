@@ -25,7 +25,7 @@ class MainApp(App):
     def build(self):
         root = FloatLayout()
         box = BoxLayout(orientation="vertical")
-        timeline = Timeline(datetime=gregorian_datetime)
+        timeline = Timeline(dt=gregorian_datetime)
         box.add_widget(timeline)
         root.add_widget(box)
         return root
@@ -33,4 +33,3 @@ class MainApp(App):
 
 if __name__ == "__main__":
     MainApp().run()
-

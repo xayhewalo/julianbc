@@ -14,56 +14,57 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
+from .customdate import ConvertibleDate, DateUnits
+from .customtime import ConvertibleTime
 from typing import Union
 
 
 class ConvertibleDateTime:
     """
-    Manipulates dates and times ConvertibleDates and ConvertibleTimes
+    Manipulates dates and times with ConvertibleDate and ConvertibleTime
 
-    * `Moment` - Day and time represented as an ordinal and seconds into a day.
-    * `Day decimal` is progress into a day. 0.5 represents 12 noon on Earth
-    * `Ordinal decimal` is an `ordinal` plus a `day decimal`
+    * `Day decimal` - progress into a day. 0.5 represents 12 noon on Earth
+    * `Ordinal decimal` or `od` - an `ordinal` plus a `day decimal`
     """
 
-    def __init__(self, date, time):
-        self.date = date  # type: from src.customdate import ConvertibleDate
-        self.time = time  # type: from src.customtime import ConvertibleTime
+    def __init__(self, date: ConvertibleDate, time: ConvertibleTime):
+        self.date = date
+        self.time = time
 
-    def ast_ymd_to_moment(
+    def next_dateunit(self, od: float, dateunit: int, sign: int = 1) -> float:
+        """
+        "First of next month", "first of two years ago", etc.
+        If today is 2020/11/15, first of next month is 2020/12/1
+        If today is 1917/4/3 first of four years ago is 1913/1/1
+
+        A negative`sign` will return a dateunit backwards in time
+        """
+        year, month, day = self.od_to_ast_ymd(od)
+        if dateunit == DateUnits.YEAR:
+            year += 1
+            return self.ast_ymd_to_od((year, 1, 1))
+        elif dateunit == DateUnits.MONTH and month:
+            new_month = month + 1
+            if self.date.is_valid_month(year, new_month):
+                return self.ast_ymd_to_od((year, new_month, 1))
+
+            year += 1 * sign
+            month = 1 if sign == 1 else self.date.months_in_year(year)
+            return self.ast_ymd_to_od((year, month, 1))
+        else:
+            raise ValueError(f"Cannot find first day of DateUnit: {dateunit}")
+
+    def ast_ymd_to_od(
         self, ast_ymd: tuple[int, Union[int, None], int]
-    ) -> tuple[int, int]:
+    ) -> float:
         ordinal_date = self.date.ast_ymd_to_ordinal_date(ast_ymd)
-        ordinal = self.date.ordinal_date_to_ordinal(ordinal_date)
-        return ordinal, 0
+        return float(self.date.ordinal_date_to_ordinal(ordinal_date))
 
-    def moment_to_ast_ymd(  # todo get rid of moments
-        self, moment: tuple[int, int]
-    ) -> tuple[int, Union[int, None], int]:
-        ordinal, _ = moment
+    def od_to_ast_ymd(self, od: float) -> tuple[int, Union[int, None], int]:
+        ordinal = int(od)
         ordinal_date = self.date.ordinal_to_ordinal_date(ordinal)
         return self.date.ordinal_date_to_ast_ymd(ordinal_date)
 
-    def moment_to_ordinal_decimal(self, moment: tuple[int, int]) -> float:
-        ordinal, seconds = moment
-        return ordinal + (seconds / self.time.clock.seconds_in_day)
-
-    def moment_to_hr_date(self, moment: tuple[int, int]) -> str:
-        ast_ymd = self.moment_to_ast_ymd(moment)
-        return self.date.format_hr_date(ast_ymd)
-
-    def elapsed_seconds(
-        self, moment1: tuple[int, int], moment2: tuple[int, int]
-    ) -> int:
-        """:returns: a day decimal"""
-        ordinal1, seconds1 = moment1
-        ordinal2, seconds2 = moment2
-        elapsed_days = ordinal2 - ordinal1
-        seconds_in_elapsed_days = elapsed_days * self.time.clock.seconds_in_day
-        return seconds2 - seconds1 + seconds_in_elapsed_days
-
-    def split_ordinal_decimal(self, ordinal_decimal: float) -> tuple[int, float]:
-        """:returns: ordinal, seconds into a day"""
-        ordinal = int(ordinal_decimal)
-        seconds = (ordinal_decimal - ordinal) * self.time.clock.seconds_in_day
-        return ordinal, seconds
+    def od_to_hr_date(self, ordinal_decimal: float, dateunit=None) -> str:
+        ast_ymd = self.od_to_ast_ymd(ordinal_decimal)
+        return self.date.format_hr_date(ast_ymd, dateunit=dateunit)

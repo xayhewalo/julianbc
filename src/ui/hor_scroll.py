@@ -29,8 +29,7 @@ class InfiniteHorScroll(Widget):
             return True
 
         if self.collide_point(*touch.pos):
-            # pointer is touching widget, but children didn't consume touch.
-            # We must be scrolling
+            # Touched widget but children didn't use touch, must be scrolling
             self.hor_scrolling = True
             touch.grab(self)
             return True

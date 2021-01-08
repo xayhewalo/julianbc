@@ -43,7 +43,7 @@ class BaseTimeline(FloatLayout, InfiniteHorScroll):
     __seconds_into_day = (__now - __midnight_today).seconds
     __now_as_ordinal_decimal = __now.toordinal() + (__seconds_into_day / 86400)
     start_ordinal_decimal = NumericProperty(__now_as_ordinal_decimal)
-    end_ordinal_decimal = NumericProperty(__now_as_ordinal_decimal + 730)
+    end_ordinal_decimal = NumericProperty(__now_as_ordinal_decimal + 365)
 
     def _get_time_span(self):
         return self.end_ordinal_decimal - self.start_ordinal_decimal
@@ -123,7 +123,7 @@ class Timeline(BaseTimeline):
             mark_height=sp(self.secondary_mark_height),
             interval=self.secondary_mark_interval,
         )
-        self.marks = [self.primary_mark, self.secondary_mark]
+        self.marks = [self.secondary_mark]
         super(Timeline, self).__init__(**kwargs)
         self.draw_marks_trigger = Clock.create_trigger(self.draw_all_marks)
         self.bind(

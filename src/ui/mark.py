@@ -47,6 +47,7 @@ class Mark(Widget):
     mark_color = ObjectProperty(defaultvalue=Color(*ON_BACKGROUND_COLOR))
 
     interval = ObjectProperty(None)  # should be a DateUnits
+    # todo should still be able to mark X intervals, like every three months
 
     def __init__(self, **kwargs):
         self.draw_marks_trigger = Clock.create_trigger(self.draw_marks)
@@ -69,7 +70,6 @@ class Mark(Widget):
                     texture=label.texture,
                 )
             )
-
         self.canvas.clear()
         self.canvas.add(self.mark_color)
 

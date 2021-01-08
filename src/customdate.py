@@ -91,7 +91,7 @@ class ConvertibleDate:
         )
         return self.ordinal_date_to_ast_ymd(new_native_ordinal_date)
 
-    # and probabs should be increment ordinal decimal
+    '''# and probabs should be increment ordinal decimal
     def increment_ast_ymd(  # todo break up into year, month, etc. increments, should probs be in datetime
         self, ast_ymd: tuple[int, int, int], intervals: list
     ) -> tuple[int, int, int]:
@@ -166,9 +166,9 @@ class ConvertibleDate:
                                 day = terminal_day + new_delta
             else:
                 raise ValueError(f"{interval} is in DateUnits")
-        return year, month, day
+        return year, month, day'''
 
-    def ordinal_date_to_ordinal(self, ordinal_date: tuple) -> int:
+    '''def ordinal_date_to_ordinal(self, ordinal_date: tuple) -> int:
         """
         assumes astronomical year numbering
 
@@ -191,9 +191,71 @@ class ConvertibleDate:
                 - day_of_year
                 + days_in_elapsed_years
             )
+        return ordinal'''
+
+    def ordinal_date_to_ordinal(self, ordinal_date: tuple[int, int]) -> int:
+        """:raises ValueError: for an invalid ordinal date"""
+        if not self.is_valid_ordinal_date(ordinal_date):
+            raise ValueError(f"{ordinal_date} is invalid for {self.calendar}")
+
+        ast_year, day_of_year = ordinal_date
+        start_ast_year, sign = self._start_and_sign(ast_year)
+
+        completed_years = abs(ast_year - start_ast_year)  # fixme DRY with is_leap_year
+        cycle_length = self.leap_year_cycle_length
+        completed_cycles = int(completed_years / cycle_length)
+        current_cycle_start_ast_year = (
+           (completed_cycles * cycle_length) + start_ast_year
+        ) * sign
+        years_into_cycle = ast_year - current_cycle_start_ast_year + 1
+        cycle_start = self.calendar.leap_year_cycle_start
+        all_this_cycles_ordinals_up_to_this_year = {
+            year for year in range(cycle_start, years_into_cycle)
+        }
+
+        leap_ordinals = self.calendar.leap_year_cycle_ordinals
+        this_cycles_elapsed_leap_years = (
+            set(leap_ordinals) & all_this_cycles_ordinals_up_to_this_year
+        )
+        common_ordinals = self.common_year_cycle_ordinals
+        this_cycles_elapsed_common_years = (
+            set(common_ordinals) & all_this_cycles_ordinals_up_to_this_year
+        )
+
+        all_elapsed_years = set(range(start_ast_year, ast_year))
+        overrules = self.calendar.leap_year_overrules
+        exceptions = self.calendar.leap_year_exceptions
+        special_leap_years = len(set(overrules) & all_elapsed_years)
+        special_common_years = len(set(exceptions) & all_elapsed_years)
+
+        # fixme leap year offset
+        num_elapsed_leap_years = (
+            (completed_cycles * self.leap_years_in_normal_cycle)
+            + len(this_cycles_elapsed_leap_years)
+            + special_leap_years  # fixme probs wrong
+            - special_common_years
+        )
+        num_elapsed_common_years = (
+            (completed_cycles * self.common_years_in_normal_cycle)
+            + len(this_cycles_elapsed_common_years)
+            + special_common_years
+            - special_leap_years
+        )
+        days_in_elapsed_years = (
+            num_elapsed_leap_years * self.days_in_leap_year
+            + num_elapsed_common_years * self.days_in_common_year
+        )
+
+        ordinal = day_of_year + days_in_elapsed_years
+        if self.is_descending_era(ast_year):
+            ordinal = -(
+                self.days_in_year(ast_year)
+                - day_of_year
+                + days_in_elapsed_years
+            )
         return ordinal
 
-    def ordinal_to_ordinal_date(self, ordinal: int) -> tuple[int, int]:
+    '''def ordinal_to_ordinal_date(self, ordinal: int) -> tuple[int, int]:
         ast_year, sign = self._start_and_sign(ordinal)
 
         days_in_years_passed = self.days_in_year(ast_year)
@@ -201,6 +263,61 @@ class ConvertibleDate:
             ast_year = self._increment_by_one(ast_year, sign)
             days_in_years_passed += self.days_in_year(ast_year)
         days_in_years_passed -= self.days_in_year(ast_year)
+
+        day_of_year = abs(ordinal) - days_in_years_passed
+        if sign == -1:
+            day_of_year = self.days_in_year(ast_year) - day_of_year
+            if day_of_year == 0:
+                ast_year = self._increment_by_one(ast_year, sign)
+                day_of_year = self.days_in_year(ast_year)
+        assert self.is_valid_ordinal_date((ast_year, day_of_year)), (
+            f"Ordinal, {ordinal}, produced invalid ordinal date, "
+            f"{ast_year, day_of_year}, for the {self.calendar} calendar"
+        )
+        return ast_year, day_of_year'''
+
+    def ordinal_to_ordinal_date(self, ordinal: int) -> tuple[int, int]:
+        """:raises AssertionError: if an invalid ordinal date is made"""
+        def days_in_this_cycle() -> int:
+            this_cycles_years = set(range(ast_year, ast_year + cycle_length))
+            special_leap_years = len(set(overrules) & this_cycles_years)  # fixme DRY
+            special_common_years = len(set(exceptions) & this_cycles_years)
+            special_common_days = (  # fixme probs wrong
+                special_common_years * days_in_common_year
+                - special_leap_years * days_in_leap_year
+            )
+            special_leap_years = (
+                special_leap_years * days_in_leap_year
+                - special_common_years * days_in_common_year
+            )
+            days_from_specials = special_leap_years + special_common_days
+            return days_in_nominal_cycle + days_from_specials
+
+        ast_year, sign = self._start_and_sign(ordinal)
+        cycle_length = self.leap_year_cycle_length
+        overrules = self.calendar.leap_year_overrules
+        exceptions = self.calendar.leap_year_exceptions
+        days_in_common_year = self.days_in_common_year
+        days_in_leap_year = self.days_in_leap_year
+        days_in_nominal_cycle = (
+            self.leap_years_in_normal_cycle * days_in_leap_year
+            + self.common_years_in_normal_cycle * days_in_common_year
+        )
+
+        days_in_past_cycles = 0
+        while days_in_past_cycles < abs(ordinal):
+            days_in_past_cycles += days_in_this_cycle()
+            ast_year += cycle_length * sign
+        days_in_past_cycles -= days_in_this_cycle()
+        ast_year -= cycle_length * sign
+
+        days_into_current_cycle = self.days_in_year(ast_year)
+        while days_in_past_cycles + days_into_current_cycle < abs(ordinal):
+            ast_year = self._increment_by_one(ast_year, sign)
+            days_into_current_cycle += self.days_in_year(ast_year)
+        days_into_current_cycle -= self.days_in_year(ast_year)
+
+        days_in_years_passed = days_in_past_cycles + days_into_current_cycle
 
         day_of_year = abs(ordinal) - days_in_years_passed
         if sign == -1:
@@ -490,10 +607,47 @@ class ConvertibleDate:
             return sum(self.calendar.days_in_leap_year_months)
         return sum(self.calendar.days_in_common_year_months)
 
+    @property
+    def days_in_common_year(self) -> int:
+        return sum(self.calendar.days_in_common_year_months)
+
+    @property
+    def days_in_leap_year(self) -> int:
+        return sum(self.calendar.days_in_leap_year_months)
+
     def months_in_year(self, ast_year: int) -> int:  # todo move to db
         if self.is_leap_year(ast_year):
             return len(self.calendar.leap_year_month_names)
         return len(self.calendar.common_year_month_names)
+
+    @property
+    def leap_year_cycle_length(self) -> int:
+        return sum(self.calendar.leap_year_cycles)
+
+    @property
+    def common_year_cycle_ordinals(self) -> tuple:
+        start = self.calendar.leap_year_cycle_start
+        all_cycle_ordinals = list(  # fixme dry with is_leap_year
+            itertools.chain.from_iterable(
+                [
+                    range(start, cycle + start)
+                    for cycle in self.calendar.leap_year_cycles
+                ]
+            )
+        )
+        return tuple(
+            _ord
+            for _ord in all_cycle_ordinals
+            if _ord not in self.calendar.leap_year_cycle_ordinals
+        )
+
+    @property
+    def common_years_in_normal_cycle(self) -> int:
+        return len(self.common_year_cycle_ordinals)
+
+    @property
+    def leap_years_in_normal_cycle(self) -> int:
+        return len(self.calendar.leap_year_cycle_ordinals)
 
     def shift_n_weekdays(
         self, src_ordinal: int, target_weekday: int, skip: int

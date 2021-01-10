@@ -1,20 +1,20 @@
 """Where the User-interface and database date-keeping meet"""
-#  Copyright (c) 2020 author(s) of MainApp.
+#  Copyright (c) 2020 author(s) of JulianBC.
 #
-#  This file is part of MainApp.
+#  This file is part of JulianBC.
 #
-#  MainApp is free software: you can redistribute it and/or modify
+#  JulianBC is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
 #
-#  MainApp is distributed in the hope that it will be useful,
+#  JulianBC is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with MainApp.  If not, see <https://www.gnu.org/licenses/>.
+#  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
 
 import math
 import itertools
@@ -65,7 +65,21 @@ class ConvertibleDate:
 
     def __init__(self, calendar: ConvertibleCalendar, date_sep="/"):
         self.date_sep = date_sep
-        self.calendar = calendar
+        self.calendar = calendar  # todo prevent calendar from changing
+        start = self.calendar.leap_year_cycle_start  # fixme this is slowing tests
+        all_cycle_ordinals = list(  # fixme dry with is_leap_year
+            itertools.chain.from_iterable(
+                [
+                    range(start, cycle + start)
+                    for cycle in self.calendar.leap_year_cycles
+                ]
+            )
+        )
+        self.__common_year_cycle_ordinals = tuple(
+            _ord
+            for _ord in all_cycle_ordinals
+            if _ord not in self.calendar.leap_year_cycle_ordinals
+        )
 
     def convert_ast_ymd(
         self,
@@ -91,82 +105,107 @@ class ConvertibleDate:
         )
         return self.ordinal_date_to_ast_ymd(new_native_ordinal_date)
 
-    '''# and probabs should be increment ordinal decimal
-    def increment_ast_ymd(  # todo break up into year, month, etc. increments, should probs be in datetime
+    def next_ast_ymd(
+        self,
+        ast_ymd: tuple[int, Union[int, None], int],
+        interval: list,
+        sign: int = 1,
+    ) -> tuple[int, Union[int, None], int]:
+        """:returns: the first day of the next dateunit"""
+        if not self.is_valid_ast_ymd(ast_ymd):
+            raise ValueError(
+                f"{ast_ymd} is not a valid year, month, day "
+                f"for {self.calendar}"
+            )
+
+        frequency, dateunit = interval
+        year, month, day = ast_ymd
+        if dateunit == DateUnits.YEAR:
+            year = self._increment_by_one(year, sign)
+            while year % frequency != 0:  # 5 - (delta % 5) where freq == 5
+                year = self._increment_by_one(year, sign)
+            return year, 1, 1
+        elif dateunit == DateUnits.MONTH:
+            if frequency > max(
+                self.days_in_common_year, self.days_in_leap_year
+            ):
+                raise ValueError(
+                    f"Can't find every {frequency} months for {self.calendar}"
+                )
+
+            month = self._increment_by_one(month, sign)
+            if not self.is_valid_month(year, month):
+                year = self._increment_by_one(year, sign)
+                month = 1
+
+            while month % frequency != 0:
+                month = self._increment_by_one(month, sign)
+
+            assert self.is_valid_month(
+                year, month
+            ), f"{month} not valid for {self.calendar}"
+            return year, month, 1
+        raise NotImplementedError
+
+    # and probabs should be increment ordinal decimal
+    def shift_ast_ymd(  # todo break up into year, month, etc. increments
         self, ast_ymd: tuple[int, int, int], intervals: list
     ) -> tuple[int, int, int]:
         """
         :param ast_ymd: astronomical year, month day
         :param intervals: how many DateUnits to increment by
         :returns: an astronomical year, month, day
+        :raises ValueError: if given an invalid ast_ymd
         """
         def return_one(*_):
             return 1
 
+        if not self.is_valid_ast_ymd(ast_ymd):
+            raise ValueError(
+                f"{ast_ymd} is not a valid year, month, day "
+                f"for {self.calendar}"
+            )
+
         year, month, day = ast_ymd
 
         for interval in intervals:
-            delta, interval = interval
-            if delta == 0:  # if delta is zero
+            delta, dateunit = interval
+            if delta == 0:
                 continue
 
-            direction = math.copysign(1, delta)
+            sign = int(math.copysign(1, delta))
 
-            if interval == DateUnits.YEAR:
+            if dateunit == DateUnits.YEAR:
                 year += delta
-            elif interval == DateUnits.MONTH and month:
+            elif dateunit == DateUnits.MONTH:
+                if not month:
+                    RuntimeError("Can't increment monthless year, month, day")
+
                 new_month = month + delta
-                if self.is_valid_ast_ymd((year, month, day)):
+                if self.is_valid_month(year, new_month):
                     month = new_month
                 else:  # invalid month, increment year
                     get_terminal_month = self.months_in_year
-                    if direction == -1:
+                    if sign == -1:
                         get_terminal_month = return_one
 
-                    while not self.is_valid_ast_ymd((year, month, day)):
+                    month = new_month
+                    while not self.is_valid_month(year, month):
+                        # fixme, this don't seem right
                         terminal_month = get_terminal_month(year)
 
-                        year += direction
-                        delta = terminal_month - month  # fix me wrong
+                        year += sign
+                        delta = terminal_month - month
                         month += delta
-            elif interval == DateUnits.DAY:
-                new_day = day + delta
-                if self.is_valid_ast_ymd((year, month, new_day)):
-                    day = new_day
-                else:  # invalid day, increment month or year
-                    if month:
-                        get_terminal_day = self.days_in_month
-                        if direction == -1:
-                            get_terminal_day = return_one
-
-                        while not self.is_valid_ast_ymd((year, month, day)):
-                            month += direction
-                            if not self.is_valid_month(year, month):
-                                year += direction
-
-                            terminal_day = get_terminal_day(year, month)
-                            new_delta = delta - (terminal_day - day)
-                            day = 1 + new_delta
-                            if direction == -1:
-                                new_delta = delta - day
-                                day = terminal_day + new_delta
-                    else:  # no months
-                        get_terminal_day = self.days_in_year
-                        if direction == -1:
-                            get_terminal_day = return_one
-
-                        while not self.is_valid_ast_ymd((year, month, day)):
-                            year += direction
-
-                            terminal_day = get_terminal_day(year)
-                            new_delta = terminal_day - day
-                            day = 1 + new_delta
-                            if direction == -1:  # fixme DRY, correct?
-                                new_delta = delta - day
-                                day = terminal_day + new_delta
             else:
-                raise ValueError(f"{interval} is in DateUnits")
-        return year, month, day'''
+                raise ValueError(f"Can't increment ymd by {dateunit}")
+            if not self.is_valid_ast_ymd((year, month, day)):
+                day = 1 if sign == -1 else self.months_in_year(year)
+                assert self.is_valid_ast_ymd(
+                    (year, month, day)
+                ), f"{year, month, day} is an invalid ymd for {self.calendar}"
+                return year, month, day
+        return year, month, day
 
     '''def ordinal_date_to_ordinal(self, ordinal_date: tuple) -> int:
         """
@@ -344,6 +383,77 @@ class ConvertibleDate:
         """Add or subtract one based on the sign"""
         return num + sign * 1
 
+    # todo delete?
+    '''def every_nth_dateunit(
+        self, start_ord: int, end_ord: int, interval: list
+    ) -> list:
+        """
+        I.e an interval of 3 months returns March, June, September, and
+        December 1st in the Gregorian calendar
+        :returns: ordinals of the specified days
+        """
+        def before_end_ordinal() -> bool:
+            return ordinal <= end_ord
+
+        frequency, dateunit = interval
+        ordinal = start_ord
+        ordinal_date = self.ordinal_to_ordinal_date(ordinal)
+        year, month, day = self.ordinal_date_to_ast_ymd(ordinal_date)
+        ordinals = list()
+        if dateunit == DateUnits.YEAR:
+            while before_end_ordinal():
+                year += frequency
+                ast_ymd = year, 1, 1
+                ordinal_date = self.ast_ymd_to_ordinal_date(ast_ymd)
+                ordinal = self.ordinal_date_to_ordinal(ordinal_date)
+                ordinals.append(ordinal)
+            return ordinals
+        elif dateunit == DateUnits.MONTH:
+            first_frequency_checked = False
+            while before_end_ordinal():
+                if month <= frequency and not first_frequency_checked:
+                    first_frequency_checked = True
+                    month = frequency
+                    ast_ymd = year, month, 1
+                    ordinal_date = self.ast_ymd_to_ordinal_date(ast_ymd)
+                    ordinal = self.ordinal_date_to_ordinal(ordinal_date)
+                    ordinals.append(ordinal)
+                    continue
+
+                max_months = self.months_in_year(year)
+                desired_months = [
+                    month for month in range(0, max_months + 1, frequency)
+                ]
+                desired_months.remove(0)
+
+                if month > max(desired_months):
+                    # the desired month is in the following year
+                    first_frequency_checked = False
+                    year += 1
+                    month = frequency
+                    ast_ymd = year, month, 1  # fixme DRY
+                    ordinal_date = self.ast_ymd_to_ordinal_date(ast_ymd)
+                    ordinal = self.ordinal_date_to_ordinal(ordinal_date)
+                    ordinals.append(ordinal)
+                    continue
+
+                for desired_month in desired_months:
+                    if month <= desired_month:
+                        month = desired_month
+                        ast_ymd = year, month, 1  # fixme DRY
+                        ordinal_date = self.ast_ymd_to_ordinal_date(ast_ymd)
+                        ordinal = self.ordinal_date_to_ordinal(ordinal_date)
+                        ordinals.append(ordinal)
+                    if month == desired_months[-1]:
+                        year += 1
+                        month = frequency
+                        ast_ymd = year, month, 1
+                        ordinal_date = self.ast_ymd_to_ordinal_date(ast_ymd)
+                        ordinal = self.ordinal_date_to_ordinal(ordinal_date)
+                        ordinals.append(ordinal)
+                        break
+            return ordinals'''
+
     def ast_ymd_to_ordinal_date(self, ast_ymd: tuple) -> tuple[int, int]:
         """:raises ValueError: for an invalid year, month, day"""
         if not self.is_valid_ast_ymd(ast_ymd):
@@ -447,8 +557,6 @@ class ConvertibleDate:
 
     def parse_hr_date(self, hr_date: str) -> tuple:
         """
-        inverse operation of :py:meth:`format_hr_date`
-
         :returns: ast_year, month, day. Month is None for monthless calendar
         """
         month = None
@@ -466,14 +574,17 @@ class ConvertibleDate:
         return ast_year, month, day
 
     def format_hr_date(self, ast_ymd: tuple, dateunit=None) -> str:
-        """inverse operation of :py:meth:`parse_hr_date`"""
         ast_year, month, day = ast_ymd
         hr_year, _ = self.ast_to_hr(ast_year)
         era = self.era(ast_year)
         if dateunit == DateUnits.YEAR:
-            return str(hr_year)
+            return " ".join([str(hr_year), era])
         elif dateunit == DateUnits.MONTH:
-            return str(month)
+            if self.is_leap_year(ast_year):
+                month_str = self.calendar.leap_year_month_names[month - 1]
+            else:
+                month_str = self.calendar.common_year_month_names[month - 1]
+            return str(hr_year) + " " + era + ", " + month_str
         elif dateunit == DateUnits.DAY:
             return str(day)
         return self.date_sep.join([str(hr_year), str(month), str(day), era])
@@ -626,6 +737,14 @@ class ConvertibleDate:
 
     @property
     def common_year_cycle_ordinals(self) -> tuple:
+        return self.__common_year_cycle_ordinals
+
+    @common_year_cycle_ordinals.setter  # todo prevent all property setters
+    def common_year_cycle_ordinals(self, _) -> tuple:
+        raise AttributeError("Denied. Change cale")
+
+    """@property
+    def common_year_cycle_ordinals(self) -> tuple:
         start = self.calendar.leap_year_cycle_start
         all_cycle_ordinals = list(  # fixme dry with is_leap_year
             itertools.chain.from_iterable(
@@ -639,7 +758,7 @@ class ConvertibleDate:
             _ord
             for _ord in all_cycle_ordinals
             if _ord not in self.calendar.leap_year_cycle_ordinals
-        )
+        )"""
 
     @property
     def common_years_in_normal_cycle(self) -> int:

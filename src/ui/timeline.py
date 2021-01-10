@@ -16,34 +16,62 @@
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
 import datetime
 
-from .hor_scroll import InfiniteHorScroll
+from .hor_scroll import HorScrollBehavior
 from .mark import Mark
+from .zoom import ZoomBehavior
 from src.customdate import DateUnits
 from src.utils import gregorian_datetime
+from typing import Generator
 from kivy.clock import Clock
-from kivy.graphics import Ellipse
 from kivy.lang import Builder
-from kivy.metrics import sp
 from kivy.properties import (
     AliasProperty,
-    BoundedNumericProperty,
+    ListProperty,
     NumericProperty,
     ObjectProperty,
 )
 from kivy.uix.floatlayout import FloatLayout
 
+kv = """
+#:import utils src.ui.utils
+<ComboTimeline>:
+    canvas:
+        Color:
+            rgba: utils.BACKGROUND_COLOR
+        Rectangle:
+            pos: self.pos
+            size: self.size
 
-class BaseTimeline(FloatLayout, InfiniteHorScroll):
+    MarkedTimeline:
+        size_hint: 1, 0.05
+        pos_hint: {"top": 1}
+        canvas.before:
+            Color:
+                rgba: 0.31, 0.31, 0.31, 0.95
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+    BareTimeline:
+        size_hint: 1, 0.95
+        Label:
+            text: "i'm bare"
+"""
+
+Builder.load_string(kv)
+
+
+class BaseTimeline(HorScrollBehavior, ZoomBehavior, FloatLayout):
     """Abstract class for timelines"""
 
-    dt = ObjectProperty(gregorian_datetime)  # ConvertibleDateTime
+    cdt = ObjectProperty(gregorian_datetime)  # ConvertibleDateTime
 
     __now = datetime.datetime.now(datetime.timezone.utc).astimezone()
     __midnight_today = __now.replace(hour=0, minute=0, second=0, microsecond=0)
     __seconds_into_day = (__now - __midnight_today).seconds
-    __now_as_ordinal_decimal = __now.toordinal() + (__seconds_into_day / 86400)
-    start_ordinal_decimal = NumericProperty(__now_as_ordinal_decimal)
-    end_ordinal_decimal = NumericProperty(__now_as_ordinal_decimal + 365)
+    __now_ordinal_decimal = __now.toordinal() + (__seconds_into_day / 86400)
+    start_ordinal_decimal = NumericProperty(__now_ordinal_decimal - 365.25 * 3)
+    end_ordinal_decimal = NumericProperty(__now_ordinal_decimal + 365.25 * 3)
 
     def _get_time_span(self):
         return self.end_ordinal_decimal - self.start_ordinal_decimal
@@ -54,21 +82,36 @@ class BaseTimeline(FloatLayout, InfiniteHorScroll):
         bind=["start_ordinal_decimal", "end_ordinal_decimal"]
     )
 
-    primary_mark: Mark
-    secondary_mark: Mark
-    marks: list
-
-    def __init__(self, **kwargs):
-        super(BaseTimeline, self).__init__(**kwargs)
-        for mark in self.marks:
-            self.add_widget(mark)
-        self.bind(pos=self.update_marks_bbox, size=self.update_marks_bbox)
-
     def on_scroll_by(self, *_) -> None:
         dod = self.dx_to_dod(self.scroll_by)
         self.start_ordinal_decimal -= dod
         self.end_ordinal_decimal -= dod
+        self.scroll_siblings()
 
+    def scroll_siblings(self) -> None:
+        for sibling in self.gen_timeline_siblings():
+            sibling.scroll_by = self.scroll_by
+
+    def on_zoom_by(self, *_) -> None:
+        dod = self.dx_to_dod(self.zoom_by)
+        self.start_ordinal_decimal += dod
+        self.end_ordinal_decimal -= dod
+        self.zoom_siblings()
+
+    def zoom_siblings(self) -> None:
+        for sibling in self.gen_timeline_siblings():
+            sibling.zoom_by = self.zoom_by
+
+    def gen_timeline_siblings(
+        self
+    ) -> Generator["BaseTimeline", "BaseTimeline", None]:
+        for child in self.parent.children:
+            if isinstance(child, BaseTimeline) and child is not self:
+                yield child
+
+    #
+    # Time Conversions
+    #
     def od_to_x(self, od: float) -> float:
         """convert ordinal decimal to x position"""
         dod = od - self.start_ordinal_decimal
@@ -82,65 +125,78 @@ class BaseTimeline(FloatLayout, InfiniteHorScroll):
         """convert change in pixels to change in ordinal decimal"""
         return self.time_span * (dx / self.width)
 
-    def update_marks_bbox(self, *_) -> None:
-        """Update child Mark(s) bounding box"""
-        for mark in self.marks:
-            mark.pos = self.pos
-            mark.size = self.size
 
+class MarkedTimeline(BaseTimeline):
+    """Contains date and time labels"""
 
-kv = """
-#:import utils src.ui.utils
-<Timeline>:
-    size_hint: 1, 0.8
-    canvas:
-        Color:
-            rgb: utils.BACKGROUND_COLOR
-        Rectangle:
-            pos: self.pos
-            size: self.size
-"""
-
-Builder.load_string(kv)
-
-
-class Timeline(BaseTimeline):
-    """Where the end-user adds events"""
-
-    primary_mark_interval = ObjectProperty(DateUnits.YEAR)
-
-    secondary_mark_width = BoundedNumericProperty(5, min=1)
-    secondary_mark_height = BoundedNumericProperty(5, min=1)
-    secondary_mark_y = BoundedNumericProperty(50, min=1)
-    secondary_mark_interval = ObjectProperty(DateUnits.MONTH)
+    mark_interval = ListProperty([1, DateUnits.YEAR])
 
     def __init__(self, **kwargs):
-        self.primary_mark = Mark(interval=self.primary_mark_interval)
-        self.secondary_mark = Mark(
-            label_align=Mark.LABEL_CENTER,
-            mark=Ellipse,
-            mark_width=sp(self.secondary_mark_width),
-            mark_height=sp(self.secondary_mark_height),
-            interval=self.secondary_mark_interval,
-        )
-        self.marks = [self.secondary_mark]
-        super(Timeline, self).__init__(**kwargs)
-        self.draw_marks_trigger = Clock.create_trigger(self.draw_all_marks)
+        super(BaseTimeline, self).__init__(**kwargs)
+        self.mark = Mark(interval=self.mark_interval)
+        self.add_widget(self.mark)
+        self.draw_mark_trigger = Clock.create_trigger(self.draw_mark)
         self.bind(
-            height=self.update_secondary_mark,
-            size=self.draw_marks_trigger,
-            start_ordinal_decimal=self.draw_marks_trigger,
-            end_ordinal_decimal=self.draw_marks_trigger,
+            pos=self.update_mark_bbox,
+            start_ordinal_decimal=self.draw_mark_trigger,
+            end_ordinal_decimal=self.draw_mark_trigger,
+            mark_interval=self.update_mark_interval,
         )
 
-    def draw_all_marks(self, _) -> None:
-        for mark in self.marks:
-            mark.draw_marks()
+    def on_zoom_by(self, *_) -> None:
+        """change mark intervals so all labels are visible"""
+        super(MarkedTimeline, self).on_zoom_by(*_)
+        mark = self.mark
+        label_width = mark.max_label_width + (2 * mark.label_padding_x)
+        if label_width >= mark.interval_width * (2/3) and self.zoom_by < 0:
+            self.mark_interval = self.cdt.change_interval(self.mark_interval)
+        elif label_width <= mark.interval_width * (1/3) and self.zoom_by > 0:
+            self.mark_interval = self.cdt.change_interval(
+                self.mark_interval, increase=False
+            )
 
-    def update_secondary_mark(self, *_) -> None:
-        self.secondary_mark.mark_y = self.height - sp(self.secondary_mark_y)
-        self.secondary_mark.label_y = (
-            self.height
-            - sp(self.secondary_mark_y)
-            + sp(self.secondary_mark_height)
+    def draw_mark(self, _) -> None:
+        self.mark.draw_marks()
+
+    def update_mark_bbox(self, *_) -> None:
+        self.mark.pos = self.pos
+        self.mark.size = self.size
+
+    def update_mark_interval(self, *_) -> None:
+        self.mark.interval = self.mark_interval
+
+    def on_size(self, *_) -> None:
+        self.draw_mark_trigger()
+        self.update_mark_bbox()
+
+
+class BareTimeline(BaseTimeline):
+    """where the end-user adds events"""
+
+
+class ComboTimeline(BaseTimeline):
+    """Combination of a MarkedTimeline and BareTimeline"""
+
+    def __init__(self, **kwargs):
+        super(ComboTimeline, self).__init__(**kwargs)
+        self.bind(
+            start_ordinal_decimal=self.update_ordinal_decimals,
+            end_ordinal_decimal=self.update_ordinal_decimals,
+            cdt=self.update_datetimes,
         )
+
+    def update_ordinal_decimals(self, *_) -> None:
+        for child_tl in self.gen_child_timelines():
+            child_tl.start_ordinal_decimal = self.start_ordinal_decimal
+            child_tl.end_ordinal_decimal = self.end_ordinal_decimal
+
+    def update_datetimes(self, *_) -> None:
+        for child_tl in self.gen_child_timelines():
+            child_tl.cdt = self.cdt
+
+    def gen_child_timelines(
+        self
+    ) -> Generator[BaseTimeline, BaseTimeline, None]:
+        for child in self.children:
+            if isinstance(child, BaseTimeline):
+                yield child

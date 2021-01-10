@@ -14,22 +14,24 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
-from kivy.app import App
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.floatlayout import FloatLayout
-from src.ui.timeline import ComboTimeline
-from src.utils import gregorian_datetime
+from kivy.properties import NumericProperty
 
 
-class MainApp(App):
-    def build(self):
-        root = FloatLayout()
-        box = BoxLayout(orientation="vertical")
-        timeline = ComboTimeline(cdt=gregorian_datetime)
-        box.add_widget(timeline)
-        root.add_widget(box)
-        return root
+# noinspection PyUnresolvedReferences
+class ZoomBehavior:
+    zoom_delta = NumericProperty("20sp")
+    zoom_by = NumericProperty(0)
 
+    def on_touch_down(self, touch):
+        if super(ZoomBehavior, self).on_touch_down(touch):
+            return True
 
-if __name__ == "__main__":
-    MainApp().run()
+        if touch.button == "scrollup":
+            self.zoom_by = self.zoom_delta
+        elif touch.button == "scrolldown":
+            self.zoom_by = -self.zoom_delta
+
+        if self.zoom_by:
+            self.zoom_by = 0
+            return True
+        return False

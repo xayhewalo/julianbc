@@ -1,6 +1,7 @@
 import pytest
 
 from src.customdate import ConvertibleDate
+from src.models import ConvertibleCalendar
 from tests.factories import ConvertibleCalendarFactory
 from tests.utils import CalendarTestCase, FAKE
 from unittest.mock import patch
@@ -47,7 +48,7 @@ class ConvertibleDateTimeTest(CalendarTestCase):
 
     @staticmethod
     def years_before_era(
-        calendar: ConvertibleCalendarFactory, era_idx: int
+        calendar: ConvertibleCalendar, era_idx: int
     ) -> int:
         """excludes eras with infinite ranges"""
         era_ranges = calendar.era_ranges
@@ -62,7 +63,7 @@ class ConvertibleDateTimeTest(CalendarTestCase):
 
     def random_monthless_calendar(
         self,
-    ) -> tuple[ConvertibleCalendarFactory, int]:
+    ) -> tuple[ConvertibleCalendar, int]:
         days_in_year = FAKE.random_int(min=1)
         monthless_calendar = self.calendar_factory.build(
             common_year_month_names=(),

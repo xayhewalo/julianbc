@@ -15,23 +15,33 @@
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
 from kivy.properties import BooleanProperty, NumericProperty
-from kivy.uix.widget import Widget
 
 
-class InfiniteHorScroll(Widget):
-    """Infinite horizontal scrolling."""
+# noinspection PyUnresolvedReferences
+class HorScrollBehavior:
+    """Infinite horizontal scrolling"""
 
     scroll_by = NumericProperty(0)
+    scroll_delta = NumericProperty("20sp")
     hor_scrolling = BooleanProperty(False)
 
     def on_touch_down(self, touch):
-        if super(InfiniteHorScroll, self).on_touch_down(touch):
+        if super(HorScrollBehavior, self).on_touch_down(touch):
             return True
 
-        if self.collide_point(*touch.pos):
-            # Touched widget but children didn't use touch, must be scrolling
+        # Touched widget but children didn't consume touch, must be scrolling
+        if touch.button == "scrollleft":
+            self.scroll_by = -self.scroll_delta
+            self.cleanup_scroll()
+            return True
+        elif touch.button == "scrollright":
+            self.scroll_by = self.scroll_delta
+            self.cleanup_scroll()
+            return True
+        elif self.collide_point(*touch.pos):
             self.hor_scrolling = True
             touch.grab(self)
+            self.get_root_window().set_system_cursor("hand")
             return True
         return False
 
@@ -39,10 +49,15 @@ class InfiniteHorScroll(Widget):
         if touch.grab_current is self and self.hor_scrolling:
             self.scroll_by = touch.dx
             return True
-        return super(InfiniteHorScroll, self).on_touch_move(touch)
+        return super(HorScrollBehavior, self).on_touch_move(touch)
 
     def on_touch_up(self, touch):
         if touch.grab_current is self and self.hor_scrolling:
             touch.ungrab(self)
-            self.hor_scrolling = False
-        return super(InfiniteHorScroll, self).on_touch_up(touch)
+            self.get_root_window().set_system_cursor("arrow")
+            self.cleanup_scroll()
+        return super(HorScrollBehavior, self).on_touch_up(touch)
+
+    def cleanup_scroll(self) -> None:
+        self.hor_scrolling = False
+        self.scroll_by = 0

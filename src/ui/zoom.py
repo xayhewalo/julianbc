@@ -14,11 +14,13 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
-from kivy.properties import NumericProperty
+from kivy.properties import BooleanProperty, NumericProperty
 
 
 # noinspection PyUnresolvedReferences
 class ZoomBehavior:
+    disable_zoom_in = BooleanProperty(False)
+    disable_zoom_out = BooleanProperty(False)
     zoom_delta = NumericProperty("20sp")
     zoom_by = NumericProperty(0)
 
@@ -26,9 +28,9 @@ class ZoomBehavior:
         if super(ZoomBehavior, self).on_touch_down(touch):
             return True
 
-        if touch.button == "scrollup":
+        if touch.button == "scrollup" and not self.disable_zoom_in:
             self.zoom_by = self.zoom_delta
-        elif touch.button == "scrolldown":
+        elif touch.button == "scrolldown" and not self.disable_zoom_out:
             self.zoom_by = -self.zoom_delta
 
         if self.zoom_by:

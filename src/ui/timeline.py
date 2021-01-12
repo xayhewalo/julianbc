@@ -19,8 +19,8 @@ import datetime
 from .hor_scroll import HorScrollBehavior
 from .mark import Mark
 from .zoom import ZoomBehavior
-from src.customdate import DateUnits
-from src.utils import gregorian_datetime
+from src.customdatetime import DateUnits, TimeUnits
+from src.setup_db import gregorian_datetime
 from typing import Generator
 from kivy.clock import Clock
 from kivy.lang import Builder
@@ -70,8 +70,8 @@ class BaseTimeline(HorScrollBehavior, ZoomBehavior, FloatLayout):
     __midnight_today = __now.replace(hour=0, minute=0, second=0, microsecond=0)
     __seconds_into_day = (__now - __midnight_today).seconds
     __now_ordinal_decimal = __now.toordinal() + (__seconds_into_day / 86400)
-    start_ordinal_decimal = NumericProperty(__now_ordinal_decimal - 365.25 * 3)
-    end_ordinal_decimal = NumericProperty(__now_ordinal_decimal + 365.25 * 3)
+    start_ordinal_decimal = NumericProperty(__now_ordinal_decimal - 1.787037037037037e-05)
+    end_ordinal_decimal = NumericProperty(__now_ordinal_decimal + 1.787037037037037e-05)
 
     def _get_time_span(self):
         return self.end_ordinal_decimal - self.start_ordinal_decimal
@@ -129,7 +129,7 @@ class BaseTimeline(HorScrollBehavior, ZoomBehavior, FloatLayout):
 class MarkedTimeline(BaseTimeline):
     """Contains date and time labels"""
 
-    mark_interval = ListProperty([1, DateUnits.YEAR])
+    mark_interval = ListProperty([1, TimeUnits.SECOND])
 
     def __init__(self, **kwargs):
         super(BaseTimeline, self).__init__(**kwargs)
@@ -143,14 +143,28 @@ class MarkedTimeline(BaseTimeline):
             mark_interval=self.update_mark_interval,
         )
 
+    def on_time_span(self, *_) -> None:
+        unit = self.mark_interval[1]
+        min_time_span = 5 / self.cdt.time.clock.seconds_in_day
+        if unit == TimeUnits.SECOND and self.time_span <= min_time_span:
+            self.disable_zoom_in = True
+        else:
+            self.disable_zoom_in = False
+
+    def on_disable_zoom_in(self, *_) -> None:
+        for sibling in self.gen_timeline_siblings():
+            sibling.disable_zoom_in = self.disable_zoom_in
+
     def on_zoom_by(self, *_) -> None:
         """change mark intervals so all labels are visible"""
         super(MarkedTimeline, self).on_zoom_by(*_)
         mark = self.mark
         label_width = mark.max_label_width + (2 * mark.label_padding_x)
-        if label_width >= mark.interval_width * (2/3) and self.zoom_by < 0:
+        increase_threshold = mark.interval_width * (2/3)
+        decrease_threshold = mark.interval_width * (1/3)
+        if label_width >= increase_threshold and self.zoom_by < 0:
             self.mark_interval = self.cdt.change_interval(self.mark_interval)
-        elif label_width <= mark.interval_width * (1/3) and self.zoom_by > 0:
+        elif label_width <= decrease_threshold and self.zoom_by > 0:
             self.mark_interval = self.cdt.change_interval(
                 self.mark_interval, increase=False
             )
@@ -182,7 +196,7 @@ class ComboTimeline(BaseTimeline):
         self.bind(
             start_ordinal_decimal=self.update_ordinal_decimals,
             end_ordinal_decimal=self.update_ordinal_decimals,
-            cdt=self.update_datetimes,
+            cdt=self.update_convertible_datetimes,
         )
 
     def update_ordinal_decimals(self, *_) -> None:
@@ -190,7 +204,7 @@ class ComboTimeline(BaseTimeline):
             child_tl.start_ordinal_decimal = self.start_ordinal_decimal
             child_tl.end_ordinal_decimal = self.end_ordinal_decimal
 
-    def update_datetimes(self, *_) -> None:
+    def update_convertible_datetimes(self, *_) -> None:
         for child_tl in self.gen_child_timelines():
             child_tl.cdt = self.cdt
 

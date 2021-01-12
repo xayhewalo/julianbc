@@ -18,7 +18,7 @@ from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.floatlayout import FloatLayout
 from src.ui.timeline import ComboTimeline
-from src.utils import gregorian_datetime
+from src.setup_db import gregorian_datetime
 
 
 class MainApp(App):

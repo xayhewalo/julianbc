@@ -1,25 +1,34 @@
 """where the User-interface and database clock-keeping meet"""
-#  Copyright (c) 2020 author(s) of MainApp.
+#  Copyright (c) 2020 author(s) of JulianBC.
 #
-#  This file is part of MainApp.
+#  This file is part of JulianBC.
 #
-#  MainApp is free software: you can redistribute it and/or modify
+#  JulianBC is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
 #
-#  MainApp is distributed in the hope that it will be useful,
+#  JulianBC is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with MainApp.  If not, see <https://www.gnu.org/licenses/>.
+#  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
 import math
 
+from enum import Enum, unique
 from sqlalchemy.future import select
 from sqlalchemy.orm import object_session
 from src.models import ConvertibleClock
+from .utils import _increment_by_one
+
+
+@unique
+class TimeUnits(Enum):
+    HOUR = 0
+    MINUTE = 1
+    SECOND = 2
 
 
 class ConvertibleTime:
@@ -32,10 +41,10 @@ class ConvertibleTime:
     * `HMS` stands for the hour, minute, second of a day.
     * `Hour` is always in military time, i.e 24-hour clock on Earth.
     * `HR time` is human-readable time, which may or may not have hour labels
-    * `Hour labels` are string like "AM" or "PM"
+    * `Hour labels` are strings like "AM" or "PM"
     Clocks can only be converted if they have the same seconds in a day.
 
-    **not** a drop-in replacement for datetime.clock
+    **not** a drop-in replacement for datetime.time
     """
 
     def __init__(
@@ -61,7 +70,203 @@ class ConvertibleTime:
         seconds = foreign_time.hms_to_seconds(foreign_hms)
         return self.seconds_to_hms(seconds)
 
-    def convertible_clocks(self) -> list:
+    def next_hms(  # todo break up into smaller functions, also is really gross
+        self, hms: tuple[int, int, int], interval: list, sign: int = 1
+    ) -> tuple[tuple[int, int, int], int]:
+        """:returns: desired hms and whether it is in a different day"""
+        # todo convert to hms and frequeny to seconds and find modulo == 0?
+        """
+        i.e:
+        frequency_seconds = frequency * unit * seconds_in_unit
+        seconds = self.hms_to_seconds(hms)
+        seconds += sign * 1
+        seconds_shifted = 0
+        while seconds % frequency_seconds != 0:
+            seconds_shifted += 1
+            seconds += 1
+        assert seconds_shifted <= seconds_in_day
+        if seconds_shifted >= seconds_in_day:
+            day_diff = 1
+            
+        hms = self.seconds_to_hms(seconds
+        return hms, day_diff
+        """
+        if not self.is_valid_hms(hms):
+            raise ValueError(f"{hms} is an invalid hms for {self.clock}")
+
+        frequency, unit = interval
+
+        if not 0 < frequency == int(frequency):  # todo same in next_ast_ymd
+            msg = f"Frequency: {frequency} is not an integer greater than zero"
+            raise ValueError(msg)
+
+        hour, minute, second = hms
+        day_diff = 0
+
+        if unit == TimeUnits.HOUR:
+            if frequency > self.clock.hours_in_day - 1:
+                msg = f"Can't find every {frequency} hour for {self.clock}"
+                raise ValueError(msg)
+
+            hour = _increment_by_one(hour, sign)
+            if not self.is_valid_hour(hour):
+                hour = 0
+                day_diff = sign
+
+            while hour % frequency != 0:
+                hour = _increment_by_one(hour, sign)
+                if not self.is_valid_hour(hour):  # todo probs don't have to check twice
+                    assert not day_diff, "shifted into a different day twice"
+                    hour = 0
+                    day_diff = sign
+            return (hour, 0, 0), day_diff
+        elif unit == TimeUnits.MINUTE:
+            if frequency > self.clock.minutes_in_hour - 1:
+                msg = f"Can't find every {frequency} minute for {self.clock}"
+                raise ValueError(msg)
+
+            minute += sign * 1
+            if not self.is_valid_minute(minute):
+                minute = 0
+                hour += sign * 1
+                if not self.is_valid_hour(hour):
+                    hour = 0
+                    day_diff = sign
+
+            while minute % frequency != 0:
+                minute += sign * 1
+                if not self.is_valid_minute(minute):
+                    minute = 0
+                    hour += sign * 1
+                    if not self.is_valid_hour(hour):
+                        assert not day_diff, "moved into a different day twice"
+                        hour = 0
+                        day_diff = sign
+            return (hour, minute, 0), day_diff
+        elif unit == TimeUnits.SECOND:
+            if frequency > self.clock.seconds_in_minute - 1:
+                msg = f"Can't find every {frequency} second for {self.clock}"
+                raise ValueError(msg)
+
+            second += sign * 1
+            if not self.is_valid_second(second):
+                second = 0
+                minute += sign * 1
+                if not self.is_valid_minute(minute):
+                    minute = 0
+                    hour += sign * 1
+                    if not self.is_valid_hour(hour):
+                        hour = 0
+                        day_diff = sign
+
+            while second % frequency != 0:
+                second += sign * 1
+                if not self.is_valid_second(second):
+                    second = 0
+                    minute += sign * 1
+                    if not self.is_valid_minute(minute):
+                        minute = 0
+                        hour += sign * 1
+                        if not self.is_valid_hour(hour):
+                            assert not day_diff, "moved days twice"
+                            hour = 0
+                            day_diff = sign
+            return (hour, minute, second), day_diff
+        else:
+            raise ValueError(f"{unit} is an invalid TimeUnit")
+
+    def shift_hms(  # todo break up into different functions
+        self, hms: tuple[int, int, int], intervals: list
+    ) -> tuple[tuple[int, int, int], int]:
+        """
+
+        :param hms: hour, minute, second
+        :param intervals: amount of TimeUnits to shift by
+        :returns: an hms and whether the shift moved into a different day
+        """
+        if not self.is_valid_hms(hms):
+            msg = f"{hms} is invalid for {self.clock}"
+            raise ValueError(msg)
+
+        hour, minute, second = hms
+        day_diff = 0
+
+        for interval in intervals:
+            delta, unit = interval
+            if delta == 0:
+                continue
+
+            sign = int(math.copysign(1, delta))
+            if unit == TimeUnits.HOUR:  # todo DRY
+                terminal_hour = 0 if sign == 1 else self.clock.hours_in_day
+
+                new_hour = hour + delta
+                while not self.is_valid_hour(new_hour):  # todo test every 24 hours returns 0, not 24
+                    day_diff += sign * 1
+                    if sign == 1:
+                        delta -= self.clock.hours_in_day - hour
+                    else:
+                        delta += hour
+                    hour = terminal_hour
+                    new_hour = hour + delta
+                hour = new_hour
+                assert self.is_valid_hms(
+                    (hour, minute, second)
+                ), f"{hour, minute, second} is invalid for {self.clock}"
+                return (hour, minute, second), day_diff  # fixme wrong because it won't shift be all the date units
+            elif unit == TimeUnits.MINUTE:
+                minutes_in_hour = self.clock.minutes_in_hour
+                terminal_minute = 0 if sign == 1 else minutes_in_hour
+
+                new_minute = minute + delta
+                while not self.is_valid_minute(new_minute):
+                    hour += sign * 1
+                    if not self.is_valid_hour(hour):  # fixme DRY
+                        day_diff += sign * 1
+                        hour = 0 if sign == 1 else self.clock.hours_in_day  # todo DRY?
+
+                    if sign == 1:
+                        delta -= minutes_in_hour - minute
+                    else:
+                        delta += minute
+                    minute = terminal_minute
+                    new_minute = minute + delta
+                minute = new_minute
+                assert self.is_valid_hms(
+                    (hour, minute, second)
+                ), f"{hour, minute, second} is invalid for {self.clock}"
+                return (hour, minute, second), day_diff
+            elif unit == TimeUnits.SECOND:
+                seconds_in_minute = self.clock.seconds_in_minute
+                terminal_second = 0 if sign == 1 else seconds_in_minute
+
+                new_second = second + delta
+                while not self.is_valid_second(new_second):
+                    minute += sign * 1
+                    if not self.is_valid_minute(minute):
+                        minute = 0 if sign == 1 else self.clock.minutes_in_hour
+                        hour += sign * 1
+                        if not self.is_valid_hour(hour):
+                            hour = 0 if sign == 1 else self.clock.hours_in_day
+                            day_diff += sign * 1
+
+                    if sign == 1:
+                        delta -= seconds_in_minute - second
+                    else:
+                        delta += second
+                    second = terminal_second
+                    new_second = second + delta
+                second = new_second
+                if not self.is_valid_hms((hour, minute, second)):
+                    print(hour, minute, second)
+                assert self.is_valid_hms(
+                    (hour, minute, second)
+                ), f"{hour, minute, second} is invalid for {self.clock}"
+                return (hour, minute, second), day_diff
+            else:
+                RuntimeError(f"{unit} is an invalid TimeUnit")
+
+    def convertible_clocks(self) -> list:  # todo move to db?, property?
         session = object_session(self.clock)
         return (
             session.execute(
@@ -111,7 +316,8 @@ class ConvertibleTime:
         return (
             self.is_valid_hour(hour)
             and self.is_valid_minute(minute)
-            and 0 <= second < self.clock.seconds_in_minute
+            # and 0 <= second < self.clock.seconds_in_minute
+            and self.is_valid_second(second)
         )
 
     def is_valid_hour(self, hour: int) -> bool:
@@ -119,6 +325,9 @@ class ConvertibleTime:
 
     def is_valid_minute(self, minute: int) -> bool:
         return 0 <= minute < self.clock.minutes_in_hour
+
+    def is_valid_second(self, second: int) -> bool:
+        return 0 <= second < self.clock.seconds_in_minute
 
     def hms_to_hr_time(
         self, hms: tuple[int, int, int], use_hour_label=False
@@ -202,4 +411,5 @@ class ConvertibleTime:
         num_labels = len(hour_label)
         if num_labels == 0:
             return True
-        return self.clock.hours_in_day % len(hour_label) == 0
+        # return self.clock.hours_in_day % len(hour_label) == 0
+        return self.clock.hours_in_day % num_labels == 0

@@ -18,20 +18,21 @@ JulianBC will be a visual-timeline program in the near future
     - [ ] up/down scroll when in focus
     - [ ] page up/down scroll when in focus
     - [ ] home/end scroll?
-- [X] Add zoom to timeline
+- [ ] Add zoom to timeline
     - [ ] ctrl + +/- to zoom
-    - [ ] limit zoom
+    - [X] limit zoom
     - [ ] Optimized zoom intervals
 - [ ] Label timeline
     - [X] with dates
-    - [ ] with time
-    - [ ] move dates and times dynamically with scroll and zoom
-    - [ ] widen interval labels based on label text with
+    - [X] with time
+    - [X] move dates and times dynamically with scroll and zoom
+    - [ ] widen interval labels based on label text width
     - [X] Set intervals by strings? I.e "week", "month", "year", etc.
     - [X] Convert Timeline days to label x position
     - [X] Add more precise formatting for human-readable dates
 - [ ] Add event containers to timeline
 - [ ] Link event container locations to dates and times
     - [ ] Add event container detail window (inspect)
+- [ ] Make all calendar and clock calculations in datetime/date/time modules. UI should only call from methods from ConvertibleDateTime
 - [ ] Add calendar from UI
 - [ ] Probably more stuff...

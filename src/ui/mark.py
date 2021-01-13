@@ -40,13 +40,13 @@ class Mark(Widget):
     label_padding_x = NumericProperty("2sp")
     label_padding_y = NumericProperty("2sp")
     label_y = NumericProperty(0)
-    font_size = BoundedNumericProperty(sp(10), min=sp(10))
+    font_size = BoundedNumericProperty(sp(11), min=sp(11))
     max_label_width = NumericProperty(0)
 
     mark = ObjectProperty(Rectangle)
     mark_y = NumericProperty(0)
     mark_width = NumericProperty("2sp")
-    mark_height = NumericProperty("800sp")
+    mark_height = NumericProperty("100sp")
     mark_color = ObjectProperty(defaultvalue=Color(*ON_BACKGROUND_COLOR))
 
     interval = ListProperty(list())

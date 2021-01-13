@@ -18,11 +18,13 @@ import datetime
 
 from .hor_scroll import HorScrollBehavior
 from .mark import Mark
+from .utils import SURFACE_COLOR
 from .zoom import ZoomBehavior
 from src.customdatetime import DateUnits, TimeUnits
 from src.setup_db import gregorian_datetime
-from typing import Generator
+from typing import Generator, Union
 from kivy.clock import Clock
+from kivy.graphics import Color, Line
 from kivy.lang import Builder
 from kivy.properties import (
     AliasProperty,
@@ -32,7 +34,7 @@ from kivy.properties import (
 )
 from kivy.uix.floatlayout import FloatLayout
 
-kv = """
+Builder.load_string("""
 #:import utils src.ui.utils
 <ComboTimeline>:
     canvas:
@@ -54,11 +56,7 @@ kv = """
 
     BareTimeline:
         size_hint: 1, 0.95
-        Label:
-            text: "i'm bare"
-"""
-
-Builder.load_string(kv)
+""")
 
 
 class BaseTimeline(HorScrollBehavior, ZoomBehavior, FloatLayout):
@@ -70,8 +68,8 @@ class BaseTimeline(HorScrollBehavior, ZoomBehavior, FloatLayout):
     __midnight_today = __now.replace(hour=0, minute=0, second=0, microsecond=0)
     __seconds_into_day = (__now - __midnight_today).seconds
     __now_ordinal_decimal = __now.toordinal() + (__seconds_into_day / 86400)
-    start_ordinal_decimal = NumericProperty(__now_ordinal_decimal - 1.787037037037037e-05)
-    end_ordinal_decimal = NumericProperty(__now_ordinal_decimal + 1.787037037037037e-05)
+    start_ordinal_decimal = NumericProperty(__now_ordinal_decimal - 2.5)
+    end_ordinal_decimal = NumericProperty(__now_ordinal_decimal + 2.5)
 
     def _get_time_span(self):
         return self.end_ordinal_decimal - self.start_ordinal_decimal
@@ -129,7 +127,7 @@ class BaseTimeline(HorScrollBehavior, ZoomBehavior, FloatLayout):
 class MarkedTimeline(BaseTimeline):
     """Contains date and time labels"""
 
-    mark_interval = ListProperty([1, TimeUnits.SECOND])
+    mark_interval = ListProperty([1, DateUnits.DAY])
 
     def __init__(self, **kwargs):
         super(BaseTimeline, self).__init__(**kwargs)
@@ -186,6 +184,15 @@ class MarkedTimeline(BaseTimeline):
 
 class BareTimeline(BaseTimeline):
     """where the end-user adds events"""
+    # todo don't add widgets, check db for visible events then make graphics for them
+
+    def on_touch_down(self, touch):
+        if touch.is_double_tap and self.collide_point(*touch.pos):
+            with self.canvas:
+                Color(SURFACE_COLOR)
+                Line(rounded_rectangle=[*touch.pos, 100, 20, 2])
+            return True
+        return super(BareTimeline, self).on_touch_down(touch)
 
 
 class ComboTimeline(BaseTimeline):
@@ -197,6 +204,7 @@ class ComboTimeline(BaseTimeline):
             start_ordinal_decimal=self.update_ordinal_decimals,
             end_ordinal_decimal=self.update_ordinal_decimals,
             cdt=self.update_convertible_datetimes,
+            height=self.update_mark_height,
         )
 
     def update_ordinal_decimals(self, *_) -> None:
@@ -207,6 +215,11 @@ class ComboTimeline(BaseTimeline):
     def update_convertible_datetimes(self, *_) -> None:
         for child_tl in self.gen_child_timelines():
             child_tl.cdt = self.cdt
+
+    def update_mark_height(self, *_) -> None:
+        for marked_tl in self.gen_child_timelines():
+            if isinstance(marked_tl, MarkedTimeline):
+                marked_tl.mark.mark_height = self.height
 
     def gen_child_timelines(
         self

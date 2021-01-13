@@ -22,6 +22,7 @@ JulianBC will be a visual-timeline program in the near future
     - [ ] ctrl + +/- to zoom
     - [X] limit zoom
     - [ ] Optimized zoom intervals
+    - [ ] pinch trackpad to zoom
 - [ ] Label timeline
     - [X] with dates
     - [X] with time
@@ -30,7 +31,7 @@ JulianBC will be a visual-timeline program in the near future
     - [X] Set intervals by strings? I.e "week", "month", "year", etc.
     - [X] Convert Timeline days to label x position
     - [X] Add more precise formatting for human-readable dates
-- [ ] Add event containers to timeline
+- [X] Add event containers to timeline
 - [ ] Link event container locations to dates and times
     - [ ] Add event container detail window (inspect)
 - [ ] Make all calendar and clock calculations in datetime/date/time modules. UI should only call from methods from ConvertibleDateTime

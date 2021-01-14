@@ -20,6 +20,16 @@ from kivy.uix.floatlayout import FloatLayout
 
 Builder.load_string("""
 #:import utils src.ui.utils
+<ImageButton@ButtonBehavior+Image>:
+    canvas.before:
+        Color:
+            rgb: 0.5, 0.5, 0.5
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    source: "./media/plus.png"
+    # allow_stretch: True
+
 <HeaderBar>:
     size_hint: 1, 0.1
     pos_hint: {"top": 1}
@@ -32,15 +42,13 @@ Builder.load_string("""
             pos: self.pos
             size: self.size
 
-    Image:
-        source: "plus.svg"
-
     Button:
         id: add_event_button
         size_hint: 0.07, .9
         pos_hint: {"center_y": 0.5}
         x: self.parent.x + self.parent.button_padding
         text: "+Event"
+        on_press: self.state="normal"; app.show_not_implemented_popup()
 
     Button:
         id: add_entity_button
@@ -48,6 +56,7 @@ Builder.load_string("""
         pos_hint: {"center_y": 0.5}
         x: add_event_button.x + self.parent.button_padding + self.width
         text: "+Entity"
+        on_press: self.state="normal"; app.show_not_implemented_popup()
 
     Button:
         id: swap_calendar_button
@@ -55,6 +64,7 @@ Builder.load_string("""
         pos_hint: {"center_y": 0.5}
         x: add_entity_button.x + self.parent.button_padding + self.width
         text: "+/-> Cal"
+        on_press: self.state="normal"; app.show_not_implemented_popup()
 
     Button:
         id: swap_calendar_button
@@ -62,37 +72,50 @@ Builder.load_string("""
         pos_hint: {"center_y": 0.5}
         x: add_entity_button.x + self.parent.button_padding + self.width
         text: "+/<-> Cal"
+        on_press: self.state="normal"; app.show_not_implemented_popup()
 
     #
     # View Modes
     #
     ToggleButton:
         id: timeline_view_button
+        state: "down"
+        group: "view"
         size_hint: 0.07, .9
         pos_hint: {"center_y": 0.5}
         x: entity_view_button.x - self.width - self.parent.button_padding
+        allow_no_selection: False
         text: "TL View"
 
     ToggleButton:
         id: entity_view_button
+        group: "view"
         size_hint: 0.07, .9
         pos_hint: {"center_y": 0.5}
         x: self.parent.center_x - self.parent.button_padding / 2 - self.width
+        allow_no_selection: False
         text: "Ent View"
+        on_press: self.state="normal"; timeline_view_button.state="down"; app.show_not_implemented_popup()
 
     ToggleButton:
         id: wiki_view_button
+        group: "view"
         size_hint: 0.07, .9
         pos_hint: {"center_y": 0.5}
         x: entity_view_button.x + self.parent.button_padding + self.width
+        allow_no_selection: False
         text: "Wiki\\nView"
+        on_press: self.state="normal"; timeline_view_button.state="down"; app.show_not_implemented_popup()
 
     ToggleButton:
         id: thread_view_button
+        group: "view"
         size_hint: 0.07, .9
         pos_hint: {"center_y": 0.5}
         x: wiki_view_button.x + self.parent.button_padding + self.width
+        allow_no_selection: False
         text: "Thread\\nView"
+        on_press: self.state="normal"; timeline_view_button.state="down"; app.show_not_implemented_popup()
 
     #
     # Util Buttons
@@ -103,6 +126,7 @@ Builder.load_string("""
         pos_hint: {"center_y": 0.5}
         x: search_button.x - self.width - self.parent.button_padding
         text: "Inspector"
+        on_press: self.state="normal"; app.show_not_implemented_popup()
 
     Button:
         id: search_button
@@ -110,6 +134,7 @@ Builder.load_string("""
         pos_hint: {"center_y": 0.5}
         x: filter_button.x - self.width - self.parent.button_padding
         text: "Search"
+        on_press: self.state="normal"; app.show_not_implemented_popup()
 
     Button:
         id: filter_button
@@ -117,6 +142,7 @@ Builder.load_string("""
         pos_hint: {"center_y": 0.5}
         x: settings_button.x - self.width - self.parent.button_padding
         text: "Filter"
+        on_press: self.state="normal"; app.show_not_implemented_popup()
 
     Button:
         id: settings_button
@@ -124,6 +150,8 @@ Builder.load_string("""
         pos_hint: {"center_y": 0.5}
         x: self.parent.width  - self.parent.button_padding - self.width
         text: "Cog"
+        on_press: self.state="normal"; app.show_not_implemented_popup()
+
 """)
 
 

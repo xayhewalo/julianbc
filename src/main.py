@@ -15,9 +15,10 @@
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
 from kivy.app import App
-from kivy.uix.button import Button
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.label import Label
+from kivy.uix.modalview import ModalView
 from src.ui.headerbar import HeaderBar
 from src.ui.timeline import ComboTimeline
 from src.setup_db import gregorian_datetime
@@ -28,13 +29,20 @@ class MainApp(App):
         root = FloatLayout()
         box = BoxLayout(orientation="vertical")
         timeline = ComboTimeline(cdt=gregorian_datetime)
-        # accordion = Accordion(orientation="vertical")
-        # accordion.add_widget(timeline)
-        # box.add_widget(accordion)
         box.add_widget(HeaderBar())
         box.add_widget(timeline)
         root.add_widget(box)
         return root
+
+    @staticmethod
+    def show_not_implemented_popup() -> None:
+        modal = ModalView(size_hint=[0.4, 0.4])
+        label = Label(
+            text="This feature is not implemented yet."
+                 "\n\nClick outside this popup to dismiss it."
+        )
+        modal.add_widget(label)
+        modal.open()
 
 
 if __name__ == "__main__":

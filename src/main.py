@@ -15,23 +15,26 @@
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
 from kivy.app import App
-from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.label import Label
 from kivy.uix.modalview import ModalView
+from kivy.uix.screenmanager import ScreenManager, NoTransition
 from src.ui.headerbar import HeaderBar
-from src.ui.timeline import ComboTimeline
-from src.setup_db import gregorian_datetime
+from src.ui.timeline import TimelineScreen
 
 
 class MainApp(App):
+    def __init__(self, **kwargs):
+        super(MainApp, self).__init__(**kwargs)
+        self.sm = ScreenManager(transition=NoTransition())
+
     def build(self):
         root = FloatLayout()
-        box = BoxLayout(orientation="vertical")
-        timeline = ComboTimeline(cdt=gregorian_datetime)
-        box.add_widget(HeaderBar())
-        box.add_widget(timeline)
-        root.add_widget(box)
+        timeline_screen = TimelineScreen(size_hint=[1, 0.9])
+        self.sm = ScreenManager(transition=NoTransition())
+        self.sm.add_widget(timeline_screen)
+        root.add_widget(self.sm)
+        root.add_widget(HeaderBar(size_hint=[1, 0.1], pos_hint={"top": 1}))
         return root
 
     @staticmethod

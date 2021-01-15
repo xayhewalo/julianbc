@@ -17,7 +17,6 @@
 from kivy.lang import Builder
 from kivy.uix.floatlayout import FloatLayout
 
-
 Builder.load_string("""
 #:import utils src.ui.utils
 <ImageButton@ButtonBehavior+Image>:
@@ -31,9 +30,6 @@ Builder.load_string("""
     # allow_stretch: True
 
 <HeaderBar>:
-    size_hint: 1, 0.1
-    pos_hint: {"top": 1}
-
     button_padding: sp(2)
     canvas:
         Color:
@@ -71,7 +67,15 @@ Builder.load_string("""
         size_hint: 0.07, .9
         pos_hint: {"center_y": 0.5}
         x: add_entity_button.x + self.parent.button_padding + self.width
-        text: "+/<-> Cal"
+        text: "<-> Cal"
+        on_press: self.state="normal"; app.show_not_implemented_popup()
+
+    Button:
+        id: add_thread_button
+        size_hint: 0.07, .9
+        pos_hint: {"center_y": 0.5}
+        x: swap_calendar_button.x + self.parent.button_padding + self.width
+        text: "+Thread"
         on_press: self.state="normal"; app.show_not_implemented_popup()
 
     #
@@ -86,6 +90,7 @@ Builder.load_string("""
         x: entity_view_button.x - self.width - self.parent.button_padding
         allow_no_selection: False
         text: "TL View"
+        on_press: app.sm.current = "timeline_view"
 
     ToggleButton:
         id: entity_view_button
@@ -151,7 +156,6 @@ Builder.load_string("""
         x: self.parent.width  - self.parent.button_padding - self.width
         text: "Cog"
         on_press: self.state="normal"; app.show_not_implemented_popup()
-
 """)
 
 

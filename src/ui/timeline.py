@@ -18,11 +18,13 @@ import datetime
 
 from .hor_scroll import HorScrollBehavior
 from .mark import Mark
+# noinspection PyUnresolvedReferences
+from .showhidebar import ShowHideBar  # so it's available for in kv lang
 from .utils import SURFACE_COLOR
 from .zoom import ZoomBehavior
 from src.customdatetime import DateUnits, TimeUnits
 from src.setup_db import gregorian_datetime
-from typing import Generator, Union
+from typing import Iterator, Union
 from kivy.clock import Clock
 from kivy.graphics import Color, Line
 from kivy.lang import Builder
@@ -33,30 +35,57 @@ from kivy.properties import (
     ObjectProperty,
 )
 from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.screenmanager import Screen
 
 Builder.load_string("""
 #:import utils src.ui.utils
-<ComboTimeline>:
-    canvas:
-        Color:
-            rgba: utils.BACKGROUND_COLOR
-        Rectangle:
-            pos: self.pos
-            size: self.size
 
-    MarkedTimeline:
-        size_hint: 1, 0.05
-        pos_hint: {"top": 1}
-        canvas.before:
-            Color:
-                rgba: 0.31, 0.31, 0.31, 0.95
-            Rectangle:
-                pos: self.pos
-                size: self.size
+<TimelineScreen>:
+    name: "timeline_view"
 
-    BareTimeline:
-        size_hint: 1, 0.95
+    CollapsableTimeline:
+        size_hint: 1, 1
+        pos: 0, 0
+
+        ComboTimeline:
+            id: combo_timeline
+            size_hint: 1, 0.97
+            canvas:
+                Color:
+                    rgba: utils.BACKGROUND_COLOR
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+
+            MarkedTimeline:
+                size_hint: 1, 0.05
+                pos_hint: {"top": 1}
+                canvas.before:
+                    Color:
+                        rgba: 0.31, 0.31, 0.31, 0.95
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+
+            BareTimeline:
+                size_hint: 1, 0.95
+                pos: self.parent.pos
+
+        ShowHideBar:
+            size_hint: 1, 0.03
+            pos_hint: {"top": 1}
+            text: combo_timeline.cdt.date.calendar.name
+            dependant: combo_timeline
 """)
+
+
+class TimelineScreen(Screen):
+    """Where Timelines are"""
+
+
+class CollapsableTimeline(FloatLayout):
+    """Expands and collapses a ComboTimeline"""
+    # todo de-focus dependant when collapsed
 
 
 class BaseTimeline(HorScrollBehavior, ZoomBehavior, FloatLayout):
@@ -100,9 +129,7 @@ class BaseTimeline(HorScrollBehavior, ZoomBehavior, FloatLayout):
         for sibling in self.gen_timeline_siblings():
             sibling.zoom_by = self.zoom_by
 
-    def gen_timeline_siblings(
-        self
-    ) -> Generator["BaseTimeline", "BaseTimeline", None]:
+    def gen_timeline_siblings(self) -> Iterator["BaseTimeline"]:
         for child in self.parent.children:
             if isinstance(child, BaseTimeline) and child is not self:
                 yield child
@@ -141,18 +168,6 @@ class MarkedTimeline(BaseTimeline):
             mark_interval=self.update_mark_interval,
         )
 
-    def on_time_span(self, *_) -> None:
-        unit = self.mark_interval[1]
-        min_time_span = 5 / self.cdt.time.clock.seconds_in_day
-        if unit == TimeUnits.SECOND and self.time_span <= min_time_span:
-            self.disable_zoom_in = True
-        else:
-            self.disable_zoom_in = False
-
-    def on_disable_zoom_in(self, *_) -> None:
-        for sibling in self.gen_timeline_siblings():
-            sibling.disable_zoom_in = self.disable_zoom_in
-
     def on_zoom_by(self, *_) -> None:
         """change mark intervals so all labels are visible"""
         super(MarkedTimeline, self).on_zoom_by(*_)
@@ -166,6 +181,18 @@ class MarkedTimeline(BaseTimeline):
             self.mark_interval = self.cdt.change_interval(
                 self.mark_interval, increase=False
             )
+
+    def on_time_span(self, *_) -> None:
+        unit = self.mark_interval[1]
+        min_time_span = 5 / self.cdt.time.clock.seconds_in_day
+        if unit == TimeUnits.SECOND and self.time_span <= min_time_span:
+            self.disable_zoom_in = True
+        else:
+            self.disable_zoom_in = False
+
+    def on_disable_zoom_in(self, *_) -> None:
+        for sibling in self.gen_timeline_siblings():
+            sibling.disable_zoom_in = self.disable_zoom_in
 
     def draw_mark(self, _) -> None:
         self.mark.draw_marks()
@@ -205,6 +232,7 @@ class ComboTimeline(BaseTimeline):
             end_ordinal_decimal=self.update_ordinal_decimals,
             cdt=self.update_convertible_datetimes,
             height=self.update_mark_height,
+            y=self.update_mark_y,
         )
 
     def update_ordinal_decimals(self, *_) -> None:
@@ -217,13 +245,18 @@ class ComboTimeline(BaseTimeline):
             child_tl.cdt = self.cdt
 
     def update_mark_height(self, *_) -> None:
-        for marked_tl in self.gen_child_timelines():
-            if isinstance(marked_tl, MarkedTimeline):
-                marked_tl.mark.mark_height = self.height
+        # noinspection PyTypeChecker
+        for marked_tl in self.gen_child_timelines(child_cls=MarkedTimeline):
+            marked_tl.mark.mark_height = self.height
+
+    def update_mark_y(self, *_) -> None:
+        # noinspection PyTypeChecker
+        for marked_tl in self.gen_child_timelines(child_cls=MarkedTimeline):
+            marked_tl.mark.mark_y = self.y
 
     def gen_child_timelines(
-        self
-    ) -> Generator[BaseTimeline, BaseTimeline, None]:
+        self, child_cls: Union[BaseTimeline, MarkedTimeline] = BaseTimeline
+    ) -> Iterator[Union[BaseTimeline, MarkedTimeline]]:
         for child in self.children:
-            if isinstance(child, BaseTimeline):
+            if isinstance(child, child_cls):
                 yield child

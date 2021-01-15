@@ -55,7 +55,7 @@ class Mark(Widget):
     def __init__(self, **kwargs):
         self.draw_marks_trigger = Clock.create_trigger(self.draw_marks)
         super(Mark, self).__init__(**kwargs)
-        self.bind(interval=self.draw_marks_trigger)
+        self.bind(interval=self.draw_marks_trigger, y=self.draw_marks_trigger)
 
     def draw_marks(self, *_) -> None:
         self.canvas.clear()

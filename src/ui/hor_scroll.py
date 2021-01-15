@@ -30,19 +30,21 @@ class HorScrollBehavior:
             return True
 
         # Touched widget but children didn't consume touch, must be scrolling
-        if touch.button == "scrollleft":
-            self.scroll_by = -self.scroll_delta
-            self.cleanup_scroll()
-            return True
-        elif touch.button == "scrollright":
-            self.scroll_by = self.scroll_delta
-            self.cleanup_scroll()
-            return True
-        elif self.collide_point(*touch.pos):
-            self.hor_scrolling = True
-            touch.grab(self)
-            self.get_root_window().set_system_cursor("hand")
-            return True
+        # fixme only scroll on focus, or gain focus when validly scrolling
+        if self.collide_point(*touch.pos):
+            if touch.button == "scrollleft":
+                self.scroll_by = -self.scroll_delta
+                self.cleanup_scroll()
+                return True
+            elif touch.button == "scrollright":
+                self.scroll_by = self.scroll_delta
+                self.cleanup_scroll()
+                return True
+            else:  # hold and drag to scroll
+                self.hor_scrolling = True
+                touch.grab(self)
+                self.get_root_window().set_system_cursor("hand")
+                return True
         return False
 
     def on_touch_move(self, touch):

@@ -28,12 +28,14 @@ class ZoomBehavior:
         if super(ZoomBehavior, self).on_touch_down(touch):
             return True
 
-        if touch.button == "scrollup" and not self.disable_zoom_in:
-            self.zoom_by = self.zoom_delta
-        elif touch.button == "scrolldown" and not self.disable_zoom_out:
-            self.zoom_by = -self.zoom_delta
+        # fixme only zoom when focused, or gain focus when zooming is valid
+        if self.collide_point(*touch.pos):
+            if touch.button == "scrollup" and not self.disable_zoom_in:
+                self.zoom_by = self.zoom_delta
+            elif touch.button == "scrolldown" and not self.disable_zoom_out:
+                self.zoom_by = -self.zoom_delta
 
-        if self.zoom_by:
-            self.zoom_by = 0
-            return True
+            if self.zoom_by:
+                self.zoom_by = 0
+                return True
         return False

@@ -1,20 +1,30 @@
-#  Copyright (c) 2020 author(s) of MainApp.
+#  Copyright (c) 2020 author(s) of JulianBC.
 #
-#  This file is part of MainApp.
+#  This file is part of JulianBC.
 #
-#  MainApp is free software: you can redistribute it and/or modify
+#  JulianBC is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
 #
-#  MainApp is distributed in the hope that it will be useful,
+#  JulianBC is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with MainApp.  If not, see <https://www.gnu.org/licenses/>.
+#  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
 import uuid
+
+from sqlalchemy.orm import declarative_base
+
+
+def string_sanitization(collection: list) -> list:
+    return [str(element) for element in collection]
+
+
+def integer_sanitization(collection: list) -> list:
+    return [int(element) for element in collection]
 
 
 def auto_constraint_name(constraint, _):
@@ -36,3 +46,6 @@ NAMING_CONVENTION = {
     "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
     "pk": "pk_%(table_name)s",
 }
+
+Base = declarative_base()
+Base.metadata.naming_convention = NAMING_CONVENTION

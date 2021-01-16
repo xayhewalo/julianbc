@@ -16,17 +16,18 @@
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
 import datetime
 
-from .hor_scroll import HorScrollBehavior
+from .horizontalscroll import HorScrollBehavior
 from .mark import Mark
 # noinspection PyUnresolvedReferences
 from .showhidebar import ShowHideBar  # so it's available for in kv lang
-from .utils import SURFACE_COLOR
+from .utils import ON_SURFACE_COLOR
 from .zoom import ZoomBehavior
 from src.customdatetime import DateUnits, TimeUnits
+from src.eventcontroller import EventController
 from src.setup_db import gregorian_datetime
 from typing import Iterator, Union
 from kivy.clock import Clock
-from kivy.graphics import Color, Line
+from kivy.graphics import Color, InstructionGroup, Line
 from kivy.lang import Builder
 from kivy.properties import (
     AliasProperty,
@@ -83,22 +84,21 @@ class TimelineScreen(Screen):
     """Where Timelines are"""
 
 
-class CollapsableTimeline(FloatLayout):
-    """Expands and collapses a ComboTimeline"""
+class CollapsableTimeline(FloatLayout):  # todo probs should be relative layout
+    """Expands and collapses a ComboTimeline"""  # todo should this be called a timeline?
     # todo de-focus dependant when collapsed
 
 
 class BaseTimeline(HorScrollBehavior, ZoomBehavior, FloatLayout):
     """Abstract class for timelines"""
 
-    cdt = ObjectProperty(gregorian_datetime)  # ConvertibleDateTime
-
+    cdt = ObjectProperty(gregorian_datetime)
     __now = datetime.datetime.now(datetime.timezone.utc).astimezone()
     __midnight_today = __now.replace(hour=0, minute=0, second=0, microsecond=0)
     __seconds_into_day = (__now - __midnight_today).seconds
     __now_ordinal_decimal = __now.toordinal() + (__seconds_into_day / 86400)
-    start_ordinal_decimal = NumericProperty(__now_ordinal_decimal - 2.5)
-    end_ordinal_decimal = NumericProperty(__now_ordinal_decimal + 2.5)
+    start_ordinal_decimal = NumericProperty(__now_ordinal_decimal - 1.1574074074074073e-05)
+    end_ordinal_decimal = NumericProperty(__now_ordinal_decimal + 1.1574074074074073e-05)
 
     def _get_time_span(self):
         return self.end_ordinal_decimal - self.start_ordinal_decimal
@@ -154,7 +154,7 @@ class BaseTimeline(HorScrollBehavior, ZoomBehavior, FloatLayout):
 class MarkedTimeline(BaseTimeline):
     """Contains date and time labels"""
 
-    mark_interval = ListProperty([1, DateUnits.DAY])
+    mark_interval = ListProperty([1, TimeUnits.SECOND])
 
     def __init__(self, **kwargs):
         super(BaseTimeline, self).__init__(**kwargs)
@@ -213,13 +213,77 @@ class BareTimeline(BaseTimeline):
     """where the end-user adds events"""
     # todo don't add widgets, check db for visible events then make graphics for them
 
-    def on_touch_down(self, touch):
+    event_height = NumericProperty("20sp")
+    event_y = NumericProperty(0)
+    event_graphics = ObjectProperty(InstructionGroup())
+    event_instr = ObjectProperty(Line)  # event graphical instruction
+
+    def __init__(self, **kwargs):
+        self.draw_event_graphics_trigger = Clock.create_trigger(
+            self.draw_event_graphics
+        )
+        super(BareTimeline, self).__init__(**kwargs)
+        self.ec = EventController(cdt=self.cdt)
+        self.event_graphics.add(Color(*ON_SURFACE_COLOR))
+        self.bind(
+            time_span=self.draw_event_graphics_trigger,
+            height=self.update_event_y,
+            y=self.update_event_y,
+            event_y=self.draw_event_graphics_trigger,
+            cdt=self.update_ec,
+        )
+
+    def on_touch_down(self, touch):  # todo double click should open event manager
         if touch.is_double_tap and self.collide_point(*touch.pos):
-            with self.canvas:
-                Color(SURFACE_COLOR)
-                Line(rounded_rectangle=[*touch.pos, 100, 20, 2])
+            pos = touch.x, self.event_y
+            self.draw_event(pos)
             return True
         return super(BareTimeline, self).on_touch_down(touch)
+
+    def draw_event_graphics(self, *_) -> None:
+        self.canvas.remove(self.event_graphics)
+        self.event_graphics.clear()
+
+        start_od, end_od = self.start_ordinal_decimal, self.end_ordinal_decimal
+        visible_events = self.ec.get_events(start_od, end_od)
+        for visible_event in visible_events:
+            # fixme UI is interacting directly with the db here
+            x = self.od_to_x(visible_event.start)
+            pos = x, self.event_y
+            width = self.dod_to_dx(visible_event.duration)  # TODO DRY
+            self.event_graphics.add(
+                self.event_instr(
+                    rounded_rectangle=[*pos, width, self.event_height, 2]
+                )
+            )
+            self.canvas.add(self.event_graphics)
+
+    def draw_event(
+        self, pos: tuple[float, float], duration: float = None, *_
+    ) -> None:
+        x, _ = pos
+        start_od = self.x_to_od(x)
+        duration = duration or 1 / self.cdt.time.clock.seconds_in_day
+        width = self.dod_to_dx(duration)
+        self.event_graphics.add(
+            self.event_instr(
+                rounded_rectangle=[*pos, width, self.event_height, 2]
+            )
+        )
+        self.canvas.add(self.event_graphics)
+
+        self.ec.make({"start": start_od, "duration": duration})
+
+    def x_to_od(self, x: float) -> float:
+        """convert x position to ordinal decimal"""
+        dx = x - self.x
+        return self.start_ordinal_decimal + self.dx_to_dod(dx)
+
+    def update_event_y(self, *_) -> None:
+        self.event_y = self.y + self.height - self.event_height
+
+    def update_ec(self, *_) -> None:
+        self.ec = EventController(cdt=self.cdt)
 
 
 class ComboTimeline(BaseTimeline):

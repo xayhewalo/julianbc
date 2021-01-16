@@ -11,9 +11,9 @@ JulianBC will be a visual-timeline program in the near future
 - [X] Add convertible clock
 - [X] Add convertible time
 - [ ] Refactor `is_leap_year` for performance/DRY
-- [X] Add infinitely scrolling timeline
+- [ ] Add infinitely scrolling timeline
     - [X] Prevent scroll_x from approaching infinity
-    - [ ] shift + scrollleft/scrollright
+    - [ ] shift + scrolllup/scrolldown
     - [ ] left/right arrow scroll when in focus
     - [ ] up/down scroll when in focus
     - [ ] page up/down scroll when in focus
@@ -23,17 +23,19 @@ JulianBC will be a visual-timeline program in the near future
     - [X] limit zoom
     - [ ] Optimized zoom intervals
     - [ ] pinch trackpad to zoom
-- [ ] Label timeline
+- [X] Label timeline
     - [X] with dates
     - [X] with time
     - [X] move dates and times dynamically with scroll and zoom
-    - [ ] widen interval labels based on label text width
+    - [X] widen interval labels based on label text width
     - [X] Set intervals by strings? I.e "week", "month", "year", etc.
     - [X] Convert Timeline days to label x position
     - [X] Add more precise formatting for human-readable dates
 - [X] Add event containers to timeline
 - [ ] Link event container locations to dates and times
     - [ ] Add event container detail window (inspect)
+- [ ] Swap a calendar's timeline from the UI
+- [ ] Show same events on two timelines with different calendars
 - [ ] Make all calendar and clock calculations in datetime/date/time modules. UI should only call from methods from ConvertibleDateTime
 - [ ] Add calendar from UI
 - [ ] Probably more stuff...

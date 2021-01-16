@@ -14,23 +14,18 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
-from sqlalchemy import create_engine
+from sqlalchemy.future import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from src.customdate import ConvertibleDate
 from src.customdatetime import ConvertibleDateTime
 from src.customtime import ConvertibleTime
-from src.models import (
-    CalBase,
-    ConvertibleCalendar,
-    ConvertibleClock,
-    ClockBase,
-)
+from src.db import ConvertibleCalendar, ConvertibleClock
+from src.db.utils import Base
 
 engine = create_engine("sqlite+pysqlite://", future=True)
 Session = scoped_session(sessionmaker(bind=engine))
 session = Session()
-CalBase.metadata.create_all(engine)
-ClockBase.metadata.create_all(engine)
+Base.metadata.create_all(engine)
 session.commit()
 gregorian = ConvertibleCalendar(
     name="Gregorian",

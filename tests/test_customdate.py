@@ -1,7 +1,7 @@
 import pytest
 
 from src.customdate import ConvertibleDate
-from src.models import ConvertibleCalendar
+from src.db import ConvertibleCalendar
 from tests.factories import ConvertibleCalendarFactory
 from tests.utils import CalendarTestCase, FAKE
 from unittest.mock import patch

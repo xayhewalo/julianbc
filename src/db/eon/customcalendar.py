@@ -1,4 +1,4 @@
-"""Date-tracking models"""
+"""Date-tracking db"""
 #  Copyright (c) 2020 author(s) of MainApp.
 #
 #  This file is part of MainApp.
@@ -17,7 +17,7 @@
 #  along with MainApp.  If not, see <https://www.gnu.org/licenses/>.
 import itertools
 
-from src.models import utils
+from src.db import utils
 from sqlalchemy import (
     BigInteger,
     Boolean,
@@ -29,17 +29,9 @@ from sqlalchemy import (
     JSON,
     Unicode,
 )
-from sqlalchemy.orm import (
-    declarative_base,
-    relationship,
-    Session,
-    validates,
-)
+from sqlalchemy.orm import relationship, Session, validates
+
 from typing import Union
-
-
-CalBase = declarative_base()
-CalBase.metadata.naming_convention = utils.NAMING_CONVENTION
 
 
 def default_eras() -> list[str, str]:
@@ -51,15 +43,7 @@ def default_era_ranges() -> list[list[str, int], list[str, str]]:
     return [["-inf", 1], [1, "inf"]]
 
 
-def string_sanitization(collection: list) -> list:
-    return [str(element) for element in collection]
-
-
-def integer_sanitization(collection: list) -> list:
-    return [int(element) for element in collection]
-
-
-class ConvertibleCalendar(CalBase):
+class ConvertibleCalendar(utils.Base):
     """User-Defined Calendars"""
 
     __tablename__ = "convertible_calendar"
@@ -88,7 +72,7 @@ class ConvertibleCalendar(CalBase):
 
     @validates("weekday_names")
     def _sanitize_weekday_names(self, _, weekday_names: list) -> list:
-        return list(string_sanitization(weekday_names))
+        return utils.string_sanitization(weekday_names)
 
     epoch_weekday = Column(  # index into weekday names
         Integer,
@@ -136,7 +120,7 @@ class ConvertibleCalendar(CalBase):
 
         for idx in weekends:
             assert 0 <= idx < len(self.weekday_names), "invalid weekend index"
-        return integer_sanitization(weekends)
+        return utils.integer_sanitization(weekends)
 
     #
     # Common years
@@ -212,14 +196,14 @@ class ConvertibleCalendar(CalBase):
 
     @validates("common_year_month_names", "leap_year_month_names")
     def _sanitize_month_names(self, _, month_names: list) -> list:
-        return string_sanitization(month_names)
+        return utils.string_sanitization(month_names)
 
     @validates("days_in_common_year_months", "days_in_leap_year_months")
     def _validate_days_in_months(self, key, days_in_months: list) -> list:
         assert all([days > 0 for days in days_in_months]), "days must be > 0"
         if days_in_months:  # skip if days_in_months is empty
             assert sum(days_in_months) > 0, f"{key} can not have zero days"
-        return integer_sanitization(days_in_months)
+        return utils.integer_sanitization(days_in_months)
 
     leap_year_cycles = Column(
         JSON,
@@ -247,7 +231,7 @@ class ConvertibleCalendar(CalBase):
 
     @validates("leap_year_cycles")
     def _validate_leap_cycles(self, _, leap_year_cycles: list) -> list:
-        sanitized_cycles = integer_sanitization(leap_year_cycles)
+        sanitized_cycles = utils.integer_sanitization(leap_year_cycles)
         for cycle in sanitized_cycles:
             assert cycle >= 1, "leap year cycles must be positive"
         return sanitized_cycles
@@ -263,7 +247,7 @@ class ConvertibleCalendar(CalBase):
 
     @validates("leap_year_cycle_ordinals")
     def _validate_cycle_ordinals(self, _, cycle_ordinals: list) -> list:
-        sanitized_cycle_ordinals = integer_sanitization(cycle_ordinals)
+        sanitized_cycle_ordinals = utils.integer_sanitization(cycle_ordinals)
         for cycle_ordinal in sanitized_cycle_ordinals:
             assert cycle_ordinal >= 0, "cycle ordinals must be non-negative"
         return sanitized_cycle_ordinals
@@ -337,7 +321,7 @@ class ConvertibleCalendar(CalBase):
         assert flat_era_ranges[0] == "-inf", "first era must be infinite"
         assert flat_era_ranges[-1] == "inf", "last era must be infinite"
 
-        finite_era_ranges = integer_sanitization(flat_era_ranges[1:-1])
+        finite_era_ranges = utils.integer_sanitization(flat_era_ranges[1:-1])
         for hr_year in finite_era_ranges:
             assert hr_year >= 0, "human-readable years must be non-negative"
         return era_ranges
@@ -355,6 +339,8 @@ class ConvertibleCalendar(CalBase):
         primaryjoin="ConvertibleCalendar.id==CalendarConversion.target_calendar_id",  # noqa: E501
         back_populates="target_calendar",
     )
+
+    events = relationship("Event", viewonly=True)
 
     def __repr__(self):
         return f"{self.name}(Epoch: {self.jd_epoch})"
@@ -415,7 +401,7 @@ event.listen(
 )
 
 
-class CalendarConversion(CalBase):
+class CalendarConversion(utils.Base):
     """Calendar-to-Calendar Association Object"""
 
     __tablename__ = "calendar_conversion"

@@ -21,7 +21,7 @@ import itertools
 
 from enum import Enum, unique
 from collections import deque
-from src.models import ConvertibleCalendar
+from src.db import ConvertibleCalendar
 from typing import Union
 
 

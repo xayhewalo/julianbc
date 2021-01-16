@@ -2,8 +2,8 @@
 import factory
 import factory.random
 
-from src.models import CalBase, ClockBase
-from sqlalchemy import create_engine
+from src.db.utils import Base
+from sqlalchemy.future import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from unittest import TestCase
 
@@ -17,8 +17,7 @@ FAKE = factory.faker.faker.Faker()
 class DatabaseTestCase(TestCase):
     def setUp(self):
         self.session = Session()
-        CalBase.metadata.create_all(self.session.bind)
-        ClockBase.metadata.create_all(self.session.bind)
+        Base.metadata.create_all(self.session.bind)
 
     def tearDown(self):
         Session.remove()

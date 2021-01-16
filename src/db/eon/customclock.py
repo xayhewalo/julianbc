@@ -1,4 +1,4 @@
-"""Time-tracking models"""
+"""Time-tracking db"""
 #  Copyright (c) 2020 author(s) of MainApp.
 #
 #  This file is part of MainApp.
@@ -15,18 +15,15 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with MainApp.  If not, see <https://www.gnu.org/licenses/>.
-from src.models import utils
+from src.db import utils
 from sqlalchemy import CheckConstraint, Column, Integer, Unicode
-from sqlalchemy.orm import column_property, declarative_base
-
-ClockBase = declarative_base()
-ClockBase.metadata.naming_convention = utils.NAMING_CONVENTION
+from sqlalchemy.orm import column_property, relationship
 
 
-class ConvertibleClock(ClockBase):
+class ConvertibleClock(utils.Base):
     """User-defined time"""
 
-    __tablename__ = "convertible_time"
+    __tablename__ = "convertible_clock"
     id = Column(Integer, primary_key=True)
     name = Column(Unicode(255), nullable=False)
     seconds_in_minute = Column(
@@ -49,6 +46,8 @@ class ConvertibleClock(ClockBase):
     )
     seconds_in_hour = column_property(seconds_in_minute * minutes_in_hour)
     seconds_in_day = column_property(seconds_in_hour * hours_in_day)
+
+    events = relationship("Event", viewonly=True)
 
     def __repr__(self):
         return f"{self.name}(Seconds in a Day: {self.seconds_in_day})"

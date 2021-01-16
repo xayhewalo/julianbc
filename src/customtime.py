@@ -20,7 +20,7 @@ import math
 from enum import Enum, unique
 from sqlalchemy.future import select
 from sqlalchemy.orm import object_session
-from src.models import ConvertibleClock
+from src.db import ConvertibleClock
 from .utils import _increment_by_one
 
 

@@ -1,6 +1,6 @@
 from tests.factories.utils import BaseFactory, factory
 from tests.utils import FAKE
-from src.models import CalendarConversion, ConvertibleCalendar
+from src.db import CalendarConversion, ConvertibleCalendar
 
 num_weekdays = FAKE.random_int(min=1, max=20)
 weekday_indexes = [x for x in range(num_weekdays)]

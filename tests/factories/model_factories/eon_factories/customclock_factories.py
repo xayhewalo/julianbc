@@ -1,4 +1,4 @@
-from src.models import ConvertibleClock
+from src.db import ConvertibleClock
 from tests.factories.utils import BaseFactory, factory
 
 

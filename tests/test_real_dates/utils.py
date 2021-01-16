@@ -1,6 +1,6 @@
 import convertdate
 
-from src.models import ConvertibleCalendar, CalendarConversion
+from src.db import ConvertibleCalendar, CalendarConversion
 from src.customdate import ConvertibleDate
 from tests.utils import CalendarTestCase, FAKE
 

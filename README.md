@@ -32,8 +32,8 @@ JulianBC will be a visual-timeline program in the near future
     - [X] Convert Timeline days to label x position
     - [X] Add more precise formatting for human-readable dates
 - [X] Add event containers to timeline
-- [ ] Link event container locations to dates and times
-    - [ ] Add event container detail window (inspect)
+- [X] Link event container locations to dates and times
+    - [X] Add event container detail window (inspect)
 - [ ] Swap a calendar's timeline from the UI
 - [ ] Show same events on two timelines with different calendars
 - [ ] Make all calendar and clock calculations in datetime/date/time modules. UI should only call from methods from ConvertibleDateTime

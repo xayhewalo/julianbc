@@ -14,6 +14,7 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
+import copy
 import datetime
 
 from .horizontalscroll import HorScrollBehavior
@@ -26,6 +27,7 @@ from src.customdatetime import DateUnits, TimeUnits
 from src.eventcontroller import EventController
 from src.setup_db import gregorian_datetime
 from typing import Iterator, Union
+from kivy.app import App
 from kivy.clock import Clock
 from kivy.graphics import Color, InstructionGroup, Line
 from kivy.lang import Builder
@@ -97,8 +99,8 @@ class BaseTimeline(HorScrollBehavior, ZoomBehavior, FloatLayout):
     __midnight_today = __now.replace(hour=0, minute=0, second=0, microsecond=0)
     __seconds_into_day = (__now - __midnight_today).seconds
     __now_ordinal_decimal = __now.toordinal() + (__seconds_into_day / 86400)
-    start_ordinal_decimal = NumericProperty(__now_ordinal_decimal - 1.1574074074074073e-05)
-    end_ordinal_decimal = NumericProperty(__now_ordinal_decimal + 1.1574074074074073e-05)
+    start_ordinal_decimal = NumericProperty(__now_ordinal_decimal - 1.1574074074074073e-05 * 10)
+    end_ordinal_decimal = NumericProperty(__now_ordinal_decimal + 1.1574074074074073e-05 * 10)
 
     def _get_time_span(self):
         return self.end_ordinal_decimal - self.start_ordinal_decimal
@@ -154,7 +156,7 @@ class BaseTimeline(HorScrollBehavior, ZoomBehavior, FloatLayout):
 class MarkedTimeline(BaseTimeline):
     """Contains date and time labels"""
 
-    mark_interval = ListProperty([1, TimeUnits.SECOND])
+    mark_interval = ListProperty([2, TimeUnits.SECOND])
 
     def __init__(self, **kwargs):
         super(BaseTimeline, self).__init__(**kwargs)
@@ -211,11 +213,12 @@ class MarkedTimeline(BaseTimeline):
 
 class BareTimeline(BaseTimeline):
     """where the end-user adds events"""
-    # todo don't add widgets, check db for visible events then make graphics for them
 
-    event_height = NumericProperty("20sp")
+    min_event_height = NumericProperty("20sp")
+    min_event_width = NumericProperty("100sp")
     event_y = NumericProperty(0)
-    event_graphics = ObjectProperty(InstructionGroup())
+    visible_event_params = ListProperty(defaultvalue=list())  # *pos, *size
+    event_instr_group = ObjectProperty(InstructionGroup())
     event_instr = ObjectProperty(Line)  # event graphical instruction
 
     def __init__(self, **kwargs):
@@ -224,7 +227,7 @@ class BareTimeline(BaseTimeline):
         )
         super(BareTimeline, self).__init__(**kwargs)
         self.ec = EventController(cdt=self.cdt)
-        self.event_graphics.add(Color(*ON_SURFACE_COLOR))
+        self.event_instr_group.add(Color(*ON_SURFACE_COLOR))
         self.bind(
             time_span=self.draw_event_graphics_trigger,
             height=self.update_event_y,
@@ -235,44 +238,72 @@ class BareTimeline(BaseTimeline):
 
     def on_touch_down(self, touch):  # todo double click should open event manager
         if touch.is_double_tap and self.collide_point(*touch.pos):
-            pos = touch.x, self.event_y
-            self.draw_event(pos)
+            """pos = touch.x, self.event_y
+            self.draw_event(pos)"""
+            app = App.get_running_app()
+            start = self.x_to_od(touch.x)
+            app.show_event_editor(start_od=start)
             return True
         return super(BareTimeline, self).on_touch_down(touch)
 
-    def draw_event_graphics(self, *_) -> None:
-        self.canvas.remove(self.event_graphics)
-        self.event_graphics.clear()
+    def draw_event_graphics(self, *_) -> None:  # todo make an EventContainer class like Mark?
+        self.canvas.remove(self.event_instr_group)
+        self.event_instr_group.clear()
+        self.visible_event_params.clear()
 
         start_od, end_od = self.start_ordinal_decimal, self.end_ordinal_decimal
         visible_events = self.ec.get_events(start_od, end_od)
-        for visible_event in visible_events:
+        prev_event = None
+        prev_x = prev_right = float("inf")
+        for event_idx, event in enumerate(visible_events):
             # fixme UI is interacting directly with the db here
-            x = self.od_to_x(visible_event.start)
-            pos = x, self.event_y
-            width = self.dod_to_dx(visible_event.duration)  # TODO DRY
-            self.event_graphics.add(
+            prev_idx = event_idx - 1
+            if prev_event:
+                prev_event = visible_events[prev_idx]
+                prev_x = self.od_to_x(prev_event.start)
+                prev_right = max(self.od_to_x(prev_event.end), prev_x + self.min_event_width)
+
+            x = self.od_to_x(event.start)
+            right = self.od_to_x(event.end)
+            width = max(self.dod_to_dx(event.duration), self.min_event_width)
+
+            if prev_x <= x <= prev_right:  # fixme if two events ago is really long, collisions occur
+                y = self.visible_event_params[prev_idx]["pos"][1] - self.min_event_height
+            else:
+                y = self.event_y
+
+            prev_event = copy.deepcopy(event)
+            prev_x = x
+            prev_right = right
+
+            pos = x, y
+
+            # todo change event hieght
+            # event_params = [*pos, width, self.min_event_height]
+            event_params = {"pos": pos, "size": [width, self.min_event_height]}
+            self.event_instr_group.add(
                 self.event_instr(
-                    rounded_rectangle=[*pos, width, self.event_height, 2]
+                    rounded_rectangle=[*pos, width, self.min_event_height, 2]
                 )
             )
-            self.canvas.add(self.event_graphics)
+            self.visible_event_params.append(event_params)
+            self.canvas.add(self.event_instr_group)
 
-    def draw_event(
+    """def draw_event(
         self, pos: tuple[float, float], duration: float = None, *_
     ) -> None:
         x, _ = pos
         start_od = self.x_to_od(x)
         duration = duration or 1 / self.cdt.time.clock.seconds_in_day
         width = self.dod_to_dx(duration)
-        self.event_graphics.add(
+        self.event_instr_group.add(
             self.event_instr(
-                rounded_rectangle=[*pos, width, self.event_height, 2]
+                rounded_rectangle=[*pos, width, self.min_event_height, 2]
             )
         )
-        self.canvas.add(self.event_graphics)
+        self.canvas.add(self.event_instr_group)
 
-        self.ec.make({"start": start_od, "duration": duration})
+        self.ec.make({"start": start_od, "duration": duration})"""
 
     def x_to_od(self, x: float) -> float:
         """convert x position to ordinal decimal"""
@@ -280,7 +311,7 @@ class BareTimeline(BaseTimeline):
         return self.start_ordinal_decimal + self.dx_to_dod(dx)
 
     def update_event_y(self, *_) -> None:
-        self.event_y = self.y + self.height - self.event_height
+        self.event_y = self.y + self.height - self.min_event_height
 
     def update_ec(self, *_) -> None:
         self.ec = EventController(cdt=self.cdt)

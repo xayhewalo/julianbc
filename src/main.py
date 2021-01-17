@@ -14,11 +14,13 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
+from kivy.animation import Animation
 from kivy.app import App
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.label import Label
 from kivy.uix.modalview import ModalView
 from kivy.uix.screenmanager import ScreenManager, NoTransition
+from src.ui.eventeditor import EventEditor
 from src.ui.headerbar import HeaderBar
 from src.ui.timeline import TimelineScreen
 
@@ -26,16 +28,31 @@ from src.ui.timeline import TimelineScreen
 class MainApp(App):
     def __init__(self, **kwargs):
         super(MainApp, self).__init__(**kwargs)
-        self.sm = ScreenManager(transition=NoTransition())
+        self.root = FloatLayout()
+        self.screen_manager = ScreenManager(transition=NoTransition())
+        self.event_editor = EventEditor(size_hint_y=0.9, x=800)
 
     def build(self):
-        root = FloatLayout()
         timeline_screen = TimelineScreen(size_hint=[1, 0.9])
-        self.sm = ScreenManager(transition=NoTransition())
-        self.sm.add_widget(timeline_screen)
-        root.add_widget(self.sm)
-        root.add_widget(HeaderBar(size_hint=[1, 0.1], pos_hint={"top": 1}))
-        return root
+        self.screen_manager = ScreenManager(transition=NoTransition())
+        self.screen_manager.add_widget(timeline_screen)
+        self.root.add_widget(self.screen_manager)
+        self.root.add_widget(HeaderBar(size_hint=[1, 0.1], pos_hint={"top": 1}))
+        self.root.add_widget(self.event_editor)
+        return self.root
+
+    def show_event_editor(self, start_od: float = None, end_od: float = None):
+        if start_od is not None:
+            self.event_editor.start = start_od
+        if end_od is not None:
+            self.event_editor.end = end_od
+
+        anim = Animation(right=self.root.right, t="in_sine", d=0.2)  # todo bind
+        anim.start(self.event_editor)
+
+    def hide_event_editor(self) -> None:
+        anim = Animation(x=self.root.right, t="out_sine", d=0.2)  # todo bind
+        anim.start(self.event_editor)
 
     @staticmethod
     def show_not_implemented_popup() -> None:

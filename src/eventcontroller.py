@@ -18,7 +18,7 @@
 from src.customdatetime import ConvertibleDateTime
 from src.db import ConvertibleCalendar, Event
 from src.setup_db import session
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, asc, or_
 from sqlalchemy.future import select
 
 
@@ -33,23 +33,27 @@ class EventController:
         make an Event using `fields`
         :raise ValueError: if `start`, `end`, `duration` are not sensible
         """
+        # todo get all the columns from the mapped class
         start = fields.get("start")
-        duration = fields.get("duration")
         end = fields.get("end")
-        if end is not None:
+        duration = fields.get("duration")
+        if end is not None and duration is not None:
             if end - start != duration:
                 raise ValueError(
                     f"Duration, {duration}, conflicts with "
                     f"start and end ordinal decimals: {start}, {end}"
                 )
 
+        # fixme a negative duration doesn't raise errors, change duration to hybrid property first
         calendar = self.cdt.date.calendar
         clock = self.cdt.time.clock
         event = Event(
             name=fields.get("name", "Untitled Event"),
+            aliases=fields.get("aliases", ""),
             start=start,
             duration=duration,
             end=end,
+            description=fields.get("description", ""),
             calendar_id=fields.get("calendar_id", calendar.id),
             clock_id=fields.get("clock_id", clock.id),
         )
@@ -71,46 +75,47 @@ class EventController:
         inclusive_calendars = calendar.calendars()
         inclusive_calendars.append(calendar)
 
-        with session:
-            result = list()
-            for foreign_cal in inclusive_calendars:
-                # called "foreign" but the native calendar is in this collection
-                native_sync_ordinal = calendar.sync_ordinal(foreign_cal) or 0
-                foreign_sync_ordinal = foreign_cal.sync_ordinal(calendar) or 0
-                ordinal_diff = foreign_sync_ordinal - native_sync_ordinal
+        # with session:
+        result = list()
+        for foreign_cal in inclusive_calendars:
+            # called "foreign" but the native calendar is in this list
+            native_sync_ordinal = calendar.sync_ordinal(foreign_cal) or 0
+            foreign_sync_ordinal = foreign_cal.sync_ordinal(calendar) or 0
+            ordinal_diff = foreign_sync_ordinal - native_sync_ordinal
 
-                start = start_ordinal_decimal + ordinal_diff
-                end = end_ordinal_decimal + ordinal_diff
+            start = start_ordinal_decimal + ordinal_diff
+            end = end_ordinal_decimal + ordinal_diff
 
-                # noinspection PyPropertyAccess,PyTypeChecker
-                result.extend(
-                    session.execute(
-                        select(Event).where(
-                            or_(
-                                # right edge of event is visible
-                                and_(start <= Event.end, Event.end <= end),
+            # noinspection PyPropertyAccess,PyTypeChecker
+            result.extend(
+                session.execute(
+                    select(Event).where(
+                        or_(
+                            # right edge of event is visible
+                            and_(start <= Event.end, Event.end <= end),
 
-                                # entire event is visible
+                            # entire event is visible
+                            and_(
                                 and_(
-                                    and_(
-                                        start <= Event.start,
-                                        Event.start <= end,
-                                    ),
-                                    and_(
-                                        start <= Event.end,
-                                        Event.end <= end,
-                                    ),
+                                    start <= Event.start,
+                                    Event.start <= end,
                                 ),
-
-                                # left edge of event is visible
-                                and_(start <= Event.start, Event.start <= end),
-
-                                # middle of event is visible, but ends are not
-                                and_(Event.start <= start, Event.end >= end)
+                                and_(
+                                    start <= Event.end,
+                                    Event.end <= end,
+                                ),
                             ),
-                        )
+
+                            # left edge of event is visible
+                            and_(start <= Event.start, Event.start <= end),
+
+                            # middle of event is visible, but ends are not
+                            and_(Event.start <= start, Event.end >= end)
+                        ),
                     )
-                    .scalars()
-                    .all()
+                    .order_by(asc(Event.start))
                 )
+                .scalars()
+                .all()
+            )
             return result

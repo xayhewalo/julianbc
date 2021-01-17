@@ -89,6 +89,6 @@ class Event(Entity):
     def __repr__(self):
         # noinspection PyPropertyAccess
         return (
-            f"{self.name} ({self.start}, {self.end}, "
-            f"{self.calendar}, {self.clock})"
+            f"{self.name} <{self.start}, {self.end}, "
+            f"{self.calendar}, {self.clock}>"
         )

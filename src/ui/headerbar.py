@@ -44,7 +44,7 @@ Builder.load_string("""
         pos_hint: {"center_y": 0.5}
         x: self.parent.x + self.parent.button_padding
         text: "+Event"
-        on_press: self.state="normal"; app.show_not_implemented_popup()
+        on_press: app.show_event_editor()
 
     Button:
         id: add_entity_button
@@ -90,7 +90,7 @@ Builder.load_string("""
         x: entity_view_button.x - self.width - self.parent.button_padding
         allow_no_selection: False
         text: "TL View"
-        on_press: app.sm.current = "timeline_view"
+        on_press: app.screen_manager.current = "timeline_view"
 
     ToggleButton:
         id: entity_view_button

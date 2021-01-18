@@ -185,6 +185,13 @@ class MarkedTimeline(BaseTimeline):
                 self.mark_interval, increase=False
             )
 
+    def on_touch_up(self, touch):
+        if self.collide_point(*touch.pos) and not self.hor_scrolling:
+            app = App.get_running_app()
+            app.show_calendar_changer()
+            return True
+        return super(MarkedTimeline, self).on_touch_up(touch)
+
     def on_time_span(self, *_) -> None:
         unit = self.mark_interval[1]
         min_time_span = 5 / self.cdt.time.clock.seconds_in_day

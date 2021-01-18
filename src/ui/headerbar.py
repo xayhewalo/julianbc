@@ -60,15 +60,7 @@ Builder.load_string("""
         pos_hint: {"center_y": 0.5}
         x: add_entity_button.x + self.parent.button_padding + self.width
         text: "+/-> Cal"
-        on_press: self.state="normal"; app.show_not_implemented_popup()
-
-    Button:
-        id: swap_calendar_button
-        size_hint: 0.07, .9
-        pos_hint: {"center_y": 0.5}
-        x: add_entity_button.x + self.parent.button_padding + self.width
-        text: "<-> Cal"
-        on_press: self.state="normal"; app.show_not_implemented_popup()
+        on_release: app.show_calendar_changer()
 
     Button:
         id: add_thread_button

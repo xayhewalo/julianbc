@@ -34,7 +34,7 @@ JulianBC will be a visual-timeline program in the near future
 - [X] Add event containers to timeline
 - [X] Link event container locations to dates and times
     - [X] Add event container detail window (inspect)
-- [ ] Swap a calendar's timeline from the UI
+- [X] Swap a calendar's timeline from the UI
 - [ ] Show same events on two timelines with different calendars
 - [ ] Make all calendar and clock calculations in datetime/date/time modules. UI should only call from methods from ConvertibleDateTime
 - [ ] Add calendar from UI

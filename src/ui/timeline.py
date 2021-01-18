@@ -86,6 +86,7 @@ class TimelineScreen(Screen):
     """Where Timelines are"""
 
 
+# todo just do collapse with combo timeline
 class CollapsableTimeline(FloatLayout):  # todo probs should be relative layout
     """Expands and collapses a ComboTimeline"""  # todo should this be called a timeline?
     # todo de-focus dependant when collapsed
@@ -99,8 +100,8 @@ class BaseTimeline(HorScrollBehavior, ZoomBehavior, FloatLayout):
     __midnight_today = __now.replace(hour=0, minute=0, second=0, microsecond=0)
     __seconds_into_day = (__now - __midnight_today).seconds
     __now_ordinal_decimal = __now.toordinal() + (__seconds_into_day / 86400)
-    start_ordinal_decimal = NumericProperty(__now_ordinal_decimal - 1.1574074074074073e-05 * 10)
-    end_ordinal_decimal = NumericProperty(__now_ordinal_decimal + 1.1574074074074073e-05 * 10)
+    start_ordinal_decimal = NumericProperty(__now_ordinal_decimal - 1)
+    end_ordinal_decimal = NumericProperty(__now_ordinal_decimal + 1)
 
     def _get_time_span(self):
         return self.end_ordinal_decimal - self.start_ordinal_decimal
@@ -156,7 +157,7 @@ class BaseTimeline(HorScrollBehavior, ZoomBehavior, FloatLayout):
 class MarkedTimeline(BaseTimeline):
     """Contains date and time labels"""
 
-    mark_interval = ListProperty([2, TimeUnits.SECOND])
+    mark_interval = ListProperty([1, DateUnits.DAY])
 
     def __init__(self, **kwargs):
         super(BaseTimeline, self).__init__(**kwargs)

@@ -19,7 +19,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from src.customdate import ConvertibleDate
 from src.customdatetime import ConvertibleDateTime
 from src.customtime import ConvertibleTime
-from src.db import ConvertibleCalendar, ConvertibleClock
+from src.db import CalendarConversion, ConvertibleCalendar, ConvertibleClock
 from src.db.utils import Base
 
 engine = create_engine("sqlite+pysqlite://", future=True)
@@ -99,10 +99,78 @@ gregorian = ConvertibleCalendar(
     era_ranges=[("-inf", 1), (1, "inf")],
     jd_epoch=1721426,
 )
-
+l_hijri = ConvertibleCalendar(  # lunar hijri
+    name="ٱلتَّقْوِيم ٱلْهِجْرِيّ",
+    weekday_names=(
+        "ٱلْأَحَد",
+        "ٱلْإِثْنَيْن",
+        "ٱلثُّلَاثَاء",
+        "ٱلْأَرْبِعَاء",
+        "ٱلْخَمِيس",
+        "ٱلْجُمْعَة",
+        "ٱلسَّبْت",
+    ),
+    weekday_start=0,
+    weekends=(0, 6),
+    epoch_weekday=5,
+    common_year_month_names=(
+        "ٱلْمُحَرَّم",
+        "صَفَر",
+        "رَبِيع ٱلْأَوَّل",
+        "رَبِيع ٱلثَّانِي",
+        "جُمَادَىٰ ٱلْأَوَّل",
+        "جُمَادَىٰ ٱلثَّانِيَة",
+        "رَجَب",
+        "شَعْبَان",
+        "رَمَضَان",
+        "شَوَّال",
+        "ذُو ٱلْقَعْدَة",
+        "ذُو ٱلْحِجَّة",
+    ),
+    # fmt: off
+    days_in_common_year_months=(
+        30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 30, 29,
+    ),
+    # fmt: on
+    has_leap_year=True,
+    leap_year_month_names=(
+        "ٱلْمُحَرَّم",
+        "صَفَر",
+        "رَبِيع ٱلْأَوَّل",
+        "رَبِيع ٱلثَّانِي",
+        "جُمَادَىٰ ٱلْأَوَّل",
+        "جُمَادَىٰ ٱلثَّانِيَة",
+        "رَجَب",
+        "شَعْبَان",
+        "رَمَضَان",
+        "شَوَّال",
+        "ذُو ٱلْقَعْدَة",
+        "ذُو ٱلْحِجَّة",
+    ),
+    # fmt: off
+    days_in_leap_year_months=(
+        30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 30, 30,
+    ),
+    # fmt: on
+    leap_year_cycles=[30],
+    leap_year_cycle_start=1,
+    leap_year_cycle_ordinals=(2, 5, 7, 10, 13, 16, 18, 21, 24, 26, 29),
+    leap_year_offset=0,
+    eras=("BH", "AH"),
+    era_ranges=(("-inf", 1), (1, "inf")),
+    jd_epoch=1948440,
+)
+gregorian2islamic = CalendarConversion(
+    source_calendar=gregorian,
+    target_calendar=l_hijri,
+    source_sync_ordinal=1,
+    target_sync_ordinal=-227013,
+)
 earth_clock = ConvertibleClock(name="Earth")
-session.add_all([gregorian, earth_clock])
+session.add_all([gregorian, l_hijri, gregorian2islamic, earth_clock])
 session.commit()
 gregorian_date = ConvertibleDate(calendar=gregorian)
+l_hijri_date = ConvertibleDate(calendar=l_hijri)
 earth_time = ConvertibleTime(clock=earth_clock)
 gregorian_datetime = ConvertibleDateTime(date=gregorian_date, time=earth_time)
+l_hijri_datetime = ConvertibleDateTime(date=l_hijri_date, time=earth_time)

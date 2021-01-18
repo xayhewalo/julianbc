@@ -77,7 +77,7 @@ class EventController:
 
         # with session:
         result = list()
-        for foreign_cal in inclusive_calendars:
+        for _, foreign_cal in enumerate(inclusive_calendars):  # fixme iteration breaks without enumeration for some reason
             # called "foreign" but the native calendar is in this list
             native_sync_ordinal = calendar.sync_ordinal(foreign_cal) or 0
             foreign_sync_ordinal = foreign_cal.sync_ordinal(calendar) or 0
@@ -114,8 +114,8 @@ class EventController:
                         ),
                     )
                     .order_by(asc(Event.start))
-                )
+                )  # fixme ensure calendar id matches
                 .scalars()
                 .all()
             )
-            return result
+        return result

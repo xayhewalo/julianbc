@@ -25,13 +25,18 @@ class HorScrollBehavior:
     scroll_delta = NumericProperty("20sp")
     hor_scrolling = BooleanProperty(False)
 
+    def __init__(self, **kwargs):
+        super(HorScrollBehavior, self).__init__(**kwargs)
+        self.collision = None
+
     def on_touch_down(self, touch):
         if super(HorScrollBehavior, self).on_touch_down(touch):
             return True
 
         # Touched widget but children didn't consume touch, must be scrolling
         # fixme only scroll on focus, or gain focus when validly scrolling
-        if self.collide_point(*touch.pos):
+        self.collision = self.collide_point(*touch.pos)
+        if self.collision:
             if touch.button == "scrollleft":
                 self.scroll_by = -self.scroll_delta
                 self.cleanup_scroll()
@@ -40,15 +45,22 @@ class HorScrollBehavior:
                 self.scroll_by = self.scroll_delta
                 self.cleanup_scroll()
                 return True
-            else:  # hold and drag to scroll
+            """elif sum(touch.dpos) != 0:  # hold and drag to scroll
                 self.hor_scrolling = True
                 touch.grab(self)
                 self.get_root_window().set_system_cursor("hand")
-                return True
+                return True"""
         return False
 
     def on_touch_move(self, touch):
-        if touch.grab_current is self and self.hor_scrolling:
+        """if touch.grab_current is self and self.hor_scrolling:
+            self.scroll_by = touch.dx
+            return True"""
+        if self.collision and touch.dx != 0:  # click and drag to scroll
+            if touch.grab_current is not self:
+                self.hor_scrolling = True
+                touch.grab(self)
+                self.get_root_window().set_system_cursor("hand")
             self.scroll_by = touch.dx
             return True
         return super(HorScrollBehavior, self).on_touch_move(touch)
@@ -63,3 +75,4 @@ class HorScrollBehavior:
     def cleanup_scroll(self) -> None:
         self.hor_scrolling = False
         self.scroll_by = 0
+        self.collision = False

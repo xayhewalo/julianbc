@@ -43,42 +43,51 @@ from kivy.uix.screenmanager import Screen
 Builder.load_string("""
 #:import utils src.ui.utils
 
-<TimelineScreen>:
-    name: "timeline_view"
+<CollapsableTimeline>:
+    ComboTimeline:
+        id: combo_timeline
+        size_hint: 1, 0.97
+        y: show_hide_bar.y - self.height - sp(10)
+        canvas:
+            Color:
+                rgba: utils.BACKGROUND_COLOR
+            Rectangle:
+                pos: self.pos
+                size: self.size
 
-    CollapsableTimeline:
-        size_hint: 1, 1
-        pos: 0, 0
-
-        ComboTimeline:
-            id: combo_timeline
-            size_hint: 1, 0.97
-            canvas:
+        MarkedTimeline:
+            size_hint: 1, 0.05
+            pos_hint: {"top": 1}
+            canvas.before:
                 Color:
-                    rgba: utils.BACKGROUND_COLOR
+                    rgba: 0.31, 0.31, 0.31, 0.95
                 Rectangle:
                     pos: self.pos
                     size: self.size
 
-            MarkedTimeline:
-                size_hint: 1, 0.05
-                pos_hint: {"top": 1}
-                canvas.before:
-                    Color:
-                        rgba: 0.31, 0.31, 0.31, 0.95
-                    Rectangle:
-                        pos: self.pos
-                        size: self.size
+        BareTimeline:
+            size_hint: 1, 0.95
+            pos: self.parent.pos
 
-            BareTimeline:
-                size_hint: 1, 0.95
-                pos: self.parent.pos
+    ShowHideBar:
+        id: show_hide_bar
+        size_hint: 1, 0.03
+        pos_hint: {"top": 1}
+        text: combo_timeline.cdt.date.calendar.name
+        dependant: combo_timeline
 
-        ShowHideBar:
-            size_hint: 1, 0.03
-            pos_hint: {"top": 1}
-            text: combo_timeline.cdt.date.calendar.name
-            dependant: combo_timeline
+<TimelineScreen>:
+    name: "timeline_view"
+
+    CollapsableTimeline:
+        id: ct1
+        size_hint: 1, 0.5
+        pos_hint: {"top": 1}
+
+    CollapsableTimeline:
+        id: ct2
+        size_hint: 1, 0.5
+        pos_hint: {"top": 0.5}
 """)
 
 
@@ -256,13 +265,13 @@ class BareTimeline(BaseTimeline):
 
     def draw_event_graphics(self, *_) -> None:  # todo make an EventContainer class like Mark?
         self.canvas.remove(self.event_instr_group)
-        self.event_instr_group.clear()
         self.visible_event_params.clear()
 
         start_od, end_od = self.start_ordinal_decimal, self.end_ordinal_decimal
         visible_events = self.ec.get_events(start_od, end_od)
         prev_event = None
         prev_x = prev_right = float("inf")
+        graphics = InstructionGroup()
         for event_idx, event in enumerate(visible_events):
             # fixme UI is interacting directly with the db here
             prev_idx = event_idx - 1
@@ -289,13 +298,14 @@ class BareTimeline(BaseTimeline):
             # todo change event hieght
             # event_params = [*pos, width, self.min_event_height]
             event_params = {"pos": pos, "size": [width, self.min_event_height]}
-            self.event_instr_group.add(
+            graphics.add(
                 self.event_instr(
                     rounded_rectangle=[*pos, width, self.min_event_height, 2]
                 )
             )
             self.visible_event_params.append(event_params)
-            self.canvas.add(self.event_instr_group)
+        self.event_instr_group = graphics
+        self.canvas.add(self.event_instr_group)
 
     """def draw_event(
         self, pos: tuple[float, float], duration: float = None, *_

@@ -13,7 +13,7 @@ JulianBC will be a visual-timeline program in the near future
  - [X] Add `months_in_common_year`
  - [X] add `days_in_common_year`
  - [X] add `days_in_leap_year`
- - [ ] add `leap_year_cycle_length`
+ - [X] add `leap_year_cycle_length`
  - [X] add `days_in_week`
  - [X] move validation methods out of this function
 #### ConvertibleClock

@@ -447,6 +447,11 @@ class ConvertibleCalendarTest(CalendarTestCase, FactoriesMixin):
             self.session.add(non_empty_ordinals_leap_year_calendar)
             self.session.commit()
 
+    def test_leap_year_cycle_length(self):
+        calendar = self.calendar_factory.build()
+        expected_cycle_length = sum(calendar.leap_year_cycles)
+        assert calendar.leap_year_cycle_length == expected_cycle_length
+
     @pytest.mark.db
     def test_leap_year_cycle_start_constraint(self):
         negative_leap_year_cycle_start_calendar = self.calendar_factory.build(

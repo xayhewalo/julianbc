@@ -252,6 +252,11 @@ class ConvertibleCalendar(utils.Base):
             assert cycle >= 1, "leap year cycles must be positive"
         return sanitized_cycles
 
+    @hybrid_property
+    def leap_year_cycle_length(self):
+        """length of all the cycles combined"""
+        return sum(self.leap_year_cycles)
+
     leap_year_cycle_start = Column(
         Integer,
         CheckConstraint(

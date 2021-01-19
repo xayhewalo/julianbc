@@ -50,7 +50,7 @@ class ConvertibleTimeTest(DatabaseTestCase):
         self.seconds = (self.py_dt - midnight).seconds
         self.hms = self.py_dt.hour, self.py_dt.minute, self.py_dt.second
 
-    @patch("src.customtime.ConvertibleTime.convertible_clocks")
+    @patch("src.db.eon.customclock.ConvertibleClock.convertible_clocks")
     @patch("src.customtime.ConvertibleTime.hms_to_seconds")
     @patch("src.customtime.ConvertibleTime.seconds_to_hms")
     def test_convert_hms(self, p_seconds_to_hms, p_hms_to_seconds, p_cc):
@@ -73,32 +73,6 @@ class ConvertibleTimeTest(DatabaseTestCase):
         patch_convertible_clocks.assert_called_once()
         patch_hms_to_seconds.assert_called_once_with(foreign_hms)
         patch_seconds_to_hms.assert_called_once_with(seconds)
-
-    def test_convertible_clocks(self):
-        convertible_clocks = set(
-            self.clock_factory.create_batch(
-                FAKE.random_int(min=1, max=10),
-                **{
-                    "seconds_in_minute": 60,
-                    "minutes_in_hour": 60,
-                    "hours_in_day": 24,
-                },
-            )
-        )
-        nonconvertible_clocks = set(
-            self.clock_factory.create_batch(
-                FAKE.random_int(min=1, max=10),
-                **{
-                    "seconds_in_minute": FAKE.random_int(min=61, max=100),
-                    "minutes_in_hour": FAKE.random_int(min=61, max=100),
-                    "hours_in_day": FAKE.random_int(min=24, max=100),
-                },
-            )
-        )
-        fetched_clocks = set(self.earth_time.convertible_clocks())
-        assert convertible_clocks.issubset(fetched_clocks)
-        # assert fetched_clocks == convertible_clocks
-        assert fetched_clocks.isdisjoint(nonconvertible_clocks)
 
     def test_hms_to_seconds(self):
         assert self.earth_time.hms_to_seconds(self.hms) == self.seconds

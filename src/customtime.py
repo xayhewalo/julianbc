@@ -17,8 +17,6 @@
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
 import math
 
-from sqlalchemy.future import select
-from sqlalchemy.orm import object_session
 from src.db import ConvertibleClock
 
 
@@ -55,25 +53,11 @@ class ConvertibleTime:
         foreign_time: "ConvertibleTime",
     ) -> tuple[int, int, int]:
         foreign_clock = foreign_time.clock
-        if foreign_clock not in self.convertible_clocks():
+        if foreign_clock not in self.clock.convertible_clocks():
             raise ValueError(f"{foreign_clock} cannot be converted to {self}")
 
         seconds = foreign_time.hms_to_seconds(foreign_hms)
         return self.seconds_to_hms(seconds)
-
-    def convertible_clocks(self) -> list:
-        session = object_session(self.clock)
-        return (
-            session.execute(
-                select(ConvertibleClock).filter(
-                    ConvertibleClock.seconds_in_day
-                    == self.clock.seconds_in_day,
-                    ConvertibleClock.id != self.clock.id,
-                )
-            )
-            .scalars()
-            .all()
-        )
 
     def hms_to_seconds(self, hms: tuple[int, int, int]) -> int:
         hour, minute, second = hms

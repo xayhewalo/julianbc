@@ -17,8 +17,8 @@ JulianBC will be a visual-timeline program in the near future
  - [X] add `days_in_week`
  - [X] move validation methods out of this function
 #### ConvertibleClock
-- [ ] add `convertible_clocks`
-- [ ] change table name to "convertible_clock"
+- [X] add `convertible_clocks`
+- [X] change table name to "convertible_clock"
 #### Entity
 - [ ] string validation on `aliases`
 - [ ] add related `calendar`

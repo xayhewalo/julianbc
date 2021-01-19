@@ -17,13 +17,14 @@
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
 from src.db import utils
 from sqlalchemy import CheckConstraint, Column, Integer, Unicode
-from sqlalchemy.orm import column_property
+from sqlalchemy.future import select
+from sqlalchemy.orm import column_property, object_session
 
 
 class ConvertibleClock(utils.Base):
     """User-defined time"""
 
-    __tablename__ = "convertible_time"
+    __tablename__ = "convertible_clock"
     id = Column(Integer, primary_key=True)
     name = Column(Unicode(255), nullable=False)
     seconds_in_minute = Column(
@@ -49,3 +50,16 @@ class ConvertibleClock(utils.Base):
 
     def __repr__(self):
         return f"{self.name}(Seconds in a Day: {self.seconds_in_day})"
+
+    def convertible_clocks(self) -> list:
+        session = object_session(self)
+        return (
+            session.execute(
+                select(ConvertibleClock).filter(
+                    ConvertibleClock.seconds_in_day == self.seconds_in_day,
+                    ConvertibleClock.id != self.id,
+                )
+            )
+            .scalars()
+            .all()
+        )

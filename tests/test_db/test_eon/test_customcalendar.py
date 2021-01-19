@@ -235,6 +235,11 @@ class ConvertibleCalendarTest(CalendarTestCase, FactoriesMixin):
             self.session.flush()
             assert calendar.months_in_common_year == expected_num_months
 
+    def test_days_in_common_year(self):
+        calendar = self.calendar_factory.build()
+        expected_days_in_common_year = sum(calendar.days_in_common_year_months)
+        assert calendar.days_in_common_year == expected_days_in_common_year
+
     #
     # Leap years
     #
@@ -285,6 +290,11 @@ class ConvertibleCalendarTest(CalendarTestCase, FactoriesMixin):
         with pytest.raises(IntegrityError), self.session:
             self.session.add(no_leap_year_calendar)
             self.session.commit()
+
+    def test_days_in_leap_year(self):
+        calendar = self.calendar_factory.build()
+        expected_days_in_leap_year = sum(calendar.days_in_leap_year_months)
+        assert calendar.days_in_leap_year == expected_days_in_leap_year
 
     @patch("src.db.utils.string_sanitization")
     def test__sanitize_month_names(self, patch_ss):

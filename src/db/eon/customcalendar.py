@@ -30,6 +30,7 @@ from sqlalchemy import (
     JSON,
     Unicode,
 )
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import column_property, relationship, Session, validates
 from typing import Union
 
@@ -150,6 +151,10 @@ class ConvertibleCalendar(utils.Base):
     )
     days_in_common_year_months = Column(JSON, nullable=False)
 
+    @hybrid_property
+    def days_in_common_year(self):
+        return sum(self.days_in_common_year_months)
+
     #
     # Leap years
     #
@@ -200,6 +205,10 @@ class ConvertibleCalendar(utils.Base):
         func.json_array_length(leap_year_month_names)
     )
     days_in_leap_year_months = Column(JSON, default=list, nullable=False)
+
+    @hybrid_property
+    def days_in_leap_year(self):
+        return sum(self.days_in_leap_year_months)
 
     @validates("common_year_month_names", "leap_year_month_names")
     def _sanitize_month_names(self, _, month_names: list) -> list:

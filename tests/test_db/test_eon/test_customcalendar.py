@@ -251,6 +251,15 @@ class ConvertibleCalendarTest(CalendarTestCase, FactoriesMixin):
             self.session.commit()
 
     @pytest.mark.db
+    def test_months_in_leap_year(self):
+        calendar = self.calendar_factory.build()
+        expected_num_months = len(calendar.leap_year_month_names)
+        with self.session:
+            self.session.add(calendar)
+            self.session.flush()
+            assert calendar.months_in_leap_year == expected_num_months
+
+    @pytest.mark.db
     def test_days_in_leap_year_months_constraint_without_months(self):
         bad_monthless_leap_year_calendar = self.calendar_factory.build(
             has_leap_year=True,

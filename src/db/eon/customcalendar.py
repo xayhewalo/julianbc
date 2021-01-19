@@ -145,10 +145,10 @@ class ConvertibleCalendar(utils.Base):
         default=list,
         nullable=False,
     )
-    days_in_common_year_months = Column(JSON, nullable=False)
     months_in_common_year = column_property(
         func.json_array_length(common_year_month_names)
     )
+    days_in_common_year_months = Column(JSON, nullable=False)
 
     #
     # Leap years
@@ -195,6 +195,9 @@ class ConvertibleCalendar(utils.Base):
         ),
         default=list,
         nullable=False,
+    )
+    months_in_leap_year = column_property(
+        func.json_array_length(leap_year_month_names)
     )
     days_in_leap_year_months = Column(JSON, default=list, nullable=False)
 

@@ -147,7 +147,7 @@ class BaseTimeline(HorScrollBehavior, ZoomBehavior, FloatLayout):
             for collapsable_timeline in app.timeline_screen.children:
                 # fixme ugly
                 if collapsable_timeline.children[1] is not self:
-                    # todo probs should change the ComboTimeline have it modifiy it's children, instead of siblings changing each other
+                    # todo probs should change the ComboTimeline have it modifiy it's children, instead of siblings changing each other so zoom works
                     collapsable_timeline.children[1].children[1].zoom_by = self.zoom_by  # mark timeline
                     collapsable_timeline.children[1].children[0].zoom_by = self.zoom_by
                     # collapsable_timeline.children[1].children[1].change_interval()  # mark timeline

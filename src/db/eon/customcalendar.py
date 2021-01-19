@@ -25,11 +25,12 @@ from sqlalchemy import (
     CheckConstraint,
     event,
     ForeignKey,
+    func,
     Integer,
     JSON,
     Unicode,
 )
-from sqlalchemy.orm import relationship, Session, validates
+from sqlalchemy.orm import column_property, relationship, Session, validates
 from typing import Union
 
 
@@ -72,6 +73,8 @@ class ConvertibleCalendar(utils.Base):
     @validates("weekday_names")
     def _sanitize_weekday_names(self, _, weekday_names: list) -> list:
         return list(utils.string_sanitization(weekday_names))
+
+    days_in_weeks = column_property(func.json_array_length(weekday_names))
 
     epoch_weekday = Column(  # index into weekday names
         Integer,

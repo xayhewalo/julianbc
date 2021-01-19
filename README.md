@@ -9,14 +9,16 @@ JulianBC will be a visual-timeline program in the near future
 ### Database
 #### ConvertibleCalendar
  - [X] Change `outlaws` to `special_leap_years` and `special_common_years`
- - [ ] Add `months_in_year`
+ - [ ] Add `months_in_leap_year`
+ - [ ] Add `months_in_common_year`
  - [ ] add `days_in_common_year`
  - [ ] add `days_in_leap_year`
  - [ ] add `leap_year_cycle_length`
- - [ ] add `days_in_week`
+ - [X] add `days_in_week`
  - [X] move validation methods out of this function
 #### ConvertibleClock
 - [ ] add `convertible_clocks`
+- [ ] change table name to "convertible_clock"
 #### Entity
 - [ ] string validation on `aliases`
 - [ ] add related `calendar`

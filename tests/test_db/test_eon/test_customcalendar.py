@@ -107,6 +107,15 @@ class ConvertibleCalendarTest(CalendarTestCase, FactoriesMixin):
         patch_ss.assert_any_call(new_weekday_names)
 
     @pytest.mark.db
+    def test_days_in_week(self):
+        calendar = self.calendar_factory.build()
+        expected_days_in_weeks = len(calendar.weekday_names)
+        with self.session:
+            self.session.add(calendar)
+            self.session.flush()
+            assert calendar.days_in_weeks == expected_days_in_weeks
+
+    @pytest.mark.db
     def test_epoch_weekday_minimum_constraint(self):
         negative_epoch_weekday_calendar = self.calendar_factory.build(
             epoch_weekday=FAKE.random_int(min=-9999, max=-1)

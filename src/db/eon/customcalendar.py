@@ -75,7 +75,6 @@ class ConvertibleCalendar(utils.Base):
         return list(utils.string_sanitization(weekday_names))
 
     days_in_weeks = column_property(func.json_array_length(weekday_names))
-
     epoch_weekday = Column(  # index into weekday names
         Integer,
         CheckConstraint(
@@ -147,6 +146,9 @@ class ConvertibleCalendar(utils.Base):
         nullable=False,
     )
     days_in_common_year_months = Column(JSON, nullable=False)
+    months_in_common_year = column_property(
+        func.json_array_length(common_year_month_names)
+    )
 
     #
     # Leap years

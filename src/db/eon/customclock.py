@@ -15,7 +15,7 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
-from src.models import utils
+from src.db import utils
 from sqlalchemy import CheckConstraint, Column, Integer, Unicode
 from sqlalchemy.orm import column_property, declarative_base
 

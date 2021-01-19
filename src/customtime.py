@@ -19,7 +19,7 @@ import math
 
 from sqlalchemy.future import select
 from sqlalchemy.orm import object_session
-from src.models import ConvertibleClock
+from src.db import ConvertibleClock
 
 
 class ConvertibleTime:

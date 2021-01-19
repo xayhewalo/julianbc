@@ -2,7 +2,7 @@
 import factory
 import factory.random
 
-from src.models import CalBase, ClockBase
+from src.db import CalBase, ClockBase
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from unittest import TestCase

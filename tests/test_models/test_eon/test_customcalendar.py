@@ -2,7 +2,7 @@ import copy
 import itertools
 import pytest
 
-from src.models.eon.customcalendar import (
+from src.db.eon.customcalendar import (
     ConvertibleCalendar,
     CalendarConversion,
     default_eras,
@@ -121,7 +121,7 @@ class ConvertibleCalendarTest(CalendarTestCase, FactoriesMixin):
     #
     # Weeks
     #
-    @patch("src.models.eon.customcalendar.string_sanitization")
+    @patch("src.db.eon.customcalendar.string_sanitization")
     def test__sanitize_weekday_names(self, patch_ss):
         weekday_names, calendar, patch_ss = self.rand_cal_with_patched_ss(
             patch_ss
@@ -195,7 +195,7 @@ class ConvertibleCalendarTest(CalendarTestCase, FactoriesMixin):
             self.session.add(bad_weekless_calendar)
             self.session.commit()
 
-    @patch("src.models.eon.customcalendar.integer_sanitization")
+    @patch("src.db.eon.customcalendar.integer_sanitization")
     def test__validate_weekends(self, patch_integer_sanitization):
         week_length = FAKE.random_int(min=1, max=20)
         good_weekends = (0,)
@@ -284,7 +284,7 @@ class ConvertibleCalendarTest(CalendarTestCase, FactoriesMixin):
             self.session.add(no_leap_year_calendar)
             self.session.commit()
 
-    @patch("src.models.eon.customcalendar.string_sanitization")
+    @patch("src.db.eon.customcalendar.string_sanitization")
     def test__sanitize_month_names(self, patch_ss):
         weekday_names, calendar, patch_ss = self.rand_cal_with_patched_ss(
             patch_ss
@@ -296,7 +296,7 @@ class ConvertibleCalendarTest(CalendarTestCase, FactoriesMixin):
         patch_ss.assert_any_call(bad_month_names1)
         patch_ss.assert_any_call(bad_month_names2)
 
-    @patch("src.models.eon.customcalendar.integer_sanitization")
+    @patch("src.db.eon.customcalendar.integer_sanitization")
     def test__validate_days_in_months(self, patch_integer_sanitization):
         num = FAKE.random_int(min=2)
         days_in_common_year_months = FAKE.random_elements(
@@ -324,7 +324,7 @@ class ConvertibleCalendarTest(CalendarTestCase, FactoriesMixin):
                 days_in_leap_year_months=negative_days_in_months,
             )
 
-    @patch("src.models.eon.customcalendar.integer_sanitization")
+    @patch("src.db.eon.customcalendar.integer_sanitization")
     def test__validates_cycles(self, patch_integer_sanitization):
         leap_year_cycles = FAKE.random_elements(
             elements=[x for x in range(1, 99)]
@@ -444,7 +444,7 @@ class ConvertibleCalendarTest(CalendarTestCase, FactoriesMixin):
             self.session.add(negative_leap_year_cycle_start_calendar)
             self.session.commit()
 
-    @patch("src.models.eon.customcalendar.integer_sanitization")
+    @patch("src.db.eon.customcalendar.integer_sanitization")
     def test__validates_cycle_ordinals(self, patch_integer_sanitization):
         leap_year_cycle_ordinals = FAKE.random_elements(
             elements=[x for x in range(1, FAKE.random_int(min=2))]
@@ -557,7 +557,7 @@ class ConvertibleCalendarTest(CalendarTestCase, FactoriesMixin):
             self.session.add(mismatch_eras_and_ranges_calendar)
             self.session.commit()
 
-    @patch("src.models.eon.customcalendar.integer_sanitization")
+    @patch("src.db.eon.customcalendar.integer_sanitization")
     def test__validate_era_ranges(self, patch_integer_sanitization):
         calendar = self.calendar_factory.build()
         bad_era_range = (-1, FAKE.random_int())

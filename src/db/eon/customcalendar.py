@@ -17,7 +17,7 @@
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
 import itertools
 
-from src.models import utils
+from src.db import utils
 from sqlalchemy import (
     BigInteger,
     Boolean,

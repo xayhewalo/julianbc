@@ -16,6 +16,8 @@
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
 import uuid
 
+from sqlalchemy.orm import declarative_base
+
 
 def auto_constraint_name(constraint, _):
     """
@@ -36,3 +38,6 @@ NAMING_CONVENTION = {
     "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
     "pk": "pk_%(table_name)s",
 }
+
+Base = declarative_base()
+Base.metadata.naming_convention = NAMING_CONVENTION

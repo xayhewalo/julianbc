@@ -17,13 +17,10 @@
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
 from src.db import utils
 from sqlalchemy import CheckConstraint, Column, Integer, Unicode
-from sqlalchemy.orm import column_property, declarative_base
-
-ClockBase = declarative_base()
-ClockBase.metadata.naming_convention = utils.NAMING_CONVENTION
+from sqlalchemy.orm import column_property
 
 
-class ConvertibleClock(ClockBase):
+class ConvertibleClock(utils.Base):
     """User-defined time"""
 
     __tablename__ = "convertible_time"

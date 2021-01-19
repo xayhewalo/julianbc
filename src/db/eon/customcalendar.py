@@ -29,17 +29,8 @@ from sqlalchemy import (
     JSON,
     Unicode,
 )
-from sqlalchemy.orm import (
-    declarative_base,
-    relationship,
-    Session,
-    validates,
-)
+from sqlalchemy.orm import relationship, Session, validates
 from typing import Union
-
-
-CalBase = declarative_base()
-CalBase.metadata.naming_convention = utils.NAMING_CONVENTION
 
 
 def default_eras() -> list[str, str]:
@@ -59,7 +50,7 @@ def integer_sanitization(collection: list) -> list:
     return [int(element) for element in collection]
 
 
-class ConvertibleCalendar(CalBase):
+class ConvertibleCalendar(utils.Base):
     """User-Defined Calendars"""
 
     __tablename__ = "convertible_calendar"
@@ -415,7 +406,7 @@ event.listen(
 )
 
 
-class CalendarConversion(CalBase):
+class CalendarConversion(utils.Base):
     """Calendar-to-Calendar Association Object"""
 
     __tablename__ = "calendar_conversion"

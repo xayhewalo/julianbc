@@ -300,9 +300,9 @@ class ConvertibleDate:
         if not self.calendar.has_leap_year:
             return False
 
-        if ast_year in self.calendar.leap_year_exceptions:
+        if ast_year in self.calendar.special_common_years:
             return False
-        if ast_year in self.calendar.leap_year_overrules:
+        if ast_year in self.calendar.special_leap_years:
             return True
 
         start = self.calendar.leap_year_cycle_start

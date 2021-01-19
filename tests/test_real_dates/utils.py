@@ -151,8 +151,8 @@ class RealCalendarTestCase(CalendarTestCase):
             # fmt: on
             leap_year_cycles=[4],
             leap_year_cycle_start=1,
-            leap_year_exceptions=(),
-            leap_year_overrules=(),
+            special_common_years=(),
+            special_leap_years=(),
             leap_year_offset=-1,
             leap_year_cycle_ordinals=[4],
             eras=("BC", "AM"),
@@ -448,8 +448,8 @@ class RealCalendarTestCase(CalendarTestCase):
                 31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 30,
             ),
             # fmt: on
-            leap_year_exceptions=(),
-            leap_year_overrules=(),
+            special_common_years=(),
+            special_leap_years=(),
             # fmt: off
             leap_year_cycles=(
                 29, 33, 33, 33, 29, 33, 33, 33, 29, 33, 33, 33, 29, 33, 33, 33,

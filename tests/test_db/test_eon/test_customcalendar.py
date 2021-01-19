@@ -251,8 +251,8 @@ class ConvertibleCalendarTest(CalendarTestCase, FactoriesMixin):
             leap_year_cycles=(),
             leap_year_cycle_ordinals=(),
             leap_year_cycle_start=None,
-            leap_year_exceptions=(),
-            leap_year_overrules=(),
+            special_common_years=(),
+            special_leap_years=(),
             leap_year_offset=None,
         )
         with pytest.raises(IntegrityError), self.session:
@@ -327,8 +327,8 @@ class ConvertibleCalendarTest(CalendarTestCase, FactoriesMixin):
             leap_year_cycles=cycles,  # should be empty
             leap_year_cycle_start=None,
             leap_year_cycle_ordinals=(),
-            leap_year_exceptions=(),
-            leap_year_overrules=(),
+            special_common_years=(),
+            special_leap_years=(),
             leap_year_offset=None,
         )
         with pytest.raises(IntegrityError), self.session:
@@ -342,8 +342,8 @@ class ConvertibleCalendarTest(CalendarTestCase, FactoriesMixin):
             leap_year_cycles=(),
             leap_year_cycle_start=None,
             leap_year_cycle_ordinals=cycle_ordinals,  # should be empty
-            leap_year_exceptions=(),
-            leap_year_overrules=(),
+            special_common_years=(),
+            special_leap_years=(),
             leap_year_offset=None,
         )
         with pytest.raises(IntegrityError), self.session:
@@ -357,8 +357,8 @@ class ConvertibleCalendarTest(CalendarTestCase, FactoriesMixin):
             leap_year_cycles=(),
             leap_year_cycle_start=FAKE.random_int(),  # should be none
             leap_year_cycle_ordinals=(),
-            leap_year_exceptions=(),
-            leap_year_overrules=(),
+            special_common_years=(),
+            special_leap_years=(),
             leap_year_offset=None,
         )
         with pytest.raises(IntegrityError), self.session:
@@ -372,8 +372,8 @@ class ConvertibleCalendarTest(CalendarTestCase, FactoriesMixin):
             leap_year_cycles=cycles,
             leap_year_cycle_start=None,  # should **not** be None
             leap_year_cycle_ordinals=cycle_ordinals,
-            leap_year_exceptions=(),
-            leap_year_overrules=(),
+            special_common_years=(),
+            special_leap_years=(),
             leap_year_offset=None,
         )
         with pytest.raises(IntegrityError), self.session:
@@ -387,8 +387,8 @@ class ConvertibleCalendarTest(CalendarTestCase, FactoriesMixin):
             leap_year_cycles=(),  # should **not** be empty
             leap_year_cycle_start=FAKE.random_int(),
             leap_year_cycle_ordinals=cycle_ordinals,
-            leap_year_exceptions=(),
-            leap_year_overrules=(),
+            special_common_years=(),
+            special_leap_years=(),
             leap_year_offset=None,
         )
         with pytest.raises(IntegrityError), self.session:
@@ -402,8 +402,8 @@ class ConvertibleCalendarTest(CalendarTestCase, FactoriesMixin):
             leap_year_cycles=cycles,
             leap_year_cycle_start=FAKE.random_int(),
             leap_year_cycle_ordinals=(),  # should **not** be empty
-            leap_year_exceptions=(),
-            leap_year_overrules=(),
+            special_common_years=(),
+            special_leap_years=(),
             leap_year_offset=None,
         )
         with pytest.raises(IntegrityError), self.session:
@@ -436,7 +436,7 @@ class ConvertibleCalendarTest(CalendarTestCase, FactoriesMixin):
         patch_integer_sanitization.assert_any_call(bad_leap_ords)
 
     @pytest.mark.db
-    def test_leap_year_exceptions_constraint(self):
+    def test_special_common_years_constraint(self):
         bad_leapless_calendar = self.calendar_factory.build(
             has_leap_year=False,
             leap_year_month_names=(),
@@ -444,8 +444,8 @@ class ConvertibleCalendarTest(CalendarTestCase, FactoriesMixin):
             leap_year_cycles=(),
             leap_year_cycle_start=None,
             leap_year_cycle_ordinals=(),
-            leap_year_exceptions=[x for x in range(FAKE.random_int(min=1))],
-            leap_year_overrules=(),
+            special_common_years=[x for x in range(FAKE.random_int(min=1))],
+            special_leap_years=(),
             leap_year_offset=None,
         )
         with pytest.raises(IntegrityError), self.session:
@@ -453,7 +453,7 @@ class ConvertibleCalendarTest(CalendarTestCase, FactoriesMixin):
             self.session.commit()
 
     @pytest.mark.db
-    def test_leap_year_overrules_constraint(self):
+    def test_special_leap_years_constraint(self):
         bad_leapless_calendar = self.calendar_factory.build(
             has_leap_year=False,
             leap_year_month_names=(),
@@ -461,8 +461,8 @@ class ConvertibleCalendarTest(CalendarTestCase, FactoriesMixin):
             leap_year_cycles=(),
             leap_year_cycle_start=None,
             leap_year_cycle_ordinals=(),
-            leap_year_exceptions=(),
-            leap_year_overrules=[x for x in range(FAKE.random_int(min=1))],
+            special_common_years=(),
+            special_leap_years=[x for x in range(FAKE.random_int(min=1))],
             leap_year_offset=None,
         )
         with pytest.raises(IntegrityError), self.session:
@@ -478,8 +478,8 @@ class ConvertibleCalendarTest(CalendarTestCase, FactoriesMixin):
             leap_year_cycles=(),
             leap_year_cycle_start=None,
             leap_year_cycle_ordinals=(),
-            leap_year_exceptions=(),
-            leap_year_overrules=(),
+            special_common_years=(),
+            special_leap_years=(),
             leap_year_offset=FAKE.random_int(min=-9999),  # should be none
         )
         with pytest.raises(IntegrityError), self.session:
@@ -488,32 +488,32 @@ class ConvertibleCalendarTest(CalendarTestCase, FactoriesMixin):
 
     @pytest.mark.db
     def test__validate_disjoint_outlaws(self):
-        outlaws = [year for year in range(FAKE.random_int(min=1))]
-        same_exceptions_and_overrules_calendar = self.calendar_factory.build(
-            leap_year_overrules=outlaws,
-            leap_year_exceptions=outlaws,
+        special_years = [year for year in range(FAKE.random_int(min=1))]
+        same_special_years_calendar = self.calendar_factory.build(
+            special_leap_years=special_years,
+            special_common_years=special_years,
         )
         assert event.contains(
             ConvertibleCalendar,
             "before_insert",
-            ConvertibleCalendar.validate_disjoint_outlaws,
+            ConvertibleCalendar.validate_disjoint_special_years,
         )
         assert event.contains(
             ConvertibleCalendar,
             "before_update",
-            ConvertibleCalendar.validate_disjoint_outlaws,
+            ConvertibleCalendar.validate_disjoint_special_years,
         )
         with pytest.raises(AssertionError), self.session:
-            self.session.add(same_exceptions_and_overrules_calendar)
+            self.session.add(same_special_years_calendar)
             self.session.commit()
         with pytest.raises(AssertionError), self.session:
             calendar = self.calendar_factory.build(
-                leap_year_overrules=outlaws,
-                leap_year_exceptions=[],
+                special_leap_years=special_years,
+                special_common_years=[],
             )
             self.session.add(calendar)
             self.session.commit()
-            calendar.leap_year_exceptions = outlaws
+            calendar.special_common_years = special_years
             self.session.commit()
 
     #

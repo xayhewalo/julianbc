@@ -45,13 +45,13 @@ class ConvertibleCalendarFactory(BaseFactory):
         "random_elements",
         elements=[x for x in range(1, FAKE.random_int(min=1, max=3000))],
     )
-    leap_year_exceptions = factory.Faker(
+    special_common_years = factory.Faker(
         "random_elements",
         elements=[x for x in range(1, 10000, 2)],
         unique=True,
         length=2,
     )
-    leap_year_overrules = factory.Faker(
+    special_leap_years = factory.Faker(
         "random_elements",
         elements=[x for x in range(-9998, 10000, 2)],
         unique=True,

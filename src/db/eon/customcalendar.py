@@ -251,24 +251,24 @@ class ConvertibleCalendar(utils.Base):
             assert cycle_ordinal >= 0, "cycle ordinals must be non-negative"
         return sanitized_cycle_ordinals
 
-    leap_year_exceptions = Column(  # common years no matter leap year rules
+    special_common_years = Column(  # common years no matter leap year rules
         JSON,
         CheckConstraint(
             """
             has_leap_year == 1
-            OR json_array_length(leap_year_exceptions) == 0
+            OR json_array_length(special_common_years) == 0
             """,
             name=f"ck_{__tablename__}_leap_year_exceptions",
         ),
         default=list,
         nullable=False,
     )
-    leap_year_overrules = Column(  # leap years not matter leap year rules
+    special_leap_years = Column(  # leap years no matter leap year rules
         JSON,
         CheckConstraint(
             """
             has_leap_year == 1
-            OR json_array_length(leap_year_overrules) == 0
+            OR json_array_length(special_leap_years) == 0
             """,
             name=f"ck_{__tablename__}_leap_year_overrules",
         ),
@@ -284,18 +284,16 @@ class ConvertibleCalendar(utils.Base):
     )
 
     @staticmethod
-    def validate_disjoint_outlaws(_, __, target: "ConvertibleCalendar"):
+    def validate_disjoint_special_years(_, __, target: "ConvertibleCalendar"):
         """
-        Overrules and exceptions are "outlaws" because they do not follow leap
-        year rules. This method is designed to be an event listener.
-
-        :raises AssertionError: if leap_year_exceptions and leap_year_overrules
+        :raises AssertionError: if special_common_years and special_leap_years
             are **not** mutually exclusive
         """
-        if target.leap_year_exceptions and target.leap_year_overrules:
-            overrules = set(target.leap_year_overrules)
-            exceptions = set(target.leap_year_exceptions)
-            assert overrules.isdisjoint(exceptions), "outlaws must be disjoint"
+        if target.special_common_years and target.special_leap_years:
+            special_leap = set(target.special_leap_years)
+            special_commons = set(target.special_common_years)
+            disjoint_special_years = special_leap.isdisjoint(special_commons)
+            assert disjoint_special_years, "special years must be disjoint"
 
     #
     # Eras, assumes human-readable years
@@ -389,12 +387,12 @@ class ConvertibleCalendar(utils.Base):
 event.listen(
     ConvertibleCalendar,
     "before_insert",
-    ConvertibleCalendar.validate_disjoint_outlaws,
+    ConvertibleCalendar.validate_disjoint_special_years,
 )
 event.listen(
     ConvertibleCalendar,
     "before_update",
-    ConvertibleCalendar.validate_disjoint_outlaws,
+    ConvertibleCalendar.validate_disjoint_special_years,
 )
 
 

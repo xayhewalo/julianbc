@@ -70,8 +70,8 @@ class ConvertibleDateTimeTest(CalendarTestCase):
             has_leap_year=False,
             leap_year_month_names=(),
             days_in_leap_year_months=(),
-            leap_year_exceptions=(),
-            leap_year_overrules=(),
+            special_common_years=(),
+            special_leap_years=(),
             leap_year_offset=None,
         )
         return monthless_calendar, days_in_year
@@ -218,8 +218,8 @@ class ConvertibleDateTimeTest(CalendarTestCase):
             leap_year_cycles=(4,),
             leap_year_cycle_ordinals=(4,),
             leap_year_cycle_start=1,
-            leap_year_overrules=(),
-            leap_year_exceptions=(),
+            special_common_years=(),
+            special_leap_years=(),
             leap_year_offset=0,
             era_ranges=(("-inf", 1), (1, "inf")),
             eras=(FAKE.word(), FAKE.word()),
@@ -414,8 +414,8 @@ class ConvertibleDateTimeTest(CalendarTestCase):
     #
     def test_is_leap_year_with_cycles(self):
         calendar = self.calendar_factory.build(
-            leap_year_exceptions=(),
-            leap_year_overrules=(),
+            special_common_years=(),
+            special_leap_years=(),
             leap_year_cycles=(5, 7),
             leap_year_cycle_start=0,
             leap_year_cycle_ordinals=(0, 3, 5),
@@ -443,8 +443,8 @@ class ConvertibleDateTimeTest(CalendarTestCase):
 
     def test_is_leap_year_cycles_with_offset(self):
         calendar = self.calendar_factory.build(
-            leap_year_exceptions=(),
-            leap_year_overrules=(),
+            special_common_years=(),
+            special_leap_years=(),
             leap_year_cycles=(9, 1),
             leap_year_cycle_start=0,
             leap_year_cycle_ordinals=(1, 4, 5, 8),
@@ -472,8 +472,8 @@ class ConvertibleDateTimeTest(CalendarTestCase):
 
     def test_is_leap_year_with_non_zero_start(self):
         calendar = self.calendar_factory.build(
-            leap_year_exceptions=(),
-            leap_year_overrules=(),
+            special_common_years=(),
+            special_leap_years=(),
             leap_year_cycles=(2, 5),
             leap_year_cycle_start=2,
             leap_year_cycle_ordinals=(3, 6),
@@ -503,23 +503,23 @@ class ConvertibleDateTimeTest(CalendarTestCase):
         year = FAKE.random_int(-9999, 9999)
         assert cdt.is_leap_year(year) is False
 
-    def test_is_leap_year_with_overrules(self):
-        calendar = self.calendar_factory.build(leap_year_exceptions=())
-        overruled_year = FAKE.random_element(
-            elements=calendar.leap_year_overrules
+    def test_is_leap_year_with_special_leap_year(self):
+        calendar = self.calendar_factory.build(special_common_years=())
+        special_leap_year = FAKE.random_element(
+            elements=calendar.special_leap_years
         )
         cdt = ConvertibleDate(calendar=calendar)
-        assert cdt.is_leap_year(overruled_year)
+        assert cdt.is_leap_year(special_leap_year)
 
-    def test_is_leap_year_with_exceptions(self):
+    def test_is_leap_year_with_special_common_years(self):
         calendar = self.calendar_factory.build(
-            leap_year_overrules=(),
+            special_leap_years=(),
         )
-        exception_year = FAKE.random_element(
-            elements=calendar.leap_year_exceptions
+        special_common_year = FAKE.random_element(
+            elements=calendar.special_common_years
         )
         cdt = ConvertibleDate(calendar=calendar)
-        assert cdt.is_leap_year(exception_year) is False
+        assert cdt.is_leap_year(special_common_year) is False
 
     #
     # ConvertibleDateTime.is_valid_ast_ymd

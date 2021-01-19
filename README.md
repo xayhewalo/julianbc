@@ -8,7 +8,7 @@ JulianBC will be a visual-timeline program in the near future
 # Road Map to 0.1.0
 ### Database
 #### ConvertibleCalendar
- - [ ] Change `outlaws` to `special_leap_years` and `special_common_years`
+ - [X] Change `outlaws` to `special_leap_years` and `special_common_years`
  - [ ] Add `months_in_year`
  - [ ] add `days_in_common_year`
  - [ ] add `days_in_leap_year`

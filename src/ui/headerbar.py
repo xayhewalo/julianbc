@@ -117,13 +117,14 @@ Builder.load_string("""
     #
     # Util Buttons
     #
-    Button:
-        id: inspector_button
+    ToggleButton:
+        id: sync_timelines
         size_hint: 0.07, .9
         pos_hint: {"center_y": 0.5}
         x: search_button.x - self.width - self.parent.button_padding
-        text: "Inspector"
-        on_press: self.state="normal"; app.show_not_implemented_popup()
+        text: "Sync\\nTimelines"
+        state: "normal"
+        on_state: app.sync_timelines = True if self.state == "down" else False
 
     Button:
         id: search_button

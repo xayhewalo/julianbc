@@ -33,9 +33,9 @@ class MainApp(App):
         self.screen_manager = ScreenManager(transition=NoTransition())
         self.event_editor = EventEditor(size_hint_y=0.9, x=800)
         self.timeline_screen = TimelineScreen(size_hint=[1, 0.9])
+        self.sync_timelines = False  # todo sync should set the start and end of the timeline in focus or at top
 
     def build(self):
-        self.screen_manager = ScreenManager(transition=NoTransition())
         self.screen_manager.add_widget(self.timeline_screen)
         self.root.add_widget(self.screen_manager)
         self.root.add_widget(HeaderBar(size_hint=[1, 0.1], pos_hint={"top": 1}))

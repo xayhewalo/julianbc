@@ -77,7 +77,7 @@ Builder.load_string("""
         dependant: combo_timeline
 
 <TimelineScreen>:
-    name: "timeline_view"
+    name: "timeline_screen"
 
     CollapsableTimeline:
         id: ct1
@@ -126,6 +126,12 @@ class BaseTimeline(HorScrollBehavior, ZoomBehavior, FloatLayout):
         self.start_ordinal_decimal -= dod
         self.end_ordinal_decimal -= dod
         self.scroll_siblings()
+        app = App.get_running_app()
+        if app.sync_timelines is True:
+            for collapsable_timeline in app.timeline_screen.children:
+                # fixme ugly
+                if collapsable_timeline.children[1] is not self:
+                    collapsable_timeline.children[1].scroll_by = self.scroll_by
 
     def scroll_siblings(self) -> None:
         for sibling in self.gen_timeline_siblings():
@@ -136,6 +142,15 @@ class BaseTimeline(HorScrollBehavior, ZoomBehavior, FloatLayout):
         self.start_ordinal_decimal += dod
         self.end_ordinal_decimal -= dod
         self.zoom_siblings()
+        app = App.get_running_app()
+        if app.sync_timelines is True:
+            for collapsable_timeline in app.timeline_screen.children:
+                # fixme ugly
+                if collapsable_timeline.children[1] is not self:
+                    # todo probs should change the ComboTimeline have it modifiy it's children, instead of siblings changing each other
+                    collapsable_timeline.children[1].children[1].zoom_by = self.zoom_by  # mark timeline
+                    collapsable_timeline.children[1].children[0].zoom_by = self.zoom_by
+                    # collapsable_timeline.children[1].children[1].change_interval()  # mark timeline
 
     def zoom_siblings(self) -> None:
         for sibling in self.gen_timeline_siblings():
@@ -295,7 +310,7 @@ class BareTimeline(BaseTimeline):
 
             pos = x, y
 
-            # todo change event hieght
+            # todo change event height
             # event_params = [*pos, width, self.min_event_height]
             event_params = {"pos": pos, "size": [width, self.min_event_height]}
             graphics.add(

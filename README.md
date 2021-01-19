@@ -6,17 +6,121 @@
 JulianBC will be a visual-timeline program in the near future
 
 # Road Map to 0.1.0
-- [X] Add convertible calendar
-- [X] Add convertible date
-- [X] Add convertible clock
-- [X] Add convertible time
-- [ ] Add infinitely scrolling timeline
-- [ ] Add zoom to timeline
-- [ ] Label timeline
-    - [ ] with dates
-    - [ ] with time
-    - [ ] move dates and times dynamically with scroll and zoom
-- [ ] Add event containers to timeline
-- [ ] Link event container locations to dates and times
-    - [ ] Add event container detail window (inspect)
+### Database
+#### ConvertibleCalendar
+ - [ ] Change `outlaws` to `special_leap_years` and `special_common_years`
+ - [ ] Add `months_in_year`
+ - [ ] add `days_in_common_year`
+ - [ ] add `days_in_leap_year`
+ - [ ] add `leap_year_cycle_length`
+ - [ ] add `days_in_week`
+ - [ ] move validation methods out of this function
+#### ConvertibleClock
+- [ ] add `convertible_clocks`
+#### Entity
+- [ ] string validation on `aliases`
+- [ ] add related `calendar`
+- [ ] `CheckConstraint` that calendar and clock are `NOT NULL` when `creation_od` or `destruction_od` are `NOT NULL`
+#### Event
+- [ ] make `durration` a hybrid property based on `end`
+- [ ] make `end` a proper `ColumnProperty`
+#### EventController
+- [ ] `fields` in `make` are based on `Event` columns
+- [ ] ensure negative `duraiton` raises error
+- [ ] `get_events` adds `calendar.id` to where clause
+
+### Business Logic
+#### ConvertibleDate
+- [ ] raise error when calendar changes
+- [ ] Prevent common year cycle ordinals from slowing tests
+- [ ] refactor ordinal conversions
+    - [ ] add `common_year_cycle_ordinals` property
+        - [ ] prevent setting `common_year_cycle_ordinals`
+    - [ ] add `common_years_in_normal_cycle` property
+        - [ ] prevent setting `common_years_in_normal_cycle`
+    - [ ] add `leap_years_in_normal_cycle` property
+        - [ ] prevent setting `leap_years_in_normal_cycle`
+- [ ] Refactor `is_leap_year`
+- [ ] Make ordinal conversions DRY with `is_leap_year`
+- [ ] Generic function to find `special_common_years` and `special_leap_years`
+- [ ] remove `_increment_by_one`
+- [ ] add `days_in_month` and use it
+- [ ] add `is_valid_month` and use it
+- [ ] add `days_in_month`
+- [ ] add `shift_ast_ymd`
+    - [ ] `shift_ast_year`
+    - [ ] `shift_ast_month`
+    - [ ] `shift_ast_day`
+    - [ ] check if `frequency` is an integer greater than zero
+- [ ] move `make_ordinal` out of `ConvertibleDate`, change name
+- [ ] remove week stuff?
+#### ConvertibleTime
+- [ ] remove `convertible_clocks`
+- [ ] add `next_hms`
+    - [ ] different methods for `hour`, `minute`, and `second`
+    - [ ] OR convert `hms` and `frequency` to `seconds` and find when modulo == 0(?)
+    - [ ] refactor so `is_valid_hour` is checked twice
+- [ ] add `shift_hms`
+    - [ ] add `shift_hour`
+    - [ ] add `shift_minute`
+    - [ ] add `shift_second`
+    - [ ] make it DRY
+    - [ ] test every 24 hours returns 0
+    - [ ] test `day_diff` i.e. shift by 50 hours has a `day_diff` >= 2
+    - [ ] add rollover hour function
+    - [ ] add rollover minute function
+    - [ ] add rollover second function
+    - [ ] add terminal hour function (?)
+#### ConvertibleDateTime
+- [ ] add `change_interval`
+    - [ ] pass `label_width` and `interval` and pick the smallest interval that's greater than the width(?)
+    - [ ] make `change_XXX_interval` DRY
+- [ ] test `ast_ymd_to_od` for proleptic years
+- [ ] add `extend_start_end` (by passed `interval`) to be used in `Timeline` `and Mark`
+    - [ ] use `shift_od`
+
+### UI
+- [ ] put logic in separate methods and call them in `on_###` methods
+- [ ] Don't interact with the db at all. Rely entirely on business logic
+- [ ] add keyboard equivalents for all mouse interactions
+- [ ] Add Calendar from UI
+#### Timeline
+- [ ] Sync timelines should set start and end ordinals of all timelines
+- [ ] add scroll
+  - [ ] Gain focus when scrolling
+  - [ ] shift + scrollup/scrolldown
+  - [ ] left/right arrow scroll when in focus
+  - [ ] up/down scroll when in focus
+  - [ ] page up/down scroll when in focus
+  - [ ] home/end scroll(?)
+- [ ] add zoom
+  - [ ] Gain focus when zooming
+  - [ ] ctrl + +/- to zoom
+  - [ ] pinch trackpad to zoom
+- [ ] Add `extended_start_ordinal` and `extended_end_ordinal` that's outside the visible `time_span`
+    - [ ] don't do the calculations in `Timeline`
+- [ ] `TimelineScreen` should handle collapsing
+- [ ] disable `focus` when `Timeline` is collapsed
+- [ ] add proper reference to other timelines when scrolling/zooming while synced
+- [ ] `ComboTimeline` should scroll/zoom its children instead of children manipulating their siblings
+- [ ] Move event graphics to `EventContainer` class
+  - [ ] test setting event height when two events ago is really long
+  - [ ] test expand event_height and all other events shift y positions
+#### Mark
+- [ ] don't do shift calculations in `Mark`
+#### EventEditor
+- [ ] Properly locate `EventEditor`
+- [ ] set widgets by constant align values created at parent level
+- [ ] only allow numbers input
+- [ ] redraw timelines on accept
+- [ ] show/hide aliases button
+- [ ] show/hide description button
+- [ ] add `aliases` one by one, not by comma-separated values
+- [ ] lose focus when after making the event
+- [ ] put `TextInput`s into a collection and reset them in a loop
+- [ ] put `hint_text_color` into a variable
+#### CalendarChanger
+- [ ] make readable references to timelines
+
+### Misc.
 - [ ] Probably more stuff...

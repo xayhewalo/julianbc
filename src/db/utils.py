@@ -19,6 +19,14 @@ import uuid
 from sqlalchemy.orm import declarative_base
 
 
+def string_sanitization(collection: list) -> list:
+    return [str(element) for element in collection]
+
+
+def integer_sanitization(collection: list) -> list:
+    return [int(element) for element in collection]
+
+
 def auto_constraint_name(constraint, _):
     """
     hack to make naming convention work

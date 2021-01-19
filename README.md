@@ -14,7 +14,7 @@ JulianBC will be a visual-timeline program in the near future
  - [ ] add `days_in_leap_year`
  - [ ] add `leap_year_cycle_length`
  - [ ] add `days_in_week`
- - [ ] move validation methods out of this function
+ - [X] move validation methods out of this function
 #### ConvertibleClock
 - [ ] add `convertible_clocks`
 #### Entity

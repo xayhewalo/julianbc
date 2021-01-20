@@ -665,10 +665,9 @@ class GregorianTest(RealCalendarTestCase):
     )
     def test_days_in_month_for_common_month(self, _):
         common_year, month, _ = self.random_common_ymd()
-        assert (
-            self.gregorian_cd.days_in_month(common_year, month)
-            == convertdate.gregorian.month_length(common_year, month)
-        )
+        assert self.gregorian_cd.days_in_month(
+            common_year, month
+        ) == convertdate.gregorian.month_length(common_year, month)
 
     #
     # ConvertibleDate.days_in_month
@@ -679,10 +678,9 @@ class GregorianTest(RealCalendarTestCase):
     )
     def test_days_in_month_for_leap_month(self, _):
         leap_year, month, _ = self.random_leap_ymd()
-        assert (
-            self.gregorian_cd.days_in_month(leap_year, month)
-            == convertdate.gregorian.month_length(leap_year, month)
-        )
+        assert self.gregorian_cd.days_in_month(
+            leap_year, month
+        ) == convertdate.gregorian.month_length(leap_year, month)
 
     #
     # ConvertibleDate.days_in_year

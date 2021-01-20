@@ -25,7 +25,7 @@ JulianBC will be a visual-timeline program in the near future
 - [ ] add related `clock`
 - [ ] `CheckConstraint` that calendar and clock are `NOT NULL` when `creation_od` or `destruction_od` are `NOT NULL`
 #### Event
-- [ ] make `durration` a hybrid property based on `end`
+- [ ] make `duration` a hybrid property based on `end`
 - [ ] make `end` a proper `ColumnProperty`
 
 ### Business Logic
@@ -43,9 +43,9 @@ JulianBC will be a visual-timeline program in the near future
 - [ ] Make ordinal conversions DRY with `is_leap_year`
 - [ ] Generic function to find `special_common_years` and `special_leap_years`
 - [X] remove `_increment_by_one`
-- [ ] add `days_in_month` and use it
+- [X] add `days_in_month` and use it
 - [X] add `is_valid_month` and use it
-- [ ] make `days_in_year` use column properties on calendar
+- [X] make `days_in_year` use column properties on calendar
 - [ ] add `shift_ast_ymd`
     - [ ] `shift_ast_year`
     - [ ] `shift_ast_month`

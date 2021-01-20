@@ -396,8 +396,8 @@ class ConvertibleDate:
 
     def days_in_year(self, ast_year: int) -> int:
         if self.is_leap_year(ast_year):
-            return sum(self.calendar.days_in_leap_year_months)
-        return sum(self.calendar.days_in_common_year_months)
+            return self.calendar.days_in_leap_year
+        return self.calendar.days_in_common_year
 
     def months_in_year(self, ast_year: int) -> int:
         if self.is_leap_year(ast_year):

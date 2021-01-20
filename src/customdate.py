@@ -99,7 +99,7 @@ class ConvertibleDate:
         days_in_elapsed_years = 0
         while abs(ay) < abs(ast_year):
             days_in_elapsed_years += self.days_in_year(ay)
-            ay = self._increment_by_one(ay, sign)
+            ay += sign * 1
 
         ordinal = day_of_year + days_in_elapsed_years
         if self.is_descending_era(ast_year):
@@ -115,7 +115,7 @@ class ConvertibleDate:
 
         days_in_years_passed = self.days_in_year(ast_year)
         while days_in_years_passed < abs(ordinal):
-            ast_year = self._increment_by_one(ast_year, sign)
+            ast_year += sign * 1
             days_in_years_passed += self.days_in_year(ast_year)
         days_in_years_passed -= self.days_in_year(ast_year)
 
@@ -123,7 +123,7 @@ class ConvertibleDate:
         if sign == -1:
             day_of_year = self.days_in_year(ast_year) - day_of_year
             if day_of_year == 0:
-                ast_year = self._increment_by_one(ast_year, sign)
+                ast_year += sign * 1
                 day_of_year = self.days_in_year(ast_year)
         assert self.is_valid_ordinal_date((ast_year, day_of_year)), (
             f"Ordinal, {ordinal}, produced invalid ordinal date, "
@@ -138,11 +138,6 @@ class ConvertibleDate:
         if num <= 0:
             start_value, sign = 0, -1
         return start_value, sign
-
-    @staticmethod
-    def _increment_by_one(num: int, sign: int) -> int:
-        """Add or subtract one based on the sign"""
-        return num + sign * 1
 
     def ast_ymd_to_ordinal_date(self, ast_ymd: tuple) -> tuple[int, int]:
         """:raises ValueError: for an invalid year, month, day"""

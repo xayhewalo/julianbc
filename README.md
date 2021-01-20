@@ -42,7 +42,7 @@ JulianBC will be a visual-timeline program in the near future
 - [ ] Refactor `is_leap_year`
 - [ ] Make ordinal conversions DRY with `is_leap_year`
 - [ ] Generic function to find `special_common_years` and `special_leap_years`
-- [ ] remove `_increment_by_one`
+- [X] remove `_increment_by_one`
 - [ ] add `days_in_month` and use it
 - [ ] add `is_valid_month` and use it
 - [ ] add `days_in_month`

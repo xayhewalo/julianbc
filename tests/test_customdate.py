@@ -7,9 +7,9 @@ from tests.utils import CalendarTestCase, FAKE
 from unittest.mock import patch
 
 
-class ConvertibleDateTimeTest(CalendarTestCase):
+class ConvertibleDateTest(CalendarTestCase):
     def setUp(self):
-        super(ConvertibleDateTimeTest, self).setUp()
+        super(ConvertibleDateTest, self).setUp()
         self.calendar_factory = ConvertibleCalendarFactory
 
     #
@@ -91,14 +91,6 @@ class ConvertibleDateTimeTest(CalendarTestCase):
         cdt = ConvertibleDate(calendar=self.calendar_factory.build())
         assert cdt._start_and_sign(non_positive_num) == (0, -1)
         assert cdt._start_and_sign(positive_num) == (1, 1)
-
-    def test__increment_by_one(self):
-        num = FAKE.random_int(min=-9999)
-        positive_sign = 1
-        negative_sign = -1
-        cdt = ConvertibleDate(calendar=self.calendar_factory.build())
-        assert cdt._increment_by_one(num, positive_sign) == num + 1
-        assert cdt._increment_by_one(num, negative_sign) == num - 1
 
     @patch(
         "src.customdate.ConvertibleDate.is_valid_ast_ymd",

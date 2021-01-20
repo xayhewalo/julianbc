@@ -391,8 +391,8 @@ class ConvertibleDate:
 
     def months_in_year(self, ast_year: int) -> int:
         if self.is_leap_year(ast_year):
-            return len(self.calendar.leap_year_month_names)
-        return len(self.calendar.common_year_month_names)
+            return self.calendar.months_in_leap_year
+        return self.calendar.months_in_common_year
 
     def day_of_week(self, ordinal: int) -> Union[int, None]:
         """

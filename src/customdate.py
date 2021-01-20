@@ -88,8 +88,7 @@ class ConvertibleDate:
     def ordinal_date_to_ordinal(self, ordinal_date: tuple) -> int:
         """
         assumes astronomical year numbering
-
-        :raises ValueError: for an invalid ordinal date
+            :raises ValueError: for an invalid ordinal date
         """
         if not self.is_valid_ordinal_date(ordinal_date):
             raise ValueError(f"{ordinal_date} is invalid for {self.calendar}")

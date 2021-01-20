@@ -478,6 +478,15 @@ class ConvertibleCalendarTest(CalendarTestCase, FactoriesMixin):
         patch_integer_sanitization.assert_any_call(bad_leap_ords)
 
     @pytest.mark.db
+    def test_leap_years_in_normal_cycle(self):
+        calendar = self.calendar_factory.build()
+        expected_cycle_length = len(calendar.leap_year_cycle_ordinals)
+        with self.session:
+            self.session.add(calendar)
+            self.session.flush()
+            assert calendar.leap_years_in_normal_cycle == expected_cycle_length
+
+    @pytest.mark.db
     def test_special_common_years_constraint(self):
         bad_leapless_calendar = self.calendar_factory.build(
             has_leap_year=False,

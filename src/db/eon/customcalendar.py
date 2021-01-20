@@ -273,6 +273,9 @@ class ConvertibleCalendar(utils.Base):
             assert cycle_ordinal >= 0, "cycle ordinals must be non-negative"
         return sanitized_cycle_ordinals
 
+    leap_years_in_normal_cycle = column_property(
+        func.json_array_length(leap_year_cycle_ordinals)
+    )
     special_common_years = Column(  # common years no matter leap year rules
         JSON,
         CheckConstraint(

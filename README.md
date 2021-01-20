@@ -19,21 +19,19 @@ JulianBC will be a visual-timeline program in the near future
 #### ConvertibleClock
 - [X] add `convertible_clocks`
 - [X] change table name to "convertible_clock"
+- [ ] test error raised for `convert_hms`
 #### Entity
 - [ ] string validation on `aliases`
 - [ ] add related `calendar`
+- [ ] add related `clock`
 - [ ] `CheckConstraint` that calendar and clock are `NOT NULL` when `creation_od` or `destruction_od` are `NOT NULL`
 #### Event
 - [ ] make `durration` a hybrid property based on `end`
 - [ ] make `end` a proper `ColumnProperty`
-#### EventController
-- [ ] `fields` in `make` are based on `Event` columns
-- [ ] ensure negative `duraiton` raises error
-- [ ] `get_events` adds `calendar.id` to where clause
 
 ### Business Logic
 #### ConvertibleDate
-- [ ] raise error when calendar changes
+- [ ] recalculate calendar properties when it is set
 - [ ] Prevent common year cycle ordinals from slowing tests
 - [ ] refactor ordinal conversions
     - [ ] add `common_year_cycle_ordinals` property
@@ -55,9 +53,9 @@ JulianBC will be a visual-timeline program in the near future
     - [ ] `shift_ast_day`
     - [ ] check if `frequency` is an integer greater than zero
 - [ ] move `make_ordinal` out of `ConvertibleDate`, change name
-- [ ] remove week stuff?
+- [X] remove week stuff
 #### ConvertibleTime
-- [ ] remove `convertible_clocks`
+- [X] remove `convertible_clocks`
 - [ ] add `next_hms`
     - [ ] different methods for `hour`, `minute`, and `second`
     - [ ] OR convert `hms` and `frequency` to `seconds` and find when modulo == 0(?)
@@ -80,6 +78,10 @@ JulianBC will be a visual-timeline program in the near future
 - [ ] test `ast_ymd_to_od` for proleptic years
 - [ ] add `extend_start_end` (by passed `interval`) to be used in `Timeline` `and Mark`
     - [ ] use `shift_od`
+#### EventController
+- [ ] `fields` in `make` are based on `Event` columns
+- [ ] ensure negative `duraiton` raises error
+- [ ] `get_events` adds `calendar.id` to where clause
 
 ### UI
 - [ ] put logic in separate methods and call them in `on_###` methods

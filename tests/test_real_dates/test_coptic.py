@@ -639,7 +639,7 @@ class CopticTest(RealCalendarTestCase):
     #
     # Weeks
     #
-    @patch("src.customdate.ConvertibleDate.days_in_week", return_value=7)
+    @patch("src.db.ConvertibleCalendar.days_in_weeks", return_value=7)
     def test_day_of_week(self, _):
         bc_year, bc_month, bc_day = self.random_bce_ymd()
         bc_julian_day = convertdate.coptic.to_jd(bc_year, bc_month, bc_day)
@@ -664,6 +664,3 @@ class CopticTest(RealCalendarTestCase):
             self.coptic_cdt.day_of_week(am_ordinal)
             == (convertdate.utils.jwday(am_julian_day) + 1) % 7
         )
-
-    def test_days_in_week(self):
-        assert self.coptic_cdt.days_in_week() == 7

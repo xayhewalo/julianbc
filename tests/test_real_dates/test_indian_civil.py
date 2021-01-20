@@ -640,7 +640,7 @@ class IndianCivilTest(RealCalendarTestCase):
     #
     # Weeks
     #
-    @patch("src.customdate.ConvertibleDate.days_in_week", return_value=7)
+    @patch("src.db.ConvertibleCalendar.days_in_weeks", return_value=7)
     def test_day_of_week(self, _):
         be_year, be_month, be_day = self.random_bce_ymd()
         be_julian_day = convertdate.indian_civil.to_jd(
@@ -669,6 +669,3 @@ class IndianCivilTest(RealCalendarTestCase):
             self.indian_cdt.day_of_week(se_ordinal)
             == (se_julian_day + 1.5) % 7
         )
-
-    def test_days_in_week(self):
-        assert self.indian_cdt.days_in_week() == 7

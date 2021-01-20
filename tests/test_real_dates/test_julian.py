@@ -625,7 +625,7 @@ class JulianTest(RealCalendarTestCase):
     #
     # Weeks
     #
-    @patch("src.customdate.ConvertibleDate.days_in_week", return_value=7)
+    @patch("src.db.ConvertibleCalendar.days_in_weeks", return_value=7)
     def test_day_of_week(self, _):
         bc_year, bc_month, bc_day = self.random_bce_ymd()
         bc_julian_day = convertdate.julian.to_jd(bc_year, bc_month, bc_day)
@@ -650,6 +650,3 @@ class JulianTest(RealCalendarTestCase):
             self.julian_cdt.day_of_week(ad_ordinal)
             == (ad_julian_day + 0.5) % 7
         )
-
-    def test_days_in_week(self):
-        assert self.julian_cdt.days_in_week() == 7

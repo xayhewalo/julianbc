@@ -640,7 +640,7 @@ class LunarHijriTest(RealCalendarTestCase):
     #
     # Weeks
     #
-    @patch("src.customdate.ConvertibleDate.days_in_week", return_value=7)
+    @patch("src.db.ConvertibleCalendar.days_in_weeks", return_value=7)
     def test_day_of_week(self, _):
         bh_year, bh_month, bh_day = self.random_bce_ymd()
         bh_julian_day = convertdate.islamic.to_jd(bh_year, bh_month, bh_day)
@@ -665,6 +665,3 @@ class LunarHijriTest(RealCalendarTestCase):
             self.l_hijri_cdt.day_of_week(ah_ordinal)
             == (convertdate.utils.jwday(ah_julian_day) + 1) % 7
         )
-
-    def test_days_in_week(self):
-        assert self.l_hijri_cdt.days_in_week() == 7

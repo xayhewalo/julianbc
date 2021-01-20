@@ -20,6 +20,7 @@ import math
 import itertools
 
 from collections import deque
+from src.db import ConvertibleCalendar
 from typing import Union
 
 
@@ -54,11 +55,9 @@ class ConvertibleDate:
     **Not** a drop in replacement for :mod:`date`.
     """
 
-    def __init__(self, calendar, date_sep="/"):
+    def __init__(self, calendar: ConvertibleCalendar, date_sep="/"):
         self.date_sep = date_sep
-        # fmt: off
-        self.calendar = calendar  # type: from src.models import ConvertibleCalendar # noqa: E501, F723
-        # fmt: on
+        self.calendar = calendar
 
     def convert_ast_ymd(
         self,
@@ -400,65 +399,11 @@ class ConvertibleDate:
             return len(self.calendar.leap_year_month_names)
         return len(self.calendar.common_year_month_names)
 
-    def shift_n_weekdays(
-        self, src_ordinal: int, target_weekday: int, skip: int
-    ) -> int:
-        """
-        I.E Next Thursday, last Tuesday, this Friday.
-        If skip==0, and the source ordinal's weekday is the same as the target
-        weekday, the source ordinal will be returned
-
-        :param src_ordinal: ordinal to start shift from
-        :param target_weekday: the weekday the returned ordinal should be
-        :param skip: number of the target weekdays to skip.
-            I.e for "this monday" skip == 0, "last Tuesday" skip == -1,
-        :returns: ordinal of target day
-        """
-        src_weekday = self.day_of_week(src_ordinal)
-        if skip != 0:
-            shift_direction = math.copysign(1, skip)
-        else:
-            shift_direction = math.copysign(1, target_weekday - src_weekday)
-        weekday_diff = target_weekday + src_weekday * shift_direction
-        total_shift = weekday_diff + skip * self.days_in_week()
-        return int(src_ordinal + total_shift)
-
-    def week_range(self, week_number: int) -> tuple[int, int]:
-        """
-        Useful in "three weeks later" conversions
-        :returns: start and end ordinal for the given week number
-        """
-        raise NotImplementedError
-
-    def week_number(self, ordinal: int) -> int:
-        raise NotImplementedError
-
-    def first_ordinal_of_year(self, ast_year: int) -> int:
-        raise NotImplementedError
-
-    def nth_weekday_in_month(
-        self, nth: int, weekday: int, ast_year: int, month: int
-    ) -> int:
-        """
-        :param nth: i.e 2 for the 2nd monday in April
-        :param weekday: index in to self.calendar.weekday_names
-        :param ast_year: astronomical year
-        :param month: index into self.calendar.months_in_<type>_year
-        :returns: ordinal for the weekday desired
-        """
-        raise NotImplementedError
-
-    def first_ordinal_of_month(self, ast_year: int, month: int) -> int:
-        raise NotImplementedError
-
     def day_of_week(self, ordinal: int) -> Union[int, None]:
         """
         :returns: index into :py:attr:`calendar.weekday_names` or None if
         calendar has no weeks
         """
-        days_in_weeks = self.days_in_week()
+        days_in_weeks = self.calendar.days_in_weeks
         if days_in_weeks:
             return (ordinal + self.calendar.epoch_weekday - 1) % days_in_weeks
-
-    def days_in_week(self) -> int:
-        return len(self.calendar.weekday_names)

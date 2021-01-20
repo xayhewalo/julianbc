@@ -676,20 +676,7 @@ class GregorianTest(RealCalendarTestCase):
     #
     # Weeks
     #
-    """def test_shift_n_weekdays(self):  # todo uncomment when ready to test
-        src_datetime = FAKE.date_time_ad()
-        src_ordinal = src_datetime.toordinal()
-        weeks_to_skip = FAKE.random_int(min=-52, max=52)
-        new_datetime = src_datetime + timedelta(weeks=weeks_to_skip)
-        new_weekday = new_datetime.weekday()
-        assert self.gregorian_cdt.shift_n_weekdays(
-            src_ordinal, new_weekday, weeks_to_skip
-        ) == new_datetime.toordinal()
-        assert self.gregorian_cdt.shift_n_weekdays(
-            0, 3, 0  # Thursday before Sunday December 31st 1 BCE
-        ) == -3"""
-
-    @patch("src.customdate.ConvertibleDate.days_in_week", return_value=7)
+    @patch("src.db.ConvertibleCalendar.days_in_weeks", return_value=7)
     def test_day_of_week(self, _):
         daycount = self.gregorian_dc
         bce_year, bce_month, bce_day = self.random_bce_ymd()
@@ -713,6 +700,3 @@ class GregorianTest(RealCalendarTestCase):
         assert self.gregorian_cdt.day_of_week(ce_ordinal) == utils.jwday(
             ce_julian_day
         )
-
-    def test_days_in_week(self):
-        assert self.gregorian_cdt.days_in_week() == 7

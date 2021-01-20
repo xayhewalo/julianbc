@@ -1,6 +1,7 @@
 import pytest
 
 from src.customdate import ConvertibleDate
+from src.db import ConvertibleCalendar
 from tests.factories import ConvertibleCalendarFactory
 from tests.utils import CalendarTestCase, FAKE
 from unittest.mock import patch
@@ -62,7 +63,7 @@ class ConvertibleDateTimeTest(CalendarTestCase):
 
     def random_monthless_calendar(
         self,
-    ) -> tuple[ConvertibleCalendarFactory, int]:
+    ) -> tuple[ConvertibleCalendar, int]:
         days_in_year = FAKE.random_int(min=1)
         monthless_calendar = self.calendar_factory.build(
             common_year_month_names=(),
@@ -632,8 +633,9 @@ class ConvertibleDateTimeTest(CalendarTestCase):
     #
     # Weeks
     #
-    @patch("src.customdate.ConvertibleDate.days_in_week", return_value=0)
-    def test_day_of_week_with_no_weeks(self, _):
+    @patch("src.db.ConvertibleCalendar.days_in_weeks")
+    def test_day_of_week_with_no_weeks(self, patch_days_in_weeks):
+        patch_days_in_weeks.__get__ = lambda *_: 0  # enforce weekless calendar
         weekless_calendar = self.calendar_factory.build(
             weekday_names=(),
             weekday_start=(),
@@ -643,13 +645,3 @@ class ConvertibleDateTimeTest(CalendarTestCase):
         _ordinal = FAKE.random_int()
         cdt = ConvertibleDate(calendar=weekless_calendar)
         assert cdt.day_of_week(_ordinal) is None
-
-    def test_days_in_week(self):
-        weekless_calendar = self.calendar_factory.build(
-            weekday_names=(),
-            weekday_start=(),
-            weekends=(),
-            epoch_weekday=(),
-        )
-        cdt = ConvertibleDate(calendar=weekless_calendar)
-        assert cdt.days_in_week() == 0

@@ -19,7 +19,6 @@ JulianBC will be a visual-timeline program in the near future
 #### ConvertibleClock
 - [X] add `convertible_clocks`
 - [X] change table name to "convertible_clock"
-- [ ] test error raised for `convert_hms`
 #### Entity
 - [ ] string validation on `aliases`
 - [ ] add related `calendar`
@@ -56,6 +55,7 @@ JulianBC will be a visual-timeline program in the near future
 - [X] remove week stuff
 #### ConvertibleTime
 - [X] remove `convertible_clocks`
+- [X] test error raised for `convert_hms`
 - [ ] add `next_hms`
     - [ ] different methods for `hour`, `minute`, and `second`
     - [ ] OR convert `hms` and `frequency` to `seconds` and find when modulo == 0(?)

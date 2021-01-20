@@ -74,6 +74,17 @@ class ConvertibleTimeTest(DatabaseTestCase):
         patch_hms_to_seconds.assert_called_once_with(foreign_hms)
         patch_seconds_to_hms.assert_called_once_with(seconds)
 
+    @patch(
+        "src.db.eon.customclock.ConvertibleClock.convertible_clocks",
+        return_value=list(),
+    )
+    def test_convert_hms_raises(self, _):
+        clock = self.clock_factory.build()
+        time = self.time_factory.build(clock=clock)
+        hms = 1, 1, 1
+        with pytest.raises(ValueError):
+            time.convert_hms(hms, time)
+
     def test_hms_to_seconds(self):
         assert self.earth_time.hms_to_seconds(self.hms) == self.seconds
 

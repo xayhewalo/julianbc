@@ -330,13 +330,20 @@ class ConvertibleDate:
 
     def is_valid_ast_ymd(self, ast_ymd: tuple) -> bool:
         ast_year, month, day = ast_ymd
-        max_days = self.days_in_year(ast_year)
+        if not self.is_valid_month(ast_year, month):
+            return False
+
         if month:
-            max_months = self.months_in_year(ast_year)
-            if not 1 <= month <= max_months:
-                return False
-            max_days = self.days_in_months(ast_year)[month - 1]
+            max_days = self.days_in_month(ast_year, month)
+        else:
+            max_days = self.days_in_year(ast_year)
         return 1 <= day <= max_days
+
+    def is_valid_month(self, ast_year: int, month: Union[int, None]) -> bool:
+        max_months = self.months_in_year(ast_year)
+        if month is None:
+            return max_months == 0
+        return 1 <= month <= max_months
 
     def is_valid_ordinal_date(self, ordinal_date: tuple) -> bool:
         """assumes astronomical year numbering"""
@@ -383,6 +390,9 @@ class ConvertibleDate:
         if self.is_leap_year(ast_year):
             return self.calendar.days_in_leap_year_months
         return self.calendar.days_in_common_year_months
+
+    def days_in_month(self, ast_year: int, month: int) -> int:
+        return self.days_in_months(ast_year)[month - 1]
 
     def days_in_year(self, ast_year: int) -> int:
         if self.is_leap_year(ast_year):

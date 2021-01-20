@@ -44,8 +44,8 @@ JulianBC will be a visual-timeline program in the near future
 - [ ] Generic function to find `special_common_years` and `special_leap_years`
 - [X] remove `_increment_by_one`
 - [ ] add `days_in_month` and use it
-- [ ] add `is_valid_month` and use it
-- [ ] add `days_in_month`
+- [X] add `is_valid_month` and use it
+- [ ] make `days_in_year` use column properties on calendar
 - [ ] add `shift_ast_ymd`
     - [ ] `shift_ast_year`
     - [ ] `shift_ast_month`

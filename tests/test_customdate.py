@@ -81,9 +81,8 @@ class ConvertibleDateTest(CalendarTestCase):
     # Ordinal Conversions
     #
 
-    # ConvertibleDateTime.increment_ast_ymd tested in test_gregorian.py
-    # ConvertibleDateTime.ordinal_date_to_ordinal in test_gregorian.py
-    # ConvertibleDateTime.ordinal_to_ordinal_date in test_gregorian.py
+    # ConvertibleDate.ordinal_date_to_ordinal in test_gregorian.py
+    # ConvertibleDate.ordinal_to_ordinal_date in test_gregorian.py
 
     def test__start_and_sign(self):
         non_positive_num = FAKE.random_int(min=-9999, max=-1)
@@ -121,15 +120,35 @@ class ConvertibleDateTest(CalendarTestCase):
             day_of_year,
         )
 
-    def test_ordinal_date_to_ast_ymd_with_no_months_are_reversible(self):
+    @patch(
+        "src.customdate.ConvertibleDate.is_valid_ast_ymd",
+        return_value=True,
+    )
+    @patch(
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
+        return_value=True,
+    )
+    def test_ordinal_date_to_ast_ymd_with_no_months_are_reversible(self, *_):
         monthless_calendar, days_in_year = self.random_monthless_calendar()
         day_of_year = FAKE.random_int(min=1, max=days_in_year)
         ast_year = FAKE.random_int()
         monthless_ast_ymd = ast_year, None, day_of_year
         ordinal_date = ast_year, day_of_year
-        cdt = ConvertibleDate(calendar=monthless_calendar)
-        assert cdt.ordinal_date_to_ast_ymd(ordinal_date) == monthless_ast_ymd
-        assert cdt.ast_ymd_to_ordinal_date(monthless_ast_ymd) == ordinal_date
+        cd = ConvertibleDate(calendar=monthless_calendar)
+        assert cd.ordinal_date_to_ast_ymd(ordinal_date) == monthless_ast_ymd
+        assert cd.ast_ymd_to_ordinal_date(monthless_ast_ymd) == ordinal_date
+        assert (
+            cd.ordinal_date_to_ast_ymd(
+                cd.ast_ymd_to_ordinal_date(monthless_ast_ymd)
+            )
+            == monthless_ast_ymd
+        )
+        assert (
+            cd.ast_ymd_to_ordinal_date(
+                cd.ordinal_date_to_ast_ymd(ordinal_date)
+            )
+            == ordinal_date
+        )
 
     #
     # Human readable years
@@ -325,7 +344,7 @@ class ConvertibleDateTest(CalendarTestCase):
         assert cdt.format_hr_date(ast_ymd) == hr_date
 
     #
-    # ConvertibleDateTime.era
+    # ConvertibleDate.era
     #
     def test_era_for_valid_ranges(self):
         calendar = self.calendar_factory.build()
@@ -384,7 +403,7 @@ class ConvertibleDateTest(CalendarTestCase):
             ConvertibleDate(calendar=calendar).era(year)
 
     #
-    # ConvertibleDateTime.is_descending_era
+    # ConvertibleDate.is_descending_era
     #
     def test_is_descending_era(self):
         calendar = self.calendar_factory.build()
@@ -403,7 +422,7 @@ class ConvertibleDateTest(CalendarTestCase):
         )
 
     #
-    # ConvertibleDateTime.is_leap_year
+    # ConvertibleDate.is_leap_year
     #
     def test_is_leap_year_with_cycles(self):
         calendar = self.calendar_factory.build(
@@ -515,9 +534,10 @@ class ConvertibleDateTest(CalendarTestCase):
         assert cdt.is_leap_year(special_common_year) is False
 
     #
-    # ConvertibleDateTime.is_valid_ast_ymd
+    # ConvertibleDate.is_valid_ast_ymd
     #
-    def test_is_valid_ast_ymd_with_no_months(self):
+    @patch("src.customdate.ConvertibleDate.is_valid_month", return_value=True)
+    def test_is_valid_ast_ymd_with_no_months(self, _):
         monthless_calendar, days_in_year = self.random_monthless_calendar()
         negative_day_of_year = FAKE.random_int(min=-9999, max=0)
         day_of_year = FAKE.random_int(min=1, max=days_in_year)
@@ -532,12 +552,25 @@ class ConvertibleDateTest(CalendarTestCase):
         assert monthless_cdt.is_valid_ast_ymd(negative_ast_ymd) is False
         assert monthless_cdt.is_valid_ast_ymd(too_large_ast_ymd) is False
 
-    # ConvertibleDateTime.days_in_months tested in test_gregorian.py
-    # ConvertibleDateTime.days_in_year tested in test_gregorian.py
-    # ConvertibleDateTime.months_in_year tested in test_gregorian.py
+    #
+    # ConvertibleDate.is_valid_month
+    #
+    @patch("src.customdate.ConvertibleDate.months_in_year", return_value=0)
+    def test_is_valid_month_with_no_months(self, patch_months_in_year):
+        monthless_calendar, _ = self.random_monthless_calendar()
+        monthless_cd = ConvertibleDate(calendar=monthless_calendar)
+        year = FAKE.random_int(min=-9999)
+        none_is_valid_for_monthless = monthless_cd.is_valid_month(year, None)
+
+        calendar = self.calendar_factory.build()
+        cd = ConvertibleDate(calendar=calendar)
+        patch_months_in_year.return_value = FAKE.random_int(min=1)
+        none_is_invalid_for_normal_cal = not cd.is_valid_month(year, None)
+        assert none_is_valid_for_monthless
+        assert none_is_invalid_for_normal_cal
 
     #
-    # ConvertibleDateTime.is_valid_ordinal_date
+    # ConvertibleDate.is_valid_ordinal_date
     #
     def test_is_valid_ordinal_date_with_no_months(self):
         monthless_calendar, days_in_year = self.random_monthless_calendar()
@@ -556,7 +589,7 @@ class ConvertibleDateTest(CalendarTestCase):
         assert cdt.is_valid_ordinal_date(too_big_ordinal_date) is False
 
     #
-    # ConvertibleDateTime.gen_years_in_eras
+    # ConvertibleDate.gen_years_in_eras
     #
     def test_gen_years_in_eras(self):
         calendar = self.calendar_factory.build()
@@ -621,6 +654,11 @@ class ConvertibleDateTest(CalendarTestCase):
             assert fetched_years_before == expected_years_before_era
         assert skipped_eras not in fetched_eras
         assert skipped_hr_era_ranges not in fetched_hr_era_ranges
+
+    # ConvertibleDate.days_in_months tested in test_gregorian.py
+    # ConvertibleDate.days_in_month tested in test_gregorian.py
+    # ConvertibleDate.days_in_year tested in test_gregorian.py
+    # ConvertibleDate.months_in_year tested in test_gregorian.py
 
     #
     # Weeks

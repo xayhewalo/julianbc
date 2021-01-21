@@ -84,6 +84,19 @@ class ConvertibleDateTest(CalendarTestCase):
     # ConvertibleDate.ordinal_date_to_ordinal in test_gregorian.py
     # ConvertibleDate.ordinal_to_ordinal_date in test_gregorian.py
 
+    def test_special_years(self):
+        raise NotImplementedError
+
+    def test_all_cycle_ordinals(self):
+        raise NotImplementedError
+
+    def test_common_year_cycle_ordinals(self):
+        raise NotImplementedError  # todo test real dates
+
+    @patch("src.customdate.ConvertibleDate.common_year_cycle_ordinals")
+    def test_common_years_in_normal_cycle(self, _):
+        raise NotImplementedError
+
     def test__start_and_sign(self):
         non_positive_num = FAKE.random_int(min=-9999, max=-1)
         positive_num = FAKE.random_int(min=1)

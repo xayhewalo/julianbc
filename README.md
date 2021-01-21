@@ -30,13 +30,14 @@ JulianBC will be a visual-timeline program in the near future
 
 ### Business Logic
 #### ConvertibleDate
-- [ ] recalculate calendar properties when it is set
-- [ ] Prevent common year cycle ordinals from slowing tests
-- [ ] refactor ordinal conversions
-    - [ ] add `common_year_cycle_ordinals` property
-        - [ ] prevent setting `common_year_cycle_ordinals`
-    - [ ] add `common_years_in_normal_cycle` property
-        - [ ] prevent setting `common_years_in_normal_cycle`
+- [X] recalculate calendar properties when it is set
+- [X] Prevent common year cycle ordinals from slowing tests
+- [X] refactor `ordinal_date_to_ordinal`
+- [ ] refactor `ordinal_to_ordinal_date`
+    - [X] add `common_year_cycle_ordinals` property
+        - [X] prevent setting `common_year_cycle_ordinals`
+    - [X] add `common_years_in_normal_cycle` property
+        - [X] prevent setting `common_years_in_normal_cycle`
     - [X] add `leap_years_in_normal_cycle` property
 - [ ] Refactor `is_leap_year`
 - [ ] Make ordinal conversions DRY with `is_leap_year`
@@ -127,3 +128,4 @@ JulianBC will be a visual-timeline program in the near future
 
 ### Misc.
 - [ ] Probably more stuff...
+- [ ] Fix `days_in_month` test for Julian Calendar for BCE years

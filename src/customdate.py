@@ -85,20 +85,100 @@ class ConvertibleDate:
         )
         return self.ordinal_date_to_ast_ymd(new_native_ordinal_date)
 
-    def ordinal_date_to_ordinal(self, ordinal_date: tuple) -> int:
-        """
-        assumes astronomical year numbering
-            :raises ValueError: for an invalid ordinal date
-        """
+    def ordinal_date_to_ordinal(self, ordinal_date: tuple[int, int]) -> int:
+        """:raises ValueError: for an invalid ordinal date"""
         if not self.is_valid_ordinal_date(ordinal_date):
             raise ValueError(f"{ordinal_date} is invalid for {self.calendar}")
 
         ast_year, day_of_year = ordinal_date
-        ay, sign = self._start_and_sign(ast_year)
-        days_in_elapsed_years = 0
-        while abs(ay) < abs(ast_year):
-            days_in_elapsed_years += self.days_in_year(ay)
-            ay += sign * 1
+        start_ast_year, sign = self._start_and_sign(ast_year)
+
+        elapsed_years = abs(ast_year - start_ast_year)
+        cycle_length = self.calendar.leap_year_cycle_length
+        completed_cycles = int(elapsed_years / cycle_length)
+        normal_leap_years_in_previous_cycles = (
+            completed_cycles * self.calendar.leap_years_in_normal_cycle
+        )
+        normal_common_years_in_previous_cycles = (
+            completed_cycles * self.common_years_in_normal_cycle
+        )
+
+        # how far are we into the current cycle?
+        current_cycle_start_ast_year = (
+            (completed_cycles * cycle_length) + start_ast_year
+        ) * sign
+        cycle_index = abs(ast_year - current_cycle_start_ast_year)
+
+        all_cycle_ordinals = self.all_cycle_ordinals
+        if sign == -1:
+            all_cycle_ordinals.reverse()
+
+        all_this_cycles_ordinals_up_to_this_year = list()
+        idx = 0
+        while idx != cycle_index:
+            current_ordinal = all_cycle_ordinals[idx]
+            all_this_cycles_ordinals_up_to_this_year.append(current_ordinal)
+            idx += 1
+
+        leap_ordinals = self.calendar.leap_year_cycle_ordinals
+        this_cycles_elapsed_leap_ordinals = [
+            ord_
+            for ord_ in all_this_cycles_ordinals_up_to_this_year
+            if ord_ in leap_ordinals
+        ]
+        elapsed_normal_leap_years_in_this_cycle = len(
+            this_cycles_elapsed_leap_ordinals
+        )
+
+        common_ordinals = self.common_year_cycle_ordinals
+        this_cycles_elapsed_common_ordinals = [
+            ord_
+            for ord_ in all_this_cycles_ordinals_up_to_this_year
+            if ord_ in common_ordinals
+        ]
+        elapsed_normal_common_years_in_this_cycle = len(
+            this_cycles_elapsed_common_ordinals
+        )
+
+        if sign == 1:
+            all_elapsed_years = set(range(start_ast_year, ast_year))
+        else:
+            all_elapsed_years = set(range(ast_year + 1, start_ast_year + 1))
+        special_leaps = self.calendar.special_leap_years
+        special_commons = self.calendar.special_common_years
+        elapsed_special_leap_years = set(special_leaps) & all_elapsed_years
+        elapsed_special_common_years = set(special_commons) & all_elapsed_years
+        net_elapsed_special_leaps = len(  # only count common years made leap
+            [
+                special_leap
+                for special_leap in elapsed_special_leap_years
+                if not self.is_leap_year(special_leap, count_special=False)
+            ]
+        )
+        net_elapsed_special_commons = len(  # only count leap years made common
+            [
+                special_common
+                for special_common in elapsed_special_common_years
+                if self.is_leap_year(special_common, count_special=False)
+            ]
+        )
+
+        num_elapsed_leap_years = (
+            normal_leap_years_in_previous_cycles
+            + elapsed_normal_leap_years_in_this_cycle
+            + net_elapsed_special_leaps
+            - net_elapsed_special_commons
+        )
+        num_elapsed_common_years = (
+            normal_common_years_in_previous_cycles
+            + elapsed_normal_common_years_in_this_cycle
+            + net_elapsed_special_commons
+            - net_elapsed_special_leaps
+        )
+        days_in_elapsed_years = (
+            num_elapsed_leap_years * self.calendar.days_in_leap_year
+            + num_elapsed_common_years * self.calendar.days_in_common_year
+        )
 
         ordinal = day_of_year + days_in_elapsed_years
         if self.is_descending_era(ast_year):
@@ -129,6 +209,45 @@ class ConvertibleDate:
             f"{ast_year, day_of_year}, for the {self.calendar} calendar"
         )
         return ast_year, day_of_year
+
+    @property
+    def all_cycle_ordinals(self) -> deque:
+        """common and leap year cycle ordinals"""
+        start = self.calendar.leap_year_cycle_start
+        all_cycle_ordinals = deque(
+            itertools.chain.from_iterable(
+                [
+                    range(start, cycle + start)
+                    for cycle in self.calendar.leap_year_cycles
+                ]
+            )
+        )
+        all_cycle_ordinals.rotate(self.calendar.leap_year_offset)
+        return all_cycle_ordinals
+
+    @all_cycle_ordinals.setter
+    def all_cycle_ordinals(self, _):
+        raise AttributeError("Denied. Change calendar instead.")
+
+    @property
+    def common_year_cycle_ordinals(self) -> tuple:
+        return tuple(
+            _ord
+            for _ord in self.all_cycle_ordinals
+            if _ord not in self.calendar.leap_year_cycle_ordinals
+        )
+
+    @common_year_cycle_ordinals.setter
+    def common_year_cycle_ordinals(self, _):
+        raise AttributeError("Denied. Change calendar instead.")
+
+    @property
+    def common_years_in_normal_cycle(self) -> int:
+        return len(self.common_year_cycle_ordinals)
+
+    @common_years_in_normal_cycle.setter
+    def common_years_in_normal_cycle(self, _):
+        raise AttributeError("Denied. Change calendar instead.")
 
     @staticmethod
     def _start_and_sign(num: int) -> tuple[int, int]:
@@ -289,13 +408,18 @@ class ConvertibleDate:
         era_range = self.calendar.era_ranges[self.calendar.eras.index(era)]
         return abs(float(era_range[0])) > abs(float(era_range[1]))
 
-    def is_leap_year(self, ast_year: int) -> bool:
+    def is_leap_year(self, ast_year: int, count_special: bool = True) -> bool:
+        """
+        :param ast_year: astronomical year
+        :param count_special: flag to consider special leap and common years
+        :returns: whether or not an astronomical year is a leap year
+        """
         if not self.calendar.has_leap_year:
             return False
 
-        if ast_year in self.calendar.special_common_years:
+        if ast_year in self.calendar.special_common_years and count_special:
             return False
-        if ast_year in self.calendar.special_leap_years:
+        if ast_year in self.calendar.special_leap_years and count_special:
             return True
 
         start = self.calendar.leap_year_cycle_start

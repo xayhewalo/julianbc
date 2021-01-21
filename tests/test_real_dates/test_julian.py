@@ -2,6 +2,7 @@ import convertdate
 import pytest
 
 from .utils import RealCalendarTestCase, FAKE
+from collections import deque
 from unittest.mock import patch
 
 
@@ -25,6 +26,24 @@ class JulianTest(RealCalendarTestCase):
     def random_leap_year() -> int:
         # don't check with convertdate, it's leap method is wrong
         return FAKE.random_int(min=-9999) * 4
+
+    @staticmethod
+    def ordinal_conversion_patches(*args):
+        patch_days_common_year = args[0]
+        patch_days_in_leap_year = args[1]
+        patch_common_years_in_normal_cycle = args[2]
+        patch_leap_years_in_normal_cycle = args[3]
+        patch_common_year_cycle_ordinals = args[4]
+        patch_all_cycle_ordinals = args[5]
+        patch_leap_year_cycle_length = args[6]
+
+        patch_leap_year_cycle_length.__get__ = lambda *_: 4
+        patch_all_cycle_ordinals.__get__ = lambda *_: deque([1, 2, 3, 4])
+        patch_common_year_cycle_ordinals.__get__ = lambda *_: (1, 2, 3)
+        patch_leap_years_in_normal_cycle.__get__ = lambda *_: 1
+        patch_common_years_in_normal_cycle.__get__ = lambda *_: 3
+        patch_days_in_leap_year.__get__ = lambda *_: 366
+        patch_days_common_year.__get__ = lambda *_: 365
 
     #
     # ConvertibleDate.convert_ast_ymd
@@ -168,13 +187,27 @@ class JulianTest(RealCalendarTestCase):
         "src.customdate.ConvertibleDate._start_and_sign",
         return_value=(0, -1),
     )
-    def test_ordinal_date_to_ordinal_for_bc_year(self, *_):
+    @patch("src.db.ConvertibleCalendar.leap_year_cycle_length")
+    @patch("src.customdate.ConvertibleDate.all_cycle_ordinals")
+    @patch("src.customdate.ConvertibleDate.common_year_cycle_ordinals")
+    @patch("src.db.ConvertibleCalendar.leap_years_in_normal_cycle")
+    @patch("src.customdate.ConvertibleDate.common_years_in_normal_cycle")
+    @patch("src.db.ConvertibleCalendar.days_in_leap_year")
+    @patch("src.db.ConvertibleCalendar.days_in_common_year")
+    def test_ordinal_date_to_ordinal_for_bc_year(self, *args):
+        self.ordinal_conversion_patches(*args)
+
         assert self.julian_cd.ordinal_date_to_ordinal((0, 366)) == 0
         assert self.julian_cd.ordinal_date_to_ordinal((0, 1)) == -365
         assert self.julian_cd.ordinal_date_to_ordinal((-1, 365)) == -366
         assert self.julian_cd.ordinal_date_to_ordinal((-1, 1)) == -730
         assert self.julian_cd.ordinal_date_to_ordinal((-2, 365)) == -731
         assert self.julian_cd.ordinal_date_to_ordinal((-2, 165)) == -931
+        assert self.julian_cd.ordinal_date_to_ordinal((-2, 1)) == -1095
+        assert self.julian_cd.ordinal_date_to_ordinal((-3, 365)) == -1096
+        assert self.julian_cd.ordinal_date_to_ordinal((-3, 1)) == -1460
+        assert self.julian_cd.ordinal_date_to_ordinal((-4, 366)) == -1461
+        assert self.julian_cd.ordinal_date_to_ordinal((-4, 145)) == -1682
 
     @patch(
         "src.customdate.ConvertibleDate.is_valid_ordinal_date",
@@ -188,12 +221,27 @@ class JulianTest(RealCalendarTestCase):
         "src.customdate.ConvertibleDate._start_and_sign",
         return_value=(1, 1),
     )
-    def test_ordinal_date_to_ordinal_for_ad_year(self, *_):
+    @patch("src.db.ConvertibleCalendar.leap_year_cycle_length")
+    @patch("src.customdate.ConvertibleDate.all_cycle_ordinals")
+    @patch("src.customdate.ConvertibleDate.common_year_cycle_ordinals")
+    @patch("src.db.ConvertibleCalendar.leap_years_in_normal_cycle")
+    @patch("src.customdate.ConvertibleDate.common_years_in_normal_cycle")
+    @patch("src.db.ConvertibleCalendar.days_in_leap_year")
+    @patch("src.db.ConvertibleCalendar.days_in_common_year")
+    def test_ordinal_date_to_ordinal_for_ad_year(self, *args):
+        self.ordinal_conversion_patches(*args)
+
         assert self.julian_cd.ordinal_date_to_ordinal((1, 1)) == 1
         assert self.julian_cd.ordinal_date_to_ordinal((1, 365)) == 365
         assert self.julian_cd.ordinal_date_to_ordinal((2, 1)) == 366
         assert self.julian_cd.ordinal_date_to_ordinal((2, 365)) == 730
+        assert self.julian_cd.ordinal_date_to_ordinal((3, 1)) == 731
         assert self.julian_cd.ordinal_date_to_ordinal((3, 102)) == 832
+        assert self.julian_cd.ordinal_date_to_ordinal((3, 365)) == 1095
+        assert self.julian_cd.ordinal_date_to_ordinal((4, 1)) == 1096
+        assert self.julian_cd.ordinal_date_to_ordinal((4, 366)) == 1461
+        assert self.julian_cd.ordinal_date_to_ordinal((5, 1)) == 1462
+        assert self.julian_cd.ordinal_date_to_ordinal((5, 99)) == 1560
 
     @patch(
         "src.customdate.ConvertibleDate.is_valid_ordinal_date",

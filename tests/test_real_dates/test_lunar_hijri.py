@@ -2,6 +2,7 @@ import convertdate
 import pytest
 
 from .utils import RealCalendarTestCase, FAKE
+from collections import deque
 from unittest.mock import patch
 
 
@@ -34,6 +35,27 @@ class LunarHijriTest(RealCalendarTestCase):
             year = FAKE.random_int()
         assert convertdate.islamic.leap(year), f"{year} is a common year "
         return year
+
+    def ordinal_conversion_patches(self, *args):
+        patch_days_common_year = args[0]
+        patch_days_in_leap_year = args[1]
+        patch_common_years_in_normal_cycle = args[2]
+        patch_leap_years_in_normal_cycle = args[3]
+        patch_common_year_cycle_ordinals = args[4]
+        patch_all_cycle_ordinals = args[5]
+        patch_leap_year_cycle_length = args[6]
+
+        patch_leap_year_cycle_length.__get__ = lambda *_: 30
+        patch_all_cycle_ordinals.__get__ = lambda *_: deque(range(1, 31))
+        _common_ordinals = list(
+            set(range(1, 31)) ^ set(self.l_hijri.leap_year_cycle_ordinals)
+        )
+        _common_ordinals.sort()
+        patch_common_year_cycle_ordinals.__get__ = lambda *_: _common_ordinals
+        patch_leap_years_in_normal_cycle.__get__ = lambda *_: 11
+        patch_common_years_in_normal_cycle.__get__ = lambda *_: 19
+        patch_days_in_leap_year.__get__ = lambda *_: 355
+        patch_days_common_year.__get__ = lambda *_: 354
 
     #
     # ConvertibleDate.convert_ast_ymd
@@ -132,7 +154,16 @@ class LunarHijriTest(RealCalendarTestCase):
         "src.customdate.ConvertibleDate._start_and_sign",
         return_value=(0, -1),
     )
-    def test_ordinal_date_to_ordinal_for_bh_year(self, *_):
+    @patch("src.db.ConvertibleCalendar.leap_year_cycle_length")
+    @patch("src.customdate.ConvertibleDate.all_cycle_ordinals")
+    @patch("src.customdate.ConvertibleDate.common_year_cycle_ordinals")
+    @patch("src.db.ConvertibleCalendar.leap_years_in_normal_cycle")
+    @patch("src.customdate.ConvertibleDate.common_years_in_normal_cycle")
+    @patch("src.db.ConvertibleCalendar.days_in_leap_year")
+    @patch("src.db.ConvertibleCalendar.days_in_common_year")
+    def test_ordinal_date_to_ordinal_for_bh_year(self, *args):
+        self.ordinal_conversion_patches(*args)
+        # don't test full cycle because that will be verbose
         assert self.l_hijri_cd.ordinal_date_to_ordinal((0, 354)) == 0
         assert self.l_hijri_cd.ordinal_date_to_ordinal((0, 1)) == -353
         assert self.l_hijri_cd.ordinal_date_to_ordinal((-1, 355)) == -354
@@ -152,7 +183,16 @@ class LunarHijriTest(RealCalendarTestCase):
         "src.customdate.ConvertibleDate._start_and_sign",
         return_value=(1, 1),
     )
-    def test_ordinal_date_to_ordinal_for_ah_year(self, *_):
+    @patch("src.db.ConvertibleCalendar.leap_year_cycle_length")
+    @patch("src.customdate.ConvertibleDate.all_cycle_ordinals")
+    @patch("src.customdate.ConvertibleDate.common_year_cycle_ordinals")
+    @patch("src.db.ConvertibleCalendar.leap_years_in_normal_cycle")
+    @patch("src.customdate.ConvertibleDate.common_years_in_normal_cycle")
+    @patch("src.db.ConvertibleCalendar.days_in_leap_year")
+    @patch("src.db.ConvertibleCalendar.days_in_common_year")
+    def test_ordinal_date_to_ordinal_for_ah_year(self, *args):
+        self.ordinal_conversion_patches(*args)
+        # don't test full cycle because that will be verbose
         assert self.l_hijri_cd.ordinal_date_to_ordinal((3, 214)) == 923
         assert self.l_hijri_cd.ordinal_date_to_ordinal((2, 355)) == 709
         assert self.l_hijri_cd.ordinal_date_to_ordinal((2, 1)) == 355

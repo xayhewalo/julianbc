@@ -2,6 +2,7 @@ import convertdate
 import pytest
 
 from .utils import RealCalendarTestCase
+from collections import deque
 from convertdate import gregorian, ordinal, utils
 from tests.utils import FAKE
 from unittest.mock import patch
@@ -61,6 +62,27 @@ class GregorianTest(RealCalendarTestCase):
         bce_ordinal = self.gregorian_dc.from_gregorian(year, month, day) + 1
         bce_ordinal_date = ordinal.from_gregorian(year, month, day)
         return bce_ordinal, bce_ordinal_date
+
+    def ordinal_conversion_patches(self, *args):
+        patch_days_common_year = args[0]
+        patch_days_in_leap_year = args[1]
+        patch_common_years_in_normal_cycle = args[2]
+        patch_leap_years_in_normal_cycle = args[3]
+        patch_common_year_cycle_ordinals = args[4]
+        patch_all_cycle_ordinals = args[5]
+        patch_leap_year_cycle_length = args[6]
+
+        patch_leap_year_cycle_length.__get__ = lambda *_: 400
+        patch_all_cycle_ordinals.__get__ = lambda *_: deque(range(1, 401))
+        _common_ordinals = list(
+            set(range(1, 401)) ^ set(self.gregorian.leap_year_cycle_ordinals)
+        )
+        _common_ordinals.sort()
+        patch_common_year_cycle_ordinals.__get__ = lambda *_: _common_ordinals
+        patch_leap_years_in_normal_cycle.__get__ = lambda *_: 97
+        patch_common_years_in_normal_cycle.__get__ = lambda *_: 303
+        patch_days_in_leap_year.__get__ = lambda *_: 366
+        patch_days_common_year.__get__ = lambda *_: 365
 
     #
     # ConvertibleDate.convert_ast_ymd
@@ -151,7 +173,16 @@ class GregorianTest(RealCalendarTestCase):
         "src.customdate.ConvertibleDate._start_and_sign",
         return_value=(0, -1),
     )
-    def test_ordinal_date_to_ordinal_for_bce_year(self, *_):
+    @patch("src.db.ConvertibleCalendar.leap_year_cycle_length")
+    @patch("src.customdate.ConvertibleDate.all_cycle_ordinals")
+    @patch("src.customdate.ConvertibleDate.common_year_cycle_ordinals")
+    @patch("src.db.ConvertibleCalendar.leap_years_in_normal_cycle")
+    @patch("src.customdate.ConvertibleDate.common_years_in_normal_cycle")
+    @patch("src.db.ConvertibleCalendar.days_in_leap_year")
+    @patch("src.db.ConvertibleCalendar.days_in_common_year")
+    def test_ordinal_date_to_ordinal_for_bce_year(self, *args):
+        self.ordinal_conversion_patches(*args)
+
         _ordinal, ordinal_date = self.random_bce_ordinal_and_ordinal_date()
         assert self.gregorian_cd.ordinal_date_to_ordinal((0, 366)) == 0
         assert self.gregorian_cd.ordinal_date_to_ordinal((0, 1)) == -365
@@ -174,7 +205,16 @@ class GregorianTest(RealCalendarTestCase):
         "src.customdate.ConvertibleDate._start_and_sign",
         return_value=(1, 1),
     )
-    def test_ordinal_date_to_ordinal_for_ce_year(self, *_):
+    @patch("src.db.ConvertibleCalendar.leap_year_cycle_length")
+    @patch("src.customdate.ConvertibleDate.all_cycle_ordinals")
+    @patch("src.customdate.ConvertibleDate.common_year_cycle_ordinals")
+    @patch("src.db.ConvertibleCalendar.leap_years_in_normal_cycle")
+    @patch("src.customdate.ConvertibleDate.common_years_in_normal_cycle")
+    @patch("src.db.ConvertibleCalendar.days_in_leap_year")
+    @patch("src.db.ConvertibleCalendar.days_in_common_year")
+    def test_ordinal_date_to_ordinal_for_ce_year(self, *args):
+        self.ordinal_conversion_patches(*args)
+
         _ordinal, ordinal_date = self.random_ce_ordinal_and_ordinal_date()
         assert self.gregorian_cd.ordinal_date_to_ordinal((2, 365)) == 730
         assert self.gregorian_cd.ordinal_date_to_ordinal((2, 1)) == 366

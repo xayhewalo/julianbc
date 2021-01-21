@@ -147,6 +147,10 @@ class CopticTest(RealCalendarTestCase):
         "src.customdate.ConvertibleDate._start_and_sign",
         return_value=(0, -1),
     )
+    @patch(
+        "src.customdate.ConvertibleDate.net_special_years",
+        return_value=[0, 0],
+    )
     @patch("src.db.ConvertibleCalendar.leap_year_cycle_length")
     @patch("src.customdate.ConvertibleDate.all_cycle_ordinals")
     @patch("src.customdate.ConvertibleDate.common_year_cycle_ordinals")
@@ -180,6 +184,10 @@ class CopticTest(RealCalendarTestCase):
     @patch(
         "src.customdate.ConvertibleDate._start_and_sign",
         return_value=(1, 1),
+    )
+    @patch(
+        "src.customdate.ConvertibleDate.net_special_years",
+        return_value=[0, 0],
     )
     @patch("src.db.ConvertibleCalendar.leap_year_cycle_length")
     @patch("src.customdate.ConvertibleDate.all_cycle_ordinals")

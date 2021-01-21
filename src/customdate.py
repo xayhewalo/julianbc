@@ -140,28 +140,9 @@ class ConvertibleDate:
             this_cycles_elapsed_common_ordinals
         )
 
-        if sign == 1:
-            all_elapsed_years = set(range(start_ast_year, ast_year))
-        else:
-            all_elapsed_years = set(range(ast_year + 1, start_ast_year + 1))
-        special_leaps = self.calendar.special_leap_years
-        special_commons = self.calendar.special_common_years
-        elapsed_special_leap_years = set(special_leaps) & all_elapsed_years
-        elapsed_special_common_years = set(special_commons) & all_elapsed_years
-        net_elapsed_special_leaps = len(  # only count common years made leap
-            [
-                special_leap
-                for special_leap in elapsed_special_leap_years
-                if not self.is_leap_year(special_leap, count_special=False)
-            ]
-        )
-        net_elapsed_special_commons = len(  # only count leap years made common
-            [
-                special_common
-                for special_common in elapsed_special_common_years
-                if self.is_leap_year(special_common, count_special=False)
-            ]
-        )
+        net_special_years = self.net_special_years(ast_year)
+        net_elapsed_special_leaps = net_special_years[0]
+        net_elapsed_special_commons = net_special_years[1]
 
         num_elapsed_leap_years = (
             normal_leap_years_in_previous_cycles
@@ -230,6 +211,22 @@ class ConvertibleDate:
         raise AttributeError("Denied. Change calendar instead.")
 
     @property
+    def days_in_normal_cycle(self):
+        leap_years_in_normal_cycle = self.calendar.leap_years_in_normal_cycle
+        common_years_in_normal_cycle = self.common_years_in_normal_cycle
+        days_in_leap_year = self.calendar.days_in_leap_year
+        days_in_common_year = self.calendar.days_in_common_year
+        days_in_normal_cycle = (
+            leap_years_in_normal_cycle * days_in_leap_year
+            + common_years_in_normal_cycle * days_in_common_year
+        )
+        return days_in_normal_cycle
+
+    @days_in_normal_cycle.setter
+    def days_in_normal_cycle(self, _):
+        raise AttributeError("Denied. Change calendar instead.")
+
+    @property
     def common_year_cycle_ordinals(self) -> tuple:
         return tuple(
             _ord
@@ -248,6 +245,42 @@ class ConvertibleDate:
     @common_years_in_normal_cycle.setter
     def common_years_in_normal_cycle(self, _):
         raise AttributeError("Denied. Change calendar instead.")
+
+    def net_special_years(self, ast_year: int) -> tuple[int, int]:
+        """:returns: special leap and special common years since the epoch"""
+        special_leaps = set(self.calendar.special_leap_years)
+        special_commons = set(self.calendar.special_common_years)
+        if not (special_leaps or special_commons):
+            return 0, 0
+
+        start_ast_year, sign = self._start_and_sign(ast_year)
+        if sign == 1:
+            all_passed_years = set(range(start_ast_year, ast_year))
+        else:
+            all_passed_years = set(range(ast_year + 1, start_ast_year + 1))
+
+        net_elapsed_special_leaps = 0
+        if special_leaps:
+            elapsed_special_leap_years = special_leaps & all_passed_years
+            net_elapsed_special_leaps = len(
+                [  # only count common years made leap
+                    special_leap
+                    for special_leap in elapsed_special_leap_years
+                    if not self.is_leap_year(special_leap, count_special=False)
+                ]
+            )
+
+        net_elapsed_special_commons = 0
+        if special_commons:
+            passed_special_common_years = special_commons & all_passed_years
+            net_elapsed_special_commons = len(
+                [  # only count leap years made common
+                    special_common
+                    for special_common in passed_special_common_years
+                    if self.is_leap_year(special_common, count_special=False)
+                ]
+            )
+        return net_elapsed_special_leaps, net_elapsed_special_commons
 
     @staticmethod
     def _start_and_sign(num: int) -> tuple[int, int]:

@@ -157,7 +157,7 @@ class CopticTest(RealCalendarTestCase):
         return_value=(0, -1),
     )
     @patch(
-        "src.customdate.ConvertibleDate.net_special_years",
+        "src.customdate.ConvertibleDate.net_elapsed_special_years",
         return_value=[0, 0],
     )
     def test_ordinal_date_to_ordinal_for_bc_year(self, *_):
@@ -187,7 +187,7 @@ class CopticTest(RealCalendarTestCase):
         return_value=(1, 1),
     )
     @patch(
-        "src.customdate.ConvertibleDate.net_special_years",
+        "src.customdate.ConvertibleDate.net_elapsed_special_years",
         return_value=[0, 0],
     )
     def test_ordinal_date_to_ordinal_for_am_year(self, *_):
@@ -360,7 +360,8 @@ class CopticTest(RealCalendarTestCase):
             self.coptic_cd.common_years_in_normal_cycle = FAKE.random_int()
 
     def test_special_years(self):
-        assert self.coptic_cd.net_special_years(FAKE.random_int()) == (0, 0)
+        ast_year = FAKE.random_int(min=-9999)
+        assert self.coptic_cd.net_elapsed_special_years(ast_year) == (0, 0)
 
     #
     # ConvertibleDate.ast_ymd_to_ordinal_date

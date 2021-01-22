@@ -162,7 +162,7 @@ class LunarHijriTest(RealCalendarTestCase):
         return_value=(0, -1),
     )
     @patch(
-        "src.customdate.ConvertibleDate.net_special_years",
+        "src.customdate.ConvertibleDate.net_elapsed_special_years",
         return_value=[0, 0],
     )
     @patch("src.db.ConvertibleCalendar.leap_year_cycle_length")
@@ -195,7 +195,7 @@ class LunarHijriTest(RealCalendarTestCase):
         return_value=(1, 1),
     )
     @patch(
-        "src.customdate.ConvertibleDate.net_special_years",
+        "src.customdate.ConvertibleDate.net_elapsed_special_years",
         return_value=[0, 0],
     )
     @patch("src.db.ConvertibleCalendar.leap_year_cycle_length")
@@ -364,7 +364,8 @@ class LunarHijriTest(RealCalendarTestCase):
             self.l_hijri_cd.common_years_in_normal_cycle = FAKE.random_int()
 
     def test_special_years(self):
-        assert self.l_hijri_cd.net_special_years(FAKE.random_int()) == (0, 0)
+        ast_year = FAKE.random_int(min=-9999)
+        assert self.l_hijri_cd.net_elapsed_special_years(ast_year) == (0, 0)
 
     #
     # ConvertibleDate.ast_ymd_to_ordinal_date

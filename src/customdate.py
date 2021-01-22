@@ -140,7 +140,7 @@ class ConvertibleDate:
             this_cycles_elapsed_common_ordinals
         )
 
-        net_special_years = self.net_special_years(ast_year)
+        net_special_years = self.net_elapsed_special_years(ast_year)
         net_elapsed_special_leaps = net_special_years[0]
         net_elapsed_special_commons = net_special_years[1]
 
@@ -148,13 +148,11 @@ class ConvertibleDate:
             normal_leap_years_in_previous_cycles
             + elapsed_normal_leap_years_in_this_cycle
             + net_elapsed_special_leaps
-            - net_elapsed_special_commons
         )
         num_elapsed_common_years = (
             normal_common_years_in_previous_cycles
             + elapsed_normal_common_years_in_this_cycle
             + net_elapsed_special_commons
-            - net_elapsed_special_leaps
         )
         days_in_elapsed_years = (
             num_elapsed_leap_years * self.calendar.days_in_leap_year
@@ -175,7 +173,7 @@ class ConvertibleDate:
 
         def days_in_this_cycle(ay: int) -> int:
             """:param ay: astronomical year"""
-            net_special_years = self.net_special_years(ay)
+            net_special_years = self.net_elapsed_special_years(ay)
             net_special_leaps = net_special_years[0]
             net_special_commons = net_special_years[1]
 
@@ -270,8 +268,11 @@ class ConvertibleDate:
     def common_years_in_normal_cycle(self, _):
         raise AttributeError("Denied. Change calendar instead.")
 
-    def net_special_years(self, ast_year: int) -> tuple[int, int]:
-        """:returns: special leap and special common years since the epoch"""
+    def net_elapsed_special_years(self, ast_year: int) -> tuple[int, int]:
+        """
+        :returns: special leap and special common years since the epoch
+            *does not include* the given year
+        """
         special_leaps = set(self.calendar.special_leap_years)
         special_commons = set(self.calendar.special_common_years)
         if not (special_leaps or special_commons):
@@ -283,10 +284,10 @@ class ConvertibleDate:
         else:
             all_passed_years = set(range(ast_year + 1, start_ast_year + 1))
 
-        net_elapsed_special_leaps = 0
+        elapsed_special_leaps = 0
         if special_leaps:
             elapsed_special_leap_years = special_leaps & all_passed_years
-            net_elapsed_special_leaps = len(
+            elapsed_special_leaps = len(
                 [  # only count common years made leap
                     special_leap
                     for special_leap in elapsed_special_leap_years
@@ -294,16 +295,22 @@ class ConvertibleDate:
                 ]
             )
 
-        net_elapsed_special_commons = 0
+        elapsed_special_commons = 0
         if special_commons:
             passed_special_common_years = special_commons & all_passed_years
-            net_elapsed_special_commons = len(
+            elapsed_special_commons = len(
                 [  # only count leap years made common
                     special_common
                     for special_common in passed_special_common_years
                     if self.is_leap_year(special_common, count_special=False)
                 ]
             )
+        net_elapsed_special_leaps = (
+            elapsed_special_leaps - elapsed_special_commons
+        )
+        net_elapsed_special_commons = (
+            elapsed_special_commons - elapsed_special_leaps
+        )
         return net_elapsed_special_leaps, net_elapsed_special_commons
 
     @staticmethod

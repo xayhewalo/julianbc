@@ -206,7 +206,7 @@ class IndianCivilTest(RealCalendarTestCase):
         return_value=(0, -1),
     )
     @patch(
-        "src.customdate.ConvertibleDate.net_special_years",
+        "src.customdate.ConvertibleDate.net_elapsed_special_years",
         return_value=[0, 0],
     )
     def test_ordinal_date_to_ordinal_for_be_year(self, *_):
@@ -236,7 +236,7 @@ class IndianCivilTest(RealCalendarTestCase):
         return_value=(1, 1),
     )
     @patch(
-        "src.customdate.ConvertibleDate.net_special_years",
+        "src.customdate.ConvertibleDate.net_elapsed_special_years",
         return_value=[0, 0],
     )
     @patch("src.db.ConvertibleCalendar.leap_year_cycle_length")
@@ -415,6 +415,10 @@ class IndianCivilTest(RealCalendarTestCase):
         assert self.indian_cd.common_years_in_normal_cycle == cyinc
         with pytest.raises(AttributeError):
             self.indian_cd.common_years_in_normal_cycle = FAKE.random_int()
+
+    def test_special_years(self):
+        ast_year = FAKE.random_int(min=-9999)
+        assert self.indian_cd.net_elapsed_special_years(ast_year) == (0, 0)
 
     #
     # ConvertibleDate.ast_ymd_to_ordinal_date

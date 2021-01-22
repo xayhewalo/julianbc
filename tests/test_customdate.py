@@ -88,8 +88,140 @@ class ConvertibleDateTest(CalendarTestCase):
     # ConvertibleDate.common_year_cycle_ordinals in test_gregorian.py
     # ConvertibleDate.common_years_in_normal_cycle in test_gregorian.py
 
-    def test_special_years(self):
-        raise NotImplementedError
+    @patch(
+        "src.customdate.ConvertibleDate._start_and_sign",
+        return_value=[1, 1],
+    )
+    def test_special_years_for_ce_year(self, _):
+        params = {
+            "leap_year_cycles": [4],
+            "leap_year_cycle_start": 1,
+            "leap_year_cycle_ordinals": [4],
+            "leap_year_offset": 0,
+        }
+
+        # one special common year, no special leap year case
+        special_common_year = FAKE.random_int() * 4
+        special_common_cal = self.calendar_factory.build(
+            special_common_years=[special_common_year],
+            special_leap_years=(),
+            **params,
+        )
+        special_commons_cd = ConvertibleDate(calendar=special_common_cal)
+        assert special_commons_cd.net_elapsed_special_years(
+            FAKE.random_int(min=1, max=special_common_year - 1)
+        ) == (0, 0)
+        assert special_commons_cd.net_elapsed_special_years(
+            special_common_year
+        ) == (0, 0)
+        assert special_commons_cd.net_elapsed_special_years(
+            special_common_year + FAKE.random_int(min=1)
+        ) == (-1, 1)
+
+        # one special leap year, no special common year case
+        special_leap_year = FAKE.random_int(min=1) * 4 - 1
+        special_leap_cal = self.calendar_factory.build(
+            special_common_years=(),
+            special_leap_years=[special_leap_year],
+            **params,
+        )
+        special_leaps_cd = ConvertibleDate(calendar=special_leap_cal)
+        assert special_leaps_cd.net_elapsed_special_years(
+            FAKE.random_int(min=1, max=special_leap_year - 1)
+        ) == (0, 0)
+        assert special_leaps_cd.net_elapsed_special_years(
+            special_leap_year
+        ) == (0, 0)
+        assert special_leaps_cd.net_elapsed_special_years(
+            special_leap_year + FAKE.random_int(min=1)
+        ) == (1, -1)
+
+        # special leap years and special common years case
+        specials_cal = self.calendar_factory.build(
+            special_common_years=(4, 12),
+            special_leap_years=(3, 7, 11, 14),
+            **params,
+        )
+        special_cd = ConvertibleDate(calendar=specials_cal)
+        assert special_cd.net_elapsed_special_years(2) == (0, 0)
+        assert special_cd.net_elapsed_special_years(3) == (0, 0)
+        assert special_cd.net_elapsed_special_years(4) == (1, -1)
+        assert special_cd.net_elapsed_special_years(5) == (0, 0)
+        assert special_cd.net_elapsed_special_years(7) == (0, 0)
+        assert special_cd.net_elapsed_special_years(8) == (1, -1)
+        assert special_cd.net_elapsed_special_years(11) == (1, -1)
+        assert special_cd.net_elapsed_special_years(12) == (2, -2)
+        assert special_cd.net_elapsed_special_years(13) == (1, -1)
+        assert special_cd.net_elapsed_special_years(14) == (1, -1)
+        assert special_cd.net_elapsed_special_years(15) == (2, -2)
+
+    @patch(
+        "src.customdate.ConvertibleDate._start_and_sign",
+        return_value=[0, -1],
+    )
+    def test_special_years_for_bce_year(self, _):
+        params = {
+            "leap_year_cycles": [4],
+            "leap_year_cycle_start": 1,
+            "leap_year_cycle_ordinals": [4],
+            "leap_year_offset": 0,
+        }
+
+        # one special common year, no special leap year case
+        special_common_year = FAKE.random_int(min=-9999, max=-1) * 4
+        special_common_cal = self.calendar_factory.build(
+            special_common_years=[special_common_year],
+            special_leap_years=(),
+            **params,
+        )
+        special_commons_cd = ConvertibleDate(calendar=special_common_cal)
+        assert special_commons_cd.net_elapsed_special_years(
+            FAKE.random_int(min=special_common_year + 1, max=0)
+        ) == (0, 0)
+        assert special_commons_cd.net_elapsed_special_years(
+            special_common_year
+        ) == (0, 0)
+        assert special_commons_cd.net_elapsed_special_years(
+            special_common_year - FAKE.random_int(min=1)
+        ) == (-1, 1)
+
+        # one special leap year, no special common year case
+        special_leap_year = FAKE.random_int(min=-9999, max=-1) * 4 - 1
+        special_leap_cal = self.calendar_factory.build(
+            special_common_years=(),
+            special_leap_years=[special_leap_year],
+            **params,
+        )
+        special_leaps_cd = ConvertibleDate(calendar=special_leap_cal)
+        assert special_leaps_cd.net_elapsed_special_years(
+            FAKE.random_int(min=special_leap_year + 1, max=0)
+        ) == (0, 0)
+        assert special_leaps_cd.net_elapsed_special_years(
+            special_leap_year
+        ) == (0, 0)
+        assert special_leaps_cd.net_elapsed_special_years(
+            special_leap_year - FAKE.random_int(min=1)
+        ) == (1, -1)
+
+        specials_cal = self.calendar_factory.build(
+            special_common_years=(-16, -8, -4, 0),
+            special_leap_years=(-2, -3),
+            leap_year_cycles=[4],
+            leap_year_cycle_start=1,
+            leap_year_cycle_ordinals=[4],
+            leap_year_offset=0,
+        )
+        special_cd = ConvertibleDate(calendar=specials_cal)
+        assert special_cd.net_elapsed_special_years(0) == (0, 0)
+        assert special_cd.net_elapsed_special_years(-1) == (-1, 1)
+        assert special_cd.net_elapsed_special_years(-2) == (-1, 1)
+        assert special_cd.net_elapsed_special_years(-3) == (0, 0)
+        assert special_cd.net_elapsed_special_years(-4) == (1, -1)
+        assert special_cd.net_elapsed_special_years(-5) == (0, 0)
+        assert special_cd.net_elapsed_special_years(-8) == (0, 0)
+        assert special_cd.net_elapsed_special_years(-9) == (-1, 1)
+        assert special_cd.net_elapsed_special_years(-16) == (-1, 1)
+        assert special_cd.net_elapsed_special_years(-17) == (-2, 2)
 
     def test__start_and_sign(self):
         non_positive_num = FAKE.random_int(min=-9999, max=-1)

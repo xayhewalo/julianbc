@@ -16,6 +16,13 @@ class JulianTest(RealCalendarTestCase):
         super(JulianTest, self).setUp()
         self.main_calendar = self.julian
         self.to_gregorian_ymd = convertdate.julian.to_gregorian
+        self.common_ordinals = (1, 2, 3)
+        self.cycle_length = 4
+        self.all_cycle_ordinals = deque([1, 2, 3, 4])
+        self.leap_years_in_normal_cycle = 1
+        self.common_years_in_normal_cycle = 3
+        self.days_in_leap_years = 366
+        self.days_in_common_year = 365
 
     @staticmethod
     def random_common_year() -> int:
@@ -327,6 +334,42 @@ class JulianTest(RealCalendarTestCase):
     def test_ordinal_date_ordinal_raises(self, _):
         with pytest.raises(ValueError):
             self.julian_cd.ordinal_date_to_ordinal((1, 0))
+
+    def test_all_cycle_ordinals(self):
+        assert self.julian_cd.all_cycle_ordinals == self.all_cycle_ordinals
+        with pytest.raises(AttributeError):
+            self.julian_cd.all_cycle_ordinals = FAKE.pylist()
+
+    @patch("src.customdate.ConvertibleDate.common_years_in_normal_cycle")
+    def test_days_in_normal_cycle(self, p_common_years_in_normal_cycle):
+        cyinc = self.common_years_in_normal_cycle
+        p_common_years_in_normal_cycle.__get__ = lambda *_: cyinc
+
+        days_in_normal_cycle = self.julian_dc.from_gregorian(
+            *convertdate.julian.to_gregorian(5, 1, 1)
+        )
+        assert self.julian_cd.days_in_normal_cycle == days_in_normal_cycle
+        with pytest.raises(AttributeError):
+            self.julian_cd.days_in_normal_cycle = FAKE.random_int()
+
+    @patch("src.customdate.ConvertibleDate.all_cycle_ordinals")
+    def test_common_year_cycle_ordinals(self, patch_all_cycle_ordinals):
+        patch_all_cycle_ordinals.__get__ = lambda *_: self.all_cycle_ordinals
+        common_ords = tuple(self.common_ordinals)
+        assert self.julian_cd.common_year_cycle_ordinals == common_ords
+        with pytest.raises(AttributeError):
+            self.julian_cd.common_year_cycle_ordinals = FAKE.pytuple()
+
+    @patch("src.customdate.ConvertibleDate.common_year_cycle_ordinals")
+    def test_common_years_in_normal_cycle(self, p_common_year_cycle_ordinals):
+        p_common_year_cycle_ordinals.__get__ = lambda *_: self.common_ordinals
+        cyinc = self.common_years_in_normal_cycle
+        assert self.julian_cd.common_years_in_normal_cycle == cyinc
+        with pytest.raises(AttributeError):
+            self.julian_cd.common_years_in_normal_cycle = FAKE.random_int()
+
+    def test_special_years(self):
+        assert self.julian_cd.net_special_years(FAKE.random_int()) == (0, 0)
 
     #
     # ConvertibleDate.ast_ymd_to_ordinal_date

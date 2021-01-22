@@ -17,6 +17,39 @@ class IndianCivilTest(RealCalendarTestCase):
         super(IndianCivilTest, self).setUp()
         self.main_calendar = self.indian
         self.to_gregorian_ymd = convertdate.indian_civil.to_gregorian
+        # fmt: off
+        self.common_ordinals = (
+            78, 79, 81, 82, 83, 85, 86, 87, 89, 90, 91, 93, 94, 95, 97, 98, 99,
+            100, 101, 102, 103, 105, 106, 107, 109, 110, 111, 113, 114, 115,
+            117, 118, 119, 121, 122, 123, 125, 126, 127, 129, 130, 131, 133,
+            134, 135, 137, 138, 139, 141, 142, 143, 145, 146, 147, 149, 150,
+            151, 153, 154, 155, 157, 158, 159, 161, 162, 163, 165, 166, 167,
+            169, 170, 171, 173, 174, 175, 177, 178, 179, 181, 182, 183, 185,
+            186, 187, 189, 190, 191, 193, 194, 195, 197, 198, 199, 200, 201,
+            202, 203, 205, 206, 207, 209, 210, 211, 213, 214, 215, 217, 218,
+            219, 221, 222, 223, 225, 226, 227, 229, 230, 231, 233, 234, 235,
+            237, 238, 239, 241, 242, 243, 245, 246, 247, 249, 250, 251, 253,
+            254, 255, 257, 258, 259, 261, 262, 263, 265, 266, 267, 269, 270,
+            271, 273, 274, 275, 277, 278, 279, 281, 282, 283, 285, 286, 287,
+            289, 290, 291, 293, 294, 295, 297, 298, 299, 300, 301, 302, 303,
+            305, 306, 307, 309, 310, 311, 313, 314, 315, 317, 318, 319, 321,
+            322, 323, 325, 326, 327, 329, 330, 331, 333, 334, 335, 337, 338,
+            339, 341, 342, 343, 345, 346, 347, 349, 350, 351, 353, 354, 355,
+            357, 358, 359, 361, 362, 363, 365, 366, 367, 369, 370, 371, 373,
+            374, 375, 377, 378, 379, 381, 382, 383, 385, 386, 387, 389, 390,
+            391, 393, 394, 395, 397, 398, 399, 1, 2, 3, 5, 6, 7, 9, 10, 11, 13,
+            14, 15, 17, 18, 19, 21, 22, 23, 25, 26, 27, 29, 30, 31, 33, 34, 35,
+            37, 38, 39, 41, 42, 43, 45, 46, 47, 49, 50, 51, 53, 54, 55, 57, 58,
+            59, 61, 62, 63, 65, 66, 67, 69, 70, 71, 73, 74, 75, 77,
+        )
+        # fmt: on
+        self.cycle_length = 400
+        self.all_cycle_ordinals = deque(range(1, 401))
+        self.all_cycle_ordinals.rotate(self.indian.leap_year_offset)
+        self.leap_years_in_normal_cycle = 97
+        self.common_years_in_normal_cycle = 303
+        self.days_in_leap_years = 366
+        self.days_in_common_year = 365
 
     def random_common_year(self) -> int:
         hr_year = FAKE.random_int(min=-9999)
@@ -349,6 +382,39 @@ class IndianCivilTest(RealCalendarTestCase):
             )
             == se_ordinal
         )
+
+    def test_all_cycle_ordinals(self):
+        assert self.indian_cd.all_cycle_ordinals == self.all_cycle_ordinals
+        with pytest.raises(AttributeError):
+            self.indian_cd.all_cycle_ordinals = FAKE.pylist()
+
+    @patch("src.customdate.ConvertibleDate.common_years_in_normal_cycle")
+    def test_days_in_normal_cycle(self, p_common_years_in_normal_cycle):
+        cyinc = self.common_years_in_normal_cycle
+        p_common_years_in_normal_cycle.__get__ = lambda *_: cyinc
+
+        days_in_normal_cycle = self.indian_dc.from_gregorian(
+            *convertdate.indian_civil.to_gregorian(400, 1, 1)
+        )
+        assert self.indian_cd.days_in_normal_cycle == days_in_normal_cycle
+        with pytest.raises(AttributeError):
+            self.indian_cd.days_in_normal_cycle = FAKE.random_int()
+
+    @patch("src.customdate.ConvertibleDate.all_cycle_ordinals")
+    def test_common_year_cycle_ordinals(self, patch_all_cycle_ordinals):
+        patch_all_cycle_ordinals.__get__ = lambda *_: self.all_cycle_ordinals
+        common_ords = tuple(self.common_ordinals)
+        assert self.indian_cd.common_year_cycle_ordinals == common_ords
+        with pytest.raises(AttributeError):
+            self.indian_cd.common_year_cycle_ordinals = FAKE.pytuple()
+
+    @patch("src.customdate.ConvertibleDate.common_year_cycle_ordinals")
+    def test_common_years_in_normal_cycle(self, p_common_year_cycle_ordinals):
+        p_common_year_cycle_ordinals.__get__ = lambda *_: self.common_ordinals
+        cyinc = self.common_years_in_normal_cycle
+        assert self.indian_cd.common_years_in_normal_cycle == cyinc
+        with pytest.raises(AttributeError):
+            self.indian_cd.common_years_in_normal_cycle = FAKE.random_int()
 
     #
     # ConvertibleDate.ast_ymd_to_ordinal_date

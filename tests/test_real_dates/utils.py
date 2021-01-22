@@ -1,5 +1,6 @@
 import convertdate
 
+from collections import deque
 from src.db import ConvertibleCalendar, CalendarConversion
 from src.customdate import ConvertibleDate
 from tests.utils import CalendarTestCase, FAKE
@@ -16,6 +17,13 @@ class RealCalendarTestCase(CalendarTestCase):
         # noinspection PyTypeChecker
         self.main_calendar = None  # type: ConvertibleCalendar
         self.to_gregorian_ymd = None  # type: callable
+        self.common_ordinals: tuple
+        self.cycle_length: int
+        self.all_cycle_ordinals: deque
+        self.leap_years_in_normal_cycle: int
+        self.common_years_in_normal_cycle: int
+        self.days_in_leap_years: int
+        self.days_in_common_year: int
 
         self.gregorian = ConvertibleCalendar(
             name="Gregorian",

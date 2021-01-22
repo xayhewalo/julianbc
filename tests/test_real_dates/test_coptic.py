@@ -19,6 +19,13 @@ class CopticTest(RealCalendarTestCase):
         super(CopticTest, self).setUp()
         self.main_calendar = self.coptic
         self.to_gregorian_ymd = convertdate.coptic.to_gregorian
+        self.common_ordinals = (2, 3, 1)
+        self.cycle_length = 4
+        self.all_cycle_ordinals = deque([2, 3, 4, 1])
+        self.leap_years_in_normal_cycle = 1
+        self.common_years_in_normal_cycle = 3
+        self.days_in_leap_years = 366
+        self.days_in_common_year = 365
 
     @staticmethod
     def random_common_year() -> int:
@@ -32,8 +39,7 @@ class CopticTest(RealCalendarTestCase):
         assert convertdate.coptic.is_leap(year)
         return year
 
-    @staticmethod
-    def ordinal_conversion_patches(*args):
+    def ordinal_conversion_patches(self, *args):
         patch_days_common_year = args[0]
         patch_days_in_leap_year = args[1]
         patch_common_years_in_normal_cycle = args[2]
@@ -42,13 +48,16 @@ class CopticTest(RealCalendarTestCase):
         patch_all_cycle_ordinals = args[5]
         patch_leap_year_cycle_length = args[6]
 
-        patch_leap_year_cycle_length.__get__ = lambda *_: 4
-        patch_all_cycle_ordinals.__get__ = lambda *_: deque([2, 3, 4, 1])
-        patch_common_year_cycle_ordinals.__get__ = lambda *_: (2, 3, 1)
-        patch_leap_years_in_normal_cycle.__get__ = lambda *_: 1
-        patch_common_years_in_normal_cycle.__get__ = lambda *_: 3
-        patch_days_in_leap_year.__get__ = lambda *_: 366
-        patch_days_common_year.__get__ = lambda *_: 365
+        patch_leap_year_cycle_length.__get__ = lambda *_: self.cycle_length
+        patch_all_cycle_ordinals.__get__ = lambda *_: self.all_cycle_ordinals
+        common_ordinals = self.common_ordinals
+        patch_common_year_cycle_ordinals.__get__ = lambda *_: common_ordinals
+        lyinc = self.leap_years_in_normal_cycle
+        patch_leap_years_in_normal_cycle.__get__ = lambda *_: lyinc
+        cyinc = self.common_years_in_normal_cycle
+        patch_common_years_in_normal_cycle.__get__ = lambda *_: cyinc
+        patch_days_in_leap_year.__get__ = lambda *_: self.days_in_leap_years
+        patch_days_common_year.__get__ = lambda *_: self.days_in_common_year
 
     #
     # ConvertibleDate.convert_ast_ymd
@@ -151,16 +160,8 @@ class CopticTest(RealCalendarTestCase):
         "src.customdate.ConvertibleDate.net_special_years",
         return_value=[0, 0],
     )
-    @patch("src.db.ConvertibleCalendar.leap_year_cycle_length")
-    @patch("src.customdate.ConvertibleDate.all_cycle_ordinals")
-    @patch("src.customdate.ConvertibleDate.common_year_cycle_ordinals")
-    @patch("src.db.ConvertibleCalendar.leap_years_in_normal_cycle")
-    @patch("src.customdate.ConvertibleDate.common_years_in_normal_cycle")
-    @patch("src.db.ConvertibleCalendar.days_in_leap_year")
-    @patch("src.db.ConvertibleCalendar.days_in_common_year")
-    def test_ordinal_date_to_ordinal_for_bc_year(self, *args):
-        self.ordinal_conversion_patches(*args)
-
+    def test_ordinal_date_to_ordinal_for_bc_year(self, *_):
+        # patching reverses all_cycle_ordinals for some reason...so don't patch
         assert self.coptic_cd.ordinal_date_to_ordinal((0, 365)) == 0
         assert self.coptic_cd.ordinal_date_to_ordinal((0, 1)) == -364
         assert self.coptic_cd.ordinal_date_to_ordinal((-1, 366)) == -365
@@ -189,16 +190,8 @@ class CopticTest(RealCalendarTestCase):
         "src.customdate.ConvertibleDate.net_special_years",
         return_value=[0, 0],
     )
-    @patch("src.db.ConvertibleCalendar.leap_year_cycle_length")
-    @patch("src.customdate.ConvertibleDate.all_cycle_ordinals")
-    @patch("src.customdate.ConvertibleDate.common_year_cycle_ordinals")
-    @patch("src.db.ConvertibleCalendar.leap_years_in_normal_cycle")
-    @patch("src.customdate.ConvertibleDate.common_years_in_normal_cycle")
-    @patch("src.db.ConvertibleCalendar.days_in_leap_year")
-    @patch("src.db.ConvertibleCalendar.days_in_common_year")
-    def test_ordinal_date_to_ordinal_for_am_year(self, *args):
-        self.ordinal_conversion_patches(*args)
-
+    def test_ordinal_date_to_ordinal_for_am_year(self, *_):
+        # patching reverses all_cycle_ordinals for some reason...so don't patch
         assert self.coptic_cd.ordinal_date_to_ordinal((5, 225)) == 1686
         assert self.coptic_cd.ordinal_date_to_ordinal((5, 1)) == 1462
         assert self.coptic_cd.ordinal_date_to_ordinal((4, 365)) == 1461
@@ -332,6 +325,42 @@ class CopticTest(RealCalendarTestCase):
             )
             == am_ordinal
         )
+
+    def test_all_cycle_ordinals(self):
+        assert self.coptic_cd.all_cycle_ordinals == self.all_cycle_ordinals
+        with pytest.raises(AttributeError):
+            self.coptic_cd.all_cycle_ordinals = FAKE.pylist()
+
+    @patch("src.customdate.ConvertibleDate.common_years_in_normal_cycle")
+    def test_days_in_normal_cycle(self, p_common_years_in_normal_cycle):
+        cyinc = self.common_years_in_normal_cycle
+        p_common_years_in_normal_cycle.__get__ = lambda *_: cyinc
+
+        days_in_normal_cycle = self.coptic_dc.from_gregorian(
+            *convertdate.coptic.to_gregorian(5, 1, 1)
+        )
+        assert self.coptic_cd.days_in_normal_cycle == days_in_normal_cycle
+        with pytest.raises(AttributeError):
+            self.coptic_cd.days_in_normal_cycle = FAKE.random_int()
+
+    @patch("src.customdate.ConvertibleDate.all_cycle_ordinals")
+    def test_common_year_cycle_ordinals(self, patch_all_cycle_ordinals):
+        patch_all_cycle_ordinals.__get__ = lambda *_: self.all_cycle_ordinals
+        common_ords = tuple(self.common_ordinals)
+        assert self.coptic_cd.common_year_cycle_ordinals == common_ords
+        with pytest.raises(AttributeError):
+            self.coptic_cd.common_year_cycle_ordinals = FAKE.pytuple()
+
+    @patch("src.customdate.ConvertibleDate.common_year_cycle_ordinals")
+    def test_common_years_in_normal_cycle(self, p_common_year_cycle_ordinals):
+        p_common_year_cycle_ordinals.__get__ = lambda *_: self.common_ordinals
+        cyinc = self.common_years_in_normal_cycle
+        assert self.coptic_cd.common_years_in_normal_cycle == cyinc
+        with pytest.raises(AttributeError):
+            self.coptic_cd.common_years_in_normal_cycle = FAKE.random_int()
+
+    def test_special_years(self):
+        assert self.coptic_cd.net_special_years(FAKE.random_int()) == (0, 0)
 
     #
     # ConvertibleDate.ast_ymd_to_ordinal_date

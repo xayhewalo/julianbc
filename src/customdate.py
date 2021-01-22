@@ -235,7 +235,7 @@ class ConvertibleDate:
         raise AttributeError("Denied. Change calendar instead.")
 
     @property
-    def days_in_normal_cycle(self):
+    def days_in_normal_cycle(self) -> int:
         leap_years_in_normal_cycle = self.calendar.leap_years_in_normal_cycle
         common_years_in_normal_cycle = self.common_years_in_normal_cycle
         days_in_leap_year = self.calendar.days_in_leap_year

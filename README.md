@@ -39,7 +39,7 @@ JulianBC will be a visual-timeline program in the near future
     - [X] add `common_years_in_normal_cycle` property
         - [X] prevent setting `common_years_in_normal_cycle`
     - [X] add `leap_years_in_normal_cycle` property
-- [ ] test cycle properties
+- [X] test cycle properties
 - [ ] Refactor `is_leap_year`
 - [ ] Make ordinal conversions DRY with `is_leap_year`
 - [X] Generic function to find `special_common_years` and `special_leap_years`
@@ -53,6 +53,7 @@ JulianBC will be a visual-timeline program in the near future
     - [ ] `shift_ast_month`
     - [ ] `shift_ast_day`
     - [ ] check if `frequency` is an integer greater than zero
+- [ ] add `next_dateunit`
 - [ ] move `make_ordinal` out of `ConvertibleDate`, change name
 - [X] remove week stuff
 #### ConvertibleTime

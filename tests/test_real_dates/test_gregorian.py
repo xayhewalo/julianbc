@@ -20,6 +20,16 @@ class GregorianTest(RealCalendarTestCase):
     def setUp(self):
         super(GregorianTest, self).setUp()
         self.main_calendar = self.gregorian
+        self.common_ordinals = list(
+            set(range(1, 401)) ^ set(self.gregorian.leap_year_cycle_ordinals)
+        )
+        self.common_ordinals.sort()
+        self.cycle_length = 400
+        self.all_cycle_ordinals = deque(range(1, 401))
+        self.leap_years_in_normal_cycle = 97
+        self.common_years_in_normal_cycle = 303
+        self.days_in_leap_years = 366
+        self.days_in_common_year = 365
 
     def random_common_year(self) -> int:
         return self.random_gregorian_common_year()
@@ -72,17 +82,16 @@ class GregorianTest(RealCalendarTestCase):
         patch_all_cycle_ordinals = args[5]
         patch_leap_year_cycle_length = args[6]
 
-        patch_leap_year_cycle_length.__get__ = lambda *_: 400
-        patch_all_cycle_ordinals.__get__ = lambda *_: deque(range(1, 401))
-        _common_ordinals = list(
-            set(range(1, 401)) ^ set(self.gregorian.leap_year_cycle_ordinals)
-        )
-        _common_ordinals.sort()
-        patch_common_year_cycle_ordinals.__get__ = lambda *_: _common_ordinals
-        patch_leap_years_in_normal_cycle.__get__ = lambda *_: 97
-        patch_common_years_in_normal_cycle.__get__ = lambda *_: 303
-        patch_days_in_leap_year.__get__ = lambda *_: 366
-        patch_days_common_year.__get__ = lambda *_: 365
+        patch_leap_year_cycle_length.__get__ = lambda *_: self.cycle_length
+        patch_all_cycle_ordinals.__get__ = lambda *_: self.all_cycle_ordinals
+        common_ordinals = self.common_ordinals
+        patch_common_year_cycle_ordinals.__get__ = lambda *_: common_ordinals
+        lyinc = self.leap_years_in_normal_cycle
+        patch_leap_years_in_normal_cycle.__get__ = lambda *_: lyinc
+        cyinc = self.common_years_in_normal_cycle
+        patch_common_years_in_normal_cycle.__get__ = lambda *_: cyinc
+        patch_days_in_leap_year.__get__ = lambda *_: self.days_in_leap_years
+        patch_days_common_year.__get__ = lambda *_: self.days_in_common_year
 
     #
     # ConvertibleDate.convert_ast_ymd
@@ -177,16 +186,8 @@ class GregorianTest(RealCalendarTestCase):
         "src.customdate.ConvertibleDate.net_special_years",
         return_value=[0, 0],
     )
-    @patch("src.db.ConvertibleCalendar.leap_year_cycle_length")
-    @patch("src.customdate.ConvertibleDate.all_cycle_ordinals")
-    @patch("src.customdate.ConvertibleDate.common_year_cycle_ordinals")
-    @patch("src.db.ConvertibleCalendar.leap_years_in_normal_cycle")
-    @patch("src.customdate.ConvertibleDate.common_years_in_normal_cycle")
-    @patch("src.db.ConvertibleCalendar.days_in_leap_year")
-    @patch("src.db.ConvertibleCalendar.days_in_common_year")
     def test_ordinal_date_to_ordinal_for_bce_year(self, *args):
-        self.ordinal_conversion_patches(*args)
-
+        # patching reverses all_cycle_ordinals for some reason...so don't patch
         _ordinal, ordinal_date = self.random_bce_ordinal_and_ordinal_date()
         assert self.gregorian_cd.ordinal_date_to_ordinal((0, 366)) == 0
         assert self.gregorian_cd.ordinal_date_to_ordinal((0, 1)) == -365
@@ -356,6 +357,39 @@ class GregorianTest(RealCalendarTestCase):
             )
             == ce_ordinal
         )
+
+    def test_all_cycle_ordinals(self):
+        assert self.gregorian_cd.all_cycle_ordinals == deque(range(1, 401))
+        with pytest.raises(AttributeError):
+            self.gregorian_cd.all_cycle_ordinals = FAKE.pylist()
+
+    @patch("src.customdate.ConvertibleDate.common_years_in_normal_cycle")
+    def test_days_in_normal_cycle(self, p_common_years_in_normal_cycle):
+        cyinc = self.common_years_in_normal_cycle
+        p_common_years_in_normal_cycle.__get__ = lambda *_: cyinc
+        # see datetime._DI400Y
+        assert self.gregorian_cd.days_in_normal_cycle == 146097
+        with pytest.raises(AttributeError):
+            self.gregorian_cd.days_in_normal_cycle = FAKE.random_int()
+
+    @patch("src.customdate.ConvertibleDate.all_cycle_ordinals")
+    def test_common_year_cycle_ordinals(self, patch_all_cycle_ordinals):
+        patch_all_cycle_ordinals.__get__ = lambda *_: self.all_cycle_ordinals
+        common_ords = tuple(self.common_ordinals)
+        assert self.gregorian_cd.common_year_cycle_ordinals == common_ords
+        with pytest.raises(AttributeError):
+            self.gregorian_cd.common_year_cycle_ordinals = FAKE.pytuple()
+
+    @patch("src.customdate.ConvertibleDate.common_year_cycle_ordinals")
+    def test_common_years_in_normal_cycle(self, p_common_year_cycle_ordinals):
+        p_common_year_cycle_ordinals.__get__ = lambda *_: self.common_ordinals
+        cyinc = self.common_years_in_normal_cycle
+        assert self.gregorian_cd.common_years_in_normal_cycle == cyinc
+        with pytest.raises(AttributeError):
+            self.gregorian_cd.common_years_in_normal_cycle = FAKE.random_int()
+
+    def test_special_years(self):
+        assert self.gregorian_cd.net_special_years(FAKE.random_int()) == (0, 0)
 
     #
     # ConvertibleDate.ast_ymd_to_ordinal_date

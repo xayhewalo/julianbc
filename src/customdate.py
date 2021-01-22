@@ -171,15 +171,39 @@ class ConvertibleDate:
         return ordinal
 
     def ordinal_to_ordinal_date(self, ordinal: int) -> tuple[int, int]:
+        """:raises AssertionError: if an invalid ordinal date is made"""
+
+        def days_in_this_cycle(ay: int) -> int:
+            """:param ay: astronomical year"""
+            net_special_years = self.net_special_years(ay)
+            net_special_leaps = net_special_years[0]
+            net_special_commons = net_special_years[1]
+
+            days_in_leap_year = self.calendar.days_in_leap_year
+            days_in_common_year = self.calendar.days_in_common_year
+            net_special_leap_days = net_special_leaps * days_in_leap_year
+            net_special_common_days = net_special_commons * days_in_common_year
+            net_special_days = net_special_leap_days + net_special_common_days
+            return self.days_in_normal_cycle + net_special_days
+
         ast_year, sign = self._start_and_sign(ordinal)
+        cycle_length = self.calendar.leap_year_cycle_length
 
-        days_in_years_passed = self.days_in_year(ast_year)
-        while days_in_years_passed < abs(ordinal):
+        days_in_passed_cycles = 0
+        while days_in_passed_cycles < abs(ordinal):
+            days_in_passed_cycles += days_in_this_cycle(ast_year)
+            ast_year += cycle_length * sign
+        days_in_passed_cycles -= days_in_this_cycle(ast_year)
+        ast_year -= cycle_length * sign
+
+        days_into_current_cycle = self.days_in_year(ast_year)
+        while days_in_passed_cycles + days_into_current_cycle < abs(ordinal):
             ast_year += sign * 1
-            days_in_years_passed += self.days_in_year(ast_year)
-        days_in_years_passed -= self.days_in_year(ast_year)
+            days_into_current_cycle += self.days_in_year(ast_year)
+        days_into_current_cycle -= self.days_in_year(ast_year)
 
-        day_of_year = abs(ordinal) - days_in_years_passed
+        days_in_passed_years = days_in_passed_cycles + days_into_current_cycle
+        day_of_year = abs(ordinal) - days_in_passed_years
         if sign == -1:
             day_of_year = self.days_in_year(ast_year) - day_of_year
             if day_of_year == 0:

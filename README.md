@@ -33,7 +33,7 @@ JulianBC will be a visual-timeline program in the near future
 - [X] recalculate calendar properties when it is set
 - [X] Prevent common year cycle ordinals from slowing tests
 - [X] refactor `ordinal_date_to_ordinal`
-- [ ] refactor `ordinal_to_ordinal_date`
+- [X] refactor `ordinal_to_ordinal_date`
     - [X] add `common_year_cycle_ordinals` property
         - [X] prevent setting `common_year_cycle_ordinals`
     - [X] add `common_years_in_normal_cycle` property

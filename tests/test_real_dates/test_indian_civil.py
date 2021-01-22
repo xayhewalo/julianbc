@@ -247,6 +247,9 @@ class IndianCivilTest(RealCalendarTestCase):
         return_value=(1, 1),
     )
     def test_ordinal_to_ordinal_date_for_se_year(self, *_):
+        assert self.indian_cd.ordinal_to_ordinal_date(146199) == (401, 102)
+        assert self.indian_cd.ordinal_to_ordinal_date(146098) == (401, 1)
+        assert self.indian_cd.ordinal_to_ordinal_date(146097) == (400, 365)
         assert self.indian_cd.ordinal_to_ordinal_date(760) == (3, 30)
         assert self.indian_cd.ordinal_to_ordinal_date(731) == (3, 1)
         assert self.indian_cd.ordinal_to_ordinal_date(366) == (2, 1)
@@ -267,6 +270,10 @@ class IndianCivilTest(RealCalendarTestCase):
         assert self.indian_cd.ordinal_to_ordinal_date(-365) == (-1, 366)
         assert self.indian_cd.ordinal_to_ordinal_date(-731) == (-2, 365)
         assert self.indian_cd.ordinal_to_ordinal_date(-808) == (-2, 288)
+        assert self.indian_cd.ordinal_to_ordinal_date(-146097) == (-400, 365)
+        assert self.indian_cd.ordinal_to_ordinal_date(-146461) == (-400, 1)
+        assert self.indian_cd.ordinal_to_ordinal_date(-146462) == (-401, 366)
+        assert self.indian_cd.ordinal_to_ordinal_date(-146762) == (-401, 66)
 
     @patch(
         "src.customdate.ConvertibleDate.is_valid_ordinal_date",

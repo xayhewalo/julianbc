@@ -227,6 +227,7 @@ class LunarHijriTest(RealCalendarTestCase):
         return_value=(1, 1),
     )
     def test_ordinal_to_ordinal_date_for_ah_year(self, *_):
+        # don't test full cycle because that will be verbose
         assert self.l_hijri_cd.ordinal_to_ordinal_date(836) == (3, 127)
         assert self.l_hijri_cd.ordinal_to_ordinal_date(709) == (2, 355)
         assert self.l_hijri_cd.ordinal_to_ordinal_date(355) == (2, 1)
@@ -242,6 +243,7 @@ class LunarHijriTest(RealCalendarTestCase):
         return_value=(0, -1),
     )
     def test_ordinal_to_ordinal_date_for_bh_year(self, *_):
+        # don't test full cycle because that will be verbose
         assert self.l_hijri_cd.ordinal_to_ordinal_date(0) == (0, 354)
         assert self.l_hijri_cd.ordinal_to_ordinal_date(-354) == (-1, 355)
         assert self.l_hijri_cd.ordinal_to_ordinal_date(-709) == (-2, 354)

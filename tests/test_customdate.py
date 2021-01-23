@@ -77,13 +77,98 @@ class ConvertibleDateTest(CalendarTestCase):
         )
         return monthless_calendar, days_in_year
 
+    def random_leapless_calendar(self) -> ConvertibleCalendar:
+        leapless_calendar = self.calendar_factory.build(
+            has_leap_year=False,
+            leap_year_month_names=(),
+            days_in_leap_year_months=(),
+            leap_year_cycles=(),
+            leap_year_cycle_start=None,
+            leap_year_cycle_ordinals=(),
+            special_common_years=(),
+            special_leap_years=(),
+            leap_year_offset=None,
+        )
+        return leapless_calendar
+
     #
     # Ordinal Conversions
     #
+    @patch(
+        "src.customdate.ConvertibleDate._start_and_sign",
+        return_value=[1, 1],
+    )
+    @patch(
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
+        return_value=True,
+    )
+    def test_leapless_ordinal_date_to_ordinal_for_ce_years(self, *_):
+        leapless_calendar = self.random_leapless_calendar()
+        year_length = sum(leapless_calendar.days_in_common_year_months)
+        cd = ConvertibleDate(calendar=leapless_calendar)
+        assert cd.ordinal_date_to_ordinal((1, 1)) == 1
+        assert cd.ordinal_date_to_ordinal((1, year_length)) == year_length
+        assert cd.ordinal_date_to_ordinal((2, 1)) == year_length + 1
+        assert cd.ordinal_date_to_ordinal((2, year_length)) == year_length * 2
 
-    # ConvertibleDate.ordinal_date_to_ordinal in test_gregorian.py
-    # ConvertibleDate.ordinal_to_ordinal_date in test_gregorian.py
+    @patch(
+        "src.customdate.ConvertibleDate._start_and_sign",
+        return_value=[0, -1],
+    )
+    @patch(
+        "src.customdate.ConvertibleDate.is_descending_era",
+        return_value=True,
+    )
+    @patch(
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
+        return_value=True,
+    )
+    def test_leapless_ordinal_date_to_ordinal_for_bce_years(self, *_):
+        leapless_calendar = self.random_leapless_calendar()
+        year_length = sum(leapless_calendar.days_in_common_year_months)
+        cd = ConvertibleDate(calendar=leapless_calendar)
+        assert cd.ordinal_date_to_ordinal((0, year_length)) == 0
+        assert cd.ordinal_date_to_ordinal((0, 1)) == -year_length + 1
+        assert cd.ordinal_date_to_ordinal((-1, year_length)) == -year_length
+        assert cd.ordinal_date_to_ordinal((-1, 1)) == (-year_length * 2) + 1
+
+    @patch(
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
+        return_value=True,
+    )
+    @patch(
+        "src.customdate.ConvertibleDate._start_and_sign",
+        return_value=[1, 1],
+    )
+    def test_leapless_ordinal_to_ordinal_date_for_ce_years(self, *_):
+        leapless_calendar = self.random_leapless_calendar()
+        year_length = sum(leapless_calendar.days_in_common_year_months)
+        cd = ConvertibleDate(calendar=leapless_calendar)
+        assert cd.ordinal_to_ordinal_date(1) == (1, 1)
+        assert cd.ordinal_to_ordinal_date(year_length) == (1, year_length)
+        assert cd.ordinal_to_ordinal_date(year_length + 1) == (2, 1)
+        assert cd.ordinal_to_ordinal_date(year_length * 2) == (2, year_length)
+
+    @patch(
+        "src.customdate.ConvertibleDate.is_valid_ordinal_date",
+        return_value=True,
+    )
+    @patch(
+        "src.customdate.ConvertibleDate._start_and_sign",
+        return_value=[0, -1],
+    )
+    def test_leapless_ordinal_to_ordinal_date_for_bce_years(self, *_):
+        leapless_calendar = self.random_leapless_calendar()
+        year_length = sum(leapless_calendar.days_in_common_year_months)
+        cd = ConvertibleDate(calendar=leapless_calendar)
+        assert cd.ordinal_to_ordinal_date(0) == (0, year_length)
+        assert cd.ordinal_to_ordinal_date(-year_length + 1) == (0, 1)
+        assert cd.ordinal_to_ordinal_date(-year_length) == (-1, year_length)
+        assert cd.ordinal_to_ordinal_date(-year_length * 2 + 1) == (-1, 1)
+
+    # todo test completed_cycles, cycle_index
     # ConvertibleDate.all_cycle_ordinals in test_gregorian.py
+    # ConvertibleDate.days_in_normal_cycle in test_gregorian.py
     # ConvertibleDate.ordinal_date_to_ordinal in test_gregorian.py
     # ConvertibleDate.common_year_cycle_ordinals in test_gregorian.py
     # ConvertibleDate.common_years_in_normal_cycle in test_gregorian.py

@@ -293,10 +293,7 @@ class IndianCivilTest(RealCalendarTestCase):
         "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
-    @patch(
-        "src.customdate.ConvertibleDate._start_and_sign",
-        return_value=(0, -1),
-    )
+    # don't patch _start_and_sign, loops can temporarily move into diff era
     def test_ordinal_to_ordinal_date_for_be_year(self, *_):
         assert self.indian_cd.ordinal_to_ordinal_date(0) == (0, 365)
         assert self.indian_cd.ordinal_to_ordinal_date(-364) == (0, 1)
@@ -312,10 +309,7 @@ class IndianCivilTest(RealCalendarTestCase):
         "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
-    @patch(
-        "src.customdate.ConvertibleDate._start_and_sign",
-        return_value=(0, -1),
-    )
+    # don't patch _start_and_sign, loops can temporarily move into diff era
     def test_ordinal_to_ordinal_date_for_last_proleptic_year(self, *_):
         assert self.indian_cd.ordinal_to_ordinal_date(0) == (0, 365)
         assert self.indian_cd.ordinal_to_ordinal_date(-60) == (0, 305)
@@ -332,10 +326,7 @@ class IndianCivilTest(RealCalendarTestCase):
         "src.customdate.ConvertibleDate.is_descending_era",
         return_value=True,
     )
-    @patch(
-        "src.customdate.ConvertibleDate._start_and_sign",
-        return_value=(0, -1),
-    )
+    # don't patch _start_and_sign, loops can temporarily move into diff era
     def test_ordinal_to_ordinal_date_is_reversible_for_be_year(self, *_):
         be_ordinal = FAKE.random_int(min=-9999, max=0)
         be_ordinal_date = (
@@ -669,6 +660,7 @@ class IndianCivilTest(RealCalendarTestCase):
     # ConvertibleDate.is_leap_year
     #
     def test_is_leap_year(self):
+        # all_cycle_ordinals reverses to early when patched...so don't patch
         common_be_year = self.random_common_bce_year()
         common_se_year = self.random_common_ce_year()
         leap_be_year = self.random_leap_bce_year()

@@ -161,10 +161,7 @@ class JulianTest(RealCalendarTestCase):
         "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
-    @patch(
-        "src.customdate.ConvertibleDate._start_and_sign",
-        return_value=(0, -1),
-    )
+    # don't patch _start_and_sign, loops can temporarily move into diff era
     def test_ordinal_to_ordinal_date_for_bc_year(self, *_):
         assert self.julian_cd.ordinal_to_ordinal_date(0) == (0, 366)
         assert self.julian_cd.ordinal_to_ordinal_date(-365) == (0, 1)
@@ -181,10 +178,7 @@ class JulianTest(RealCalendarTestCase):
         "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
-    @patch(
-        "src.customdate.ConvertibleDate._start_and_sign",
-        return_value=(0, -1),
-    )
+    # don't patch _start_and_sign, loops can temporarily move into diff era
     def test_ordinal_to_ordinal_date_for_last_proleptic_year(self, *_):
         assert self.julian_cd.ordinal_to_ordinal_date(0) == (0, 366)
         assert self.julian_cd.ordinal_to_ordinal_date(-100) == (0, 266)
@@ -618,6 +612,7 @@ class JulianTest(RealCalendarTestCase):
     # ConvertibleDate.is_leap_year
     #
     def test_is_leap_year(self):
+        # all_cycle_ordinals reverses to early when patched...so don't patch
         common_bce_year = self.random_common_bce_year()
         common_ce_year = self.random_common_ce_year()
         leap_bce_year = self.random_leap_bce_year()

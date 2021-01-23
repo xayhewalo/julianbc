@@ -186,7 +186,7 @@ class GregorianTest(RealCalendarTestCase):
         "src.customdate.ConvertibleDate.net_elapsed_special_years",
         return_value=[0, 0],
     )
-    def test_ordinal_date_to_ordinal_for_bce_year(self, *args):
+    def test_ordinal_date_to_ordinal_for_bce_year(self, *_):
         # patching reverses all_cycle_ordinals for some reason...so don't patch
         _ordinal, ordinal_date = self.random_bce_ordinal_and_ordinal_date()
         assert self.gregorian_cd.ordinal_date_to_ordinal((0, 366)) == 0
@@ -247,10 +247,7 @@ class GregorianTest(RealCalendarTestCase):
         "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
-    @patch(
-        "src.customdate.ConvertibleDate._start_and_sign",
-        return_value=(0, -1),
-    )
+    # don't patch _start_and_sign, loops can temporarily move into diff era
     def test_ordinal_to_ordinal_date_for_bce_year(self, *_):
         bce_ordinal_n_ordinal_date = self.random_bce_ordinal_and_ordinal_date()
         bce_ordinal, bce_ordinal_date = bce_ordinal_n_ordinal_date
@@ -285,10 +282,7 @@ class GregorianTest(RealCalendarTestCase):
         "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
-    @patch(
-        "src.customdate.ConvertibleDate._start_and_sign",
-        return_value=(0, -1),
-    )
+    # don't patch _start_and_sign, loops can temporarily move into diff era
     def test_ordinal_to_ordinal_date_for_last_proleptic_year(self, *_):
         year = 0
         _, month, day = self.random_leap_bce_ymd()
@@ -308,10 +302,7 @@ class GregorianTest(RealCalendarTestCase):
         "src.customdate.ConvertibleDate.is_descending_era",
         return_value=True,
     )
-    @patch(
-        "src.customdate.ConvertibleDate._start_and_sign",
-        return_value=(0, -1),
-    )
+    # don't patch _start_and_sign, loops can temporarily move into diff era
     def test_ordinal_to_ordinal_date_is_reversible_for_bce_year(self, *_):
         bce_ymd = self.random_bce_ymd()
         bce_ordinal = self.gregorian_dc.from_gregorian(*bce_ymd) + 1
@@ -641,6 +632,7 @@ class GregorianTest(RealCalendarTestCase):
     # ConvertibleDate.is_leap_year
     #
     def test_is_leap_year(self):
+        # all_cycle_ordinals reverses to early when patched...so don't patch
         common_bce_year = self.random_common_bce_year()
         common_ce_year = self.random_common_ce_year()
         leap_bce_year = self.random_leap_bce_year()

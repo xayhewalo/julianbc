@@ -161,6 +161,7 @@ class CopticTest(RealCalendarTestCase):
         return_value=[0, 0],
     )
     def test_ordinal_date_to_ordinal_for_bc_year(self, *_):
+        # todo deepcopy to see if it prevents early reversing
         # patching reverses all_cycle_ordinals for some reason...so don't patch
         assert self.coptic_cd.ordinal_date_to_ordinal((0, 365)) == 0
         assert self.coptic_cd.ordinal_date_to_ordinal((0, 1)) == -364
@@ -315,6 +316,79 @@ class CopticTest(RealCalendarTestCase):
                 self.coptic_cd.ordinal_to_ordinal_date(am_ordinal)
             )
             == am_ordinal
+        )
+
+    #
+    # Cycle methods
+    #
+    @patch(
+        "src.customdate.ConvertibleDate._start_and_sign",
+        return_value=(1, 1),
+    )
+    def test_completed_cycles_for_am_year(self, _):
+        completed_cycles = FAKE.random_int()
+        start_year = self.make_cycle_start_year(completed_cycles)
+        end_year = self.make_cycle_end_year(completed_cycles)
+        cycle_year = FAKE.random_int(min=start_year, max=end_year)
+        assert self.coptic_cd.completed_cycles(1) == 0
+        assert self.coptic_cd.completed_cycles(4) == 0
+        assert self.coptic_cd.completed_cycles(5) == 1
+        assert self.coptic_cd.completed_cycles(cycle_year) == completed_cycles
+
+    @patch(
+        "src.customdate.ConvertibleDate._start_and_sign",
+        return_value=(0, -1),
+    )
+    def test_completed_cycles_for_bc_year(self, _):
+        completed_cycles = FAKE.random_int()
+        start_year = self.make_cycle_start_year(
+            completed_cycles, proleptic=True
+        )
+        end_year = self.make_cycle_end_year(completed_cycles, proleptic=True)
+        cycle_year = FAKE.random_int(min=end_year, max=start_year)
+        assert self.coptic_cd.completed_cycles(0) == 0
+        assert self.coptic_cd.completed_cycles(-3) == 0
+        assert self.coptic_cd.completed_cycles(-4) == 1
+        assert self.coptic_cd.completed_cycles(cycle_year) == completed_cycles
+
+    @patch(
+        "src.customdate.ConvertibleDate._start_and_sign",
+        return_value=(1, 1),
+    )
+    def test_cycle_index_for_am_year(self, _):
+        completed_cycles = FAKE.random_int()
+        cycle_index = FAKE.random_int(max=self.cycle_length)
+        am_start_year = self.make_cycle_start_year(completed_cycles)
+        am_year = am_start_year + cycle_index
+        assert self.coptic_cd.cycle_index(1) == 0
+        assert self.coptic_cd.cycle_index(2) == 1
+        assert self.coptic_cd.cycle_index(3) == 2
+        assert self.coptic_cd.cycle_index(4) == 3
+        assert self.coptic_cd.cycle_index(5) == 0
+        assert (
+            self.coptic_cd.cycle_index(am_year, completed_cycles, 1, 1)
+            == cycle_index
+        )
+
+    @patch(
+        "src.customdate.ConvertibleDate._start_and_sign",
+        return_value=(0, -1),
+    )
+    def test_cycle_index_for_bc_year(self, _):
+        completed_cycles = FAKE.random_int()
+        cycle_index = FAKE.random_int(max=self.cycle_length)
+        bc_start_year = self.make_cycle_start_year(
+            completed_cycles, proleptic=True
+        )
+        bc_year = bc_start_year - cycle_index
+        assert self.coptic_cd.cycle_index(-4) == 0
+        assert self.coptic_cd.cycle_index(-3) == 3
+        assert self.coptic_cd.cycle_index(-2) == 2
+        assert self.coptic_cd.cycle_index(-1) == 1
+        assert self.coptic_cd.cycle_index(0) == 0
+        assert (
+            self.coptic_cd.cycle_index(bc_year, completed_cycles, 0, -1)
+            == cycle_index
         )
 
     def test_all_cycle_ordinals(self):

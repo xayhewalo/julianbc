@@ -246,11 +246,17 @@ class ConvertibleDate:
     def cycle_index(
         self,
         ast_year: int,
-        completed_cycles: int,
-        start_ast_year: int,
-        sign: int,
+        completed_cycles: int = None,
+        start_ast_year: int = None,
+        sign: int = None,
     ) -> int:
         """how far is this year into the current leap year cycle?"""
+        if completed_cycles is None:
+            completed_cycles = self.completed_cycles(ast_year)
+
+        if start_ast_year is None or sign is None:
+            start_ast_year, sign = self._start_and_sign(ast_year)
+
         cycle_length = self.calendar.leap_year_cycle_length
         current_cycle_start_ast_year = (
             (completed_cycles * cycle_length) + start_ast_year

@@ -349,6 +349,85 @@ class GregorianTest(RealCalendarTestCase):
             == ce_ordinal
         )
 
+    #
+    # Cycle methods
+    #
+    @patch(
+        "src.customdate.ConvertibleDate._start_and_sign",
+        return_value=(1, 1),
+    )
+    def test_completed_cycles_for_ce_year(self, _):
+        completed_cycles = FAKE.random_int()
+        start_year = self.make_cycle_start_year(completed_cycles)
+        end_year = self.make_cycle_end_year(completed_cycles)
+        cycle_year = FAKE.random_int(min=start_year, max=end_year)
+        assert self.gregorian_cd.completed_cycles(1) == 0
+        assert self.gregorian_cd.completed_cycles(400) == 0
+        assert self.gregorian_cd.completed_cycles(401) == 1
+        assert (
+            self.gregorian_cd.completed_cycles(cycle_year) == completed_cycles
+        )
+
+    @patch(
+        "src.customdate.ConvertibleDate._start_and_sign",
+        return_value=(0, -1),
+    )
+    def test_completed_cycles_for_bce_year(self, _):
+        completed_cycles = FAKE.random_int()
+        start_year = self.make_cycle_start_year(
+            completed_cycles, proleptic=True
+        )
+        end_year = self.make_cycle_end_year(completed_cycles, proleptic=True)
+        cycle_year = FAKE.random_int(min=end_year, max=start_year)
+        assert self.gregorian_cd.completed_cycles(0) == 0
+        assert self.gregorian_cd.completed_cycles(-399) == 0
+        assert self.gregorian_cd.completed_cycles(-400) == 1
+        assert (
+            self.gregorian_cd.completed_cycles(cycle_year) == completed_cycles
+        )
+
+    @patch(
+        "src.customdate.ConvertibleDate._start_and_sign",
+        return_value=(1, 1),
+    )
+    def test_cycle_index_for_ce_year(self, _):
+        completed_cycles = FAKE.random_int()
+        cycle_index = FAKE.random_int(max=self.cycle_length)
+        ad_start_year = self.make_cycle_start_year(completed_cycles)
+        ad_year = ad_start_year + cycle_index
+        assert self.gregorian_cd.cycle_index(1) == 0
+        assert self.gregorian_cd.cycle_index(100) == 99
+        assert self.gregorian_cd.cycle_index(200) == 199
+        assert self.gregorian_cd.cycle_index(300) == 299
+        assert self.gregorian_cd.cycle_index(400) == 399
+        assert self.gregorian_cd.cycle_index(401) == 0
+        assert (
+            self.gregorian_cd.cycle_index(ad_year, completed_cycles, 1, 1)
+            == cycle_index
+        )
+
+    @patch(
+        "src.customdate.ConvertibleDate._start_and_sign",
+        return_value=(0, -1),
+    )
+    def test_cycle_index_for_bce_year(self, _):
+        completed_cycles = FAKE.random_int()
+        cycle_index = FAKE.random_int(max=self.cycle_length)
+        bce_start_year = self.make_cycle_start_year(
+            completed_cycles, proleptic=True
+        )
+        bce_year = bce_start_year - cycle_index
+        assert self.gregorian_cd.cycle_index(-400) == 0
+        assert self.gregorian_cd.cycle_index(-399) == 399
+        assert self.gregorian_cd.cycle_index(-300) == 300
+        assert self.gregorian_cd.cycle_index(-200) == 200
+        assert self.gregorian_cd.cycle_index(-100) == 100
+        assert self.gregorian_cd.cycle_index(0) == 0
+        assert (
+            self.gregorian_cd.cycle_index(bce_year, completed_cycles, 0, -1)
+            == cycle_index
+        )
+
     def test_all_cycle_ordinals(self):
         assert self.gregorian_cd.all_cycle_ordinals == deque(range(1, 401))
         with pytest.raises(AttributeError):

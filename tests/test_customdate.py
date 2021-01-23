@@ -166,7 +166,6 @@ class ConvertibleDateTest(CalendarTestCase):
         assert cd.ordinal_to_ordinal_date(-year_length) == (-1, year_length)
         assert cd.ordinal_to_ordinal_date(-year_length * 2 + 1) == (-1, 1)
 
-    # todo test completed_cycles, cycle_index
     # ConvertibleDate.all_cycle_ordinals in test_gregorian.py
     # ConvertibleDate.days_in_normal_cycle in test_gregorian.py
     # ConvertibleDate.ordinal_date_to_ordinal in test_gregorian.py

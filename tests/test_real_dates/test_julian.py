@@ -329,6 +329,79 @@ class JulianTest(RealCalendarTestCase):
         with pytest.raises(ValueError):
             self.julian_cd.ordinal_date_to_ordinal((1, 0))
 
+    #
+    # Cycle methods
+    #
+    @patch(
+        "src.customdate.ConvertibleDate._start_and_sign",
+        return_value=(1, 1),
+    )
+    def test_completed_cycles_for_ad_year(self, _):
+        completed_cycles = FAKE.random_int()
+        start_year = self.make_cycle_start_year(completed_cycles)
+        end_year = self.make_cycle_end_year(completed_cycles)
+        cycle_year = FAKE.random_int(min=start_year, max=end_year)
+        assert self.julian_cd.completed_cycles(1) == 0
+        assert self.julian_cd.completed_cycles(4) == 0
+        assert self.julian_cd.completed_cycles(5) == 1
+        assert self.julian_cd.completed_cycles(cycle_year) == completed_cycles
+
+    @patch(
+        "src.customdate.ConvertibleDate._start_and_sign",
+        return_value=(0, -1),
+    )
+    def test_completed_cycles_for_bc_year(self, _):
+        completed_cycles = FAKE.random_int()
+        start_year = self.make_cycle_start_year(
+            completed_cycles, proleptic=True
+        )
+        end_year = self.make_cycle_end_year(completed_cycles, proleptic=True)
+        cycle_year = FAKE.random_int(min=end_year, max=start_year)
+        assert self.julian_cd.completed_cycles(0) == 0
+        assert self.julian_cd.completed_cycles(-3) == 0
+        assert self.julian_cd.completed_cycles(-4) == 1
+        assert self.julian_cd.completed_cycles(cycle_year) == completed_cycles
+
+    @patch(
+        "src.customdate.ConvertibleDate._start_and_sign",
+        return_value=(1, 1),
+    )
+    def test_cycle_index_for_ad_year(self, _):
+        completed_cycles = FAKE.random_int()
+        cycle_index = FAKE.random_int(max=self.cycle_length)
+        ad_start_year = self.make_cycle_start_year(completed_cycles)
+        ad_year = ad_start_year + cycle_index
+        assert self.julian_cd.cycle_index(1) == 0
+        assert self.julian_cd.cycle_index(2) == 1
+        assert self.julian_cd.cycle_index(3) == 2
+        assert self.julian_cd.cycle_index(4) == 3
+        assert self.julian_cd.cycle_index(5) == 0
+        assert (
+            self.julian_cd.cycle_index(ad_year, completed_cycles, 1, 1)
+            == cycle_index
+        )
+
+    @patch(
+        "src.customdate.ConvertibleDate._start_and_sign",
+        return_value=(0, -1),
+    )
+    def test_cycle_index_for_bc_year(self, _):
+        completed_cycles = FAKE.random_int()
+        cycle_index = FAKE.random_int(max=self.cycle_length)
+        bc_start_year = self.make_cycle_start_year(
+            completed_cycles, proleptic=True
+        )
+        bc_year = bc_start_year - cycle_index
+        assert self.julian_cd.cycle_index(-4) == 0
+        assert self.julian_cd.cycle_index(-3) == 3
+        assert self.julian_cd.cycle_index(-2) == 2
+        assert self.julian_cd.cycle_index(-1) == 1
+        assert self.julian_cd.cycle_index(0) == 0
+        assert (
+            self.julian_cd.cycle_index(bc_year, completed_cycles, 0, -1)
+            == cycle_index
+        )
+
     def test_all_cycle_ordinals(self):
         assert self.julian_cd.all_cycle_ordinals == self.all_cycle_ordinals
         with pytest.raises(AttributeError):

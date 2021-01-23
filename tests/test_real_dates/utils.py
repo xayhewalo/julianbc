@@ -18,7 +18,8 @@ class RealCalendarTestCase(CalendarTestCase):
         self.main_calendar = None  # type: ConvertibleCalendar
         self.to_gregorian_ymd = None  # type: callable
         self.common_ordinals: tuple
-        self.cycle_length: int
+        # noinspection PyTypeChecker
+        self.cycle_length = None  # type: int
         self.all_cycle_ordinals: deque
         self.leap_years_in_normal_cycle: int
         self.common_years_in_normal_cycle: int
@@ -551,6 +552,21 @@ class RealCalendarTestCase(CalendarTestCase):
     #
     # Calendar **independent** methods
     #
+    def make_cycle_start_year(self, completed_cycles: int, proleptic=False):
+        """assumes astronomical year numbering"""
+        start_year = (completed_cycles * self.cycle_length) + 1
+        if proleptic:
+            start_year = -(completed_cycles * self.cycle_length)
+        return start_year
+
+    def make_cycle_end_year(self, completed_cycles: int, proleptic=False):
+        """assumes astronomical year numbering"""
+        cycle_length = self.cycle_length
+        end_year = (completed_cycles * cycle_length) + cycle_length
+        if proleptic:
+            end_year = -(completed_cycles * cycle_length) - cycle_length - 1
+        return end_year
+
     def random_year(self) -> int:
         if FAKE.random_int() > 5000:
             return self.random_common_year()

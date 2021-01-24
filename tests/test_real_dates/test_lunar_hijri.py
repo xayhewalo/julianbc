@@ -3,6 +3,7 @@ import pytest
 
 from .utils import RealCalendarTestCase, FAKE
 from collections import deque
+from src.customdate import DateUnit
 from unittest.mock import patch
 
 
@@ -63,6 +64,89 @@ class LunarHijriTest(RealCalendarTestCase):
         patch_common_years_in_normal_cycle.__get__ = lambda *_: cyinc
         patch_days_in_leap_year.__get__ = lambda *_: self.days_in_leap_years
         patch_days_common_year.__get__ = lambda *_: self.days_in_common_year
+
+    #
+    # ConvertibleDate.shift_ast_ymd
+    #
+    @patch(
+        "src.customdate.ConvertibleDate.is_valid_ast_ymd",
+        return_value=True,
+    )
+    def test_shift_ast_ymd_by_multiple_intervals(self, _):
+        plus_delta = FAKE.random_int(min=1, max=11)
+        plus_years = [[plus_delta, DateUnit.YEAR]]
+        plus_months = [[plus_delta, DateUnit.MONTH]]
+        ymd = self.random_ymd()
+        ast_year, _, _ = ymd
+        zero_interval = [[0, DateUnit.YEAR]]
+        assert self.l_hijri_cd.shift_ast_ymd(ymd, zero_interval) == ymd
+        # fmt: off
+        assert self.l_hijri_cd.shift_ast_ymd(
+            (ast_year, 9, 4), plus_years
+        ) == (ast_year + plus_delta, 9, 4)
+        assert self.l_hijri_cd.shift_ast_ymd(
+            (ast_year, 1, 29), plus_months
+        ) == (ast_year, 1 + plus_delta, 29)
+        # fmt: on
+        assert self.l_hijri_cd.shift_ast_ymd(
+            (ast_year, 2, 20), [[22, DateUnit.YEAR], [7, DateUnit.MONTH]]
+        ) == (ast_year + 22, 9, 20)
+        assert self.l_hijri_cd.shift_ast_ymd(
+            (ast_year, 3, 25), [[7, DateUnit.YEAR], [-2, DateUnit.MONTH]]
+        ) == (ast_year + 7, 1, 25)
+
+    def test_shift_ast_ymd_to_invalid_day(self):
+        common_year = self.random_common_year()
+        leap_year = self.random_leap_year()
+        assert self.l_hijri_cd.shift_ast_ymd(
+            (common_year, 11, 30), [[1, DateUnit.MONTH]]
+        ) == (common_year, 12, 29)
+        assert self.l_hijri_cd.shift_ast_ymd(
+            (leap_year, 12, 30), [[2, DateUnit.MONTH]]
+        ) == (leap_year + 1, 2, 29)
+        assert self.l_hijri_cd.shift_ast_ymd(
+            (leap_year, 12, 30), [[-2, DateUnit.MONTH]]
+        ) == (leap_year, 10, 29)
+        assert self.l_hijri_cd.shift_ast_ymd(
+            (common_year, 5, 30), [[-3, DateUnit.MONTH]]
+        ) == (common_year, 2, 29)
+
+    def test_shift_ast_year(self):
+        delta = FAKE.random_int()
+        year = self.random_year()
+        expected_year = year + delta
+        assert self.l_hijri_cd.shift_ast_year(year, delta) == expected_year
+
+    def test_shift_month(self):
+        year, month, _ = self.random_ymd()
+        assert self.l_hijri_cd.shift_month(year, month, -24) == (
+            year - 2,
+            month,
+        )
+        assert self.l_hijri_cd.shift_month(year, month, -12) == (
+            year - 1,
+            month,
+        )
+        assert self.l_hijri_cd.shift_month(year, month, 0) == (year, month)
+        assert self.l_hijri_cd.shift_month(year, month, 12) == (
+            year + 1,
+            month,
+        )
+        assert self.l_hijri_cd.shift_month(year, month, 24) == (
+            year + 2,
+            month,
+        )
+        assert self.l_hijri_cd.shift_month(year, 2, 3) == (year, 5)
+        assert self.l_hijri_cd.shift_month(year, 12, 1) == (year + 1, 1)
+        assert self.l_hijri_cd.shift_month(year, 8, 7) == (year + 1, 3)
+        assert self.l_hijri_cd.shift_month(year, 3, 14) == (year + 1, 5)
+        assert self.l_hijri_cd.shift_month(year, 6, 29) == (year + 2, 11)
+        assert self.l_hijri_cd.shift_month(year, 10, -1) == (year, 9)
+        assert self.l_hijri_cd.shift_month(year, 1, -1) == (year - 1, 12)
+        assert self.l_hijri_cd.shift_month(year, 2, -3) == (year - 1, 11)
+        assert self.l_hijri_cd.shift_month(year, 5, -7) == (year - 1, 10)
+        assert self.l_hijri_cd.shift_month(year, 7, -15) == (year - 1, 4)
+        assert self.l_hijri_cd.shift_month(year, 12, -28) == (year - 2, 8)
 
     #
     # ConvertibleDate.convert_ast_ymd

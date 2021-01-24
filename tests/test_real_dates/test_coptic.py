@@ -3,6 +3,7 @@ import pytest
 
 from .utils import RealCalendarTestCase, FAKE
 from collections import deque
+from src.customdate import DateUnit
 from unittest.mock import patch
 
 
@@ -58,6 +59,82 @@ class CopticTest(RealCalendarTestCase):
         patch_common_years_in_normal_cycle.__get__ = lambda *_: cyinc
         patch_days_in_leap_year.__get__ = lambda *_: self.days_in_leap_years
         patch_days_common_year.__get__ = lambda *_: self.days_in_common_year
+
+    #
+    # ConvertibleDate.shift_ast_ymd
+    #
+    @patch(
+        "src.customdate.ConvertibleDate.is_valid_ast_ymd",
+        return_value=True,
+    )
+    def test_shift_ast_ymd_by_multiple_intervals(self, _):
+        plus_delta = FAKE.random_int(min=1, max=12)
+        plus_years = [[plus_delta, DateUnit.YEAR]]
+        plus_months = [[plus_delta, DateUnit.MONTH]]
+        ymd = self.random_ymd()
+        ast_year, _, _ = ymd
+        assert self.coptic_cd.shift_ast_ymd(ymd, [[0, DateUnit.YEAR]]) == ymd
+        # fmt: off
+        assert self.coptic_cd.shift_ast_ymd(
+            (ast_year, 6, 27), plus_years
+        ) == (ast_year + plus_delta, 6, 27)
+        assert self.coptic_cd.shift_ast_ymd(
+            (ast_year, 1, 5), plus_months
+        ) == (ast_year, 1 + plus_delta, 5)
+        # fmt: on
+        assert self.coptic_cd.shift_ast_ymd(
+            (ast_year, 3, 15), [[2, DateUnit.YEAR], [4, DateUnit.MONTH]]
+        ) == (ast_year + 2, 7, 15)
+        assert self.coptic_cd.shift_ast_ymd(
+            (ast_year, 9, 25), [[3, DateUnit.YEAR], [-2, DateUnit.MONTH]]
+        ) == (ast_year + 3, 7, 25)
+
+    def test_shift_ast_ymd_to_invalid_day(self):
+        common_year = self.random_common_year()
+        leap_year = self.random_leap_year()
+        assert self.coptic_cd.shift_ast_ymd(
+            (common_year, 12, 30), [[1, DateUnit.MONTH]]
+        ) == (common_year, 13, 5)
+        assert self.coptic_cd.shift_ast_ymd(
+            (leap_year, 12, 30), [[1, DateUnit.MONTH]]
+        ) == (leap_year, 13, 6)
+        assert self.coptic_cd.shift_ast_ymd(
+            (2, 1, 6), [[-1, DateUnit.MONTH]]
+        ) == (1, 13, 5)
+        assert self.coptic_cd.shift_ast_ymd(
+            (4, 1, 7), [[-1, DateUnit.MONTH]]
+        ) == (3, 13, 6)
+
+    def test_shift_ast_year(self):
+        delta = FAKE.random_int()
+        year = self.random_year()
+        expected_year = year + delta
+        assert self.coptic_cd.shift_ast_year(year, delta) == expected_year
+
+    def test_shift_month(self):
+        year, month, _ = self.random_ymd()
+        assert self.coptic_cd.shift_month(year, month, -26) == (
+            year - 2,
+            month,
+        )
+        assert self.coptic_cd.shift_month(year, month, -13) == (
+            year - 1,
+            month,
+        )
+        assert self.coptic_cd.shift_month(year, month, 0) == (year, month)
+        assert self.coptic_cd.shift_month(year, month, 13) == (year + 1, month)
+        assert self.coptic_cd.shift_month(year, month, 26) == (year + 2, month)
+        assert self.coptic_cd.shift_month(year, 2, 3) == (year, 5)
+        assert self.coptic_cd.shift_month(year, 13, 1) == (year + 1, 1)
+        assert self.coptic_cd.shift_month(year, 8, 7) == (year + 1, 2)
+        assert self.coptic_cd.shift_month(year, 3, 14) == (year + 1, 4)
+        assert self.coptic_cd.shift_month(year, 6, 29) == (year + 2, 9)
+        assert self.coptic_cd.shift_month(year, 10, -1) == (year, 9)
+        assert self.coptic_cd.shift_month(year, 1, -1) == (year - 1, 13)
+        assert self.coptic_cd.shift_month(year, 2, -3) == (year - 1, 12)
+        assert self.coptic_cd.shift_month(year, 5, -7) == (year - 1, 11)
+        assert self.coptic_cd.shift_month(year, 7, -15) == (year - 1, 5)
+        assert self.coptic_cd.shift_month(year, 12, -28) == (year - 2, 10)
 
     #
     # ConvertibleDate.convert_ast_ymd
@@ -161,7 +238,6 @@ class CopticTest(RealCalendarTestCase):
         return_value=[0, 0],
     )
     def test_ordinal_date_to_ordinal_for_bc_year(self, *_):
-        # todo deepcopy to see if it prevents early reversing
         # patching reverses all_cycle_ordinals for some reason...so don't patch
         assert self.coptic_cd.ordinal_date_to_ordinal((0, 365)) == 0
         assert self.coptic_cd.ordinal_date_to_ordinal((0, 1)) == -364

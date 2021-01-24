@@ -48,15 +48,14 @@ JulianBC will be a visual-timeline program in the near future
 - [X] add `days_in_month` and use it
 - [X] add `is_valid_month` and use it
 - [X] make `days_in_year` use column properties on calendar
-- [ ] test `completed_cycles`
-- [ ] test `cycle_index`
+- [X] test `completed_cycles`
+- [X] test `cycle_index`
 - [X] test cycle properties with no leap years:
-- [ ] add `shift_ast_ymd`
-    - [ ] `shift_ast_year`
-    - [ ] `shift_ast_month`
-    - [ ] `shift_ast_day`
-    - [ ] check if `frequency` is an integer greater than zero
+- [X] add `shift_ast_ymd`
+    - [X] `shift_ast_year`
+    - [X] `shift_ast_month`
 - [ ] add `next_dateunit`
+    - [ ] check if `frequency` is an integer greater than zero
 - [ ] move `make_ordinal` out of `ConvertibleDate`, change name
 - [X] remove week stuff
 #### ConvertibleTime
@@ -82,8 +81,9 @@ JulianBC will be a visual-timeline program in the near future
     - [ ] pass `label_width` and `interval` and pick the smallest interval that's greater than the width(?)
     - [ ] make `change_XXX_interval` DRY
 - [ ] test `ast_ymd_to_od` for proleptic years
-- [ ] add `extend_start_end` (by passed `interval`) to be used in `Timeline` `and Mark`
+- [ ] add `extend_start_end` (by passed `interval`) to be used in `Timeline` and `Mark`
     - [ ] use `shift_od`
+- [ ] shift days and weeks in `shift_od`
 #### EventController
 - [ ] `fields` in `make` are based on `Event` columns
 - [ ] ensure negative `duraiton` raises error

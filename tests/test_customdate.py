@@ -92,6 +92,13 @@ class ConvertibleDateTest(CalendarTestCase):
         return leapless_calendar
 
     #
+    # ConvertibleDate.shift_ast_ymd
+    #
+    # todo test monthless calendar
+    # todo test shift_month for diff num months for common and leap years
+    # todo test raises errors
+
+    #
     # Ordinal Conversions
     #
     @patch(

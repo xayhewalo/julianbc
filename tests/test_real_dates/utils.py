@@ -564,7 +564,7 @@ class RealCalendarTestCase(CalendarTestCase):
         cycle_length = self.cycle_length
         end_year = (completed_cycles * cycle_length) + cycle_length
         if proleptic:
-            end_year = -(completed_cycles * cycle_length) - cycle_length - 1
+            end_year = -(completed_cycles * cycle_length) - cycle_length + 1
         return end_year
 
     def random_year(self) -> int:

@@ -3,6 +3,7 @@ import pytest
 
 from .utils import RealCalendarTestCase, FAKE
 from collections import deque
+from src.customdate import DateUnit
 from unittest.mock import patch
 
 
@@ -51,6 +52,82 @@ class JulianTest(RealCalendarTestCase):
         patch_common_years_in_normal_cycle.__get__ = lambda *_: 3
         patch_days_in_leap_year.__get__ = lambda *_: 366
         patch_days_common_year.__get__ = lambda *_: 365
+
+    #
+    # ConvertibleDate.shift_ast_ymd
+    #
+    @patch(
+        "src.customdate.ConvertibleDate.is_valid_ast_ymd",
+        return_value=True,
+    )
+    def test_shift_ast_ymd_by_multiple_intervals(self, _):
+        plus_delta = FAKE.random_int(min=1, max=11)
+        plus_years = [[plus_delta, DateUnit.YEAR]]
+        plus_months = [[plus_delta, DateUnit.MONTH]]
+        ymd = self.random_ymd()
+        ast_year, _, _ = ymd
+        assert self.julian_cd.shift_ast_ymd(ymd, [[0, DateUnit.YEAR]]) == ymd
+        # fmt: off
+        assert self.julian_cd.shift_ast_ymd(
+            (ast_year, 2, 14), plus_years
+        ) == (ast_year + plus_delta, 2, 14)
+        assert self.julian_cd.shift_ast_ymd(
+            (ast_year, 1, 28), plus_months
+        ) == (ast_year, 1 + plus_delta, 28)
+        # fmt: on
+        assert self.julian_cd.shift_ast_ymd(
+            (ast_year, 10, 15), [[7, DateUnit.YEAR], [2, DateUnit.MONTH]]
+        ) == (ast_year + 7, 12, 15)
+        assert self.julian_cd.shift_ast_ymd(
+            (ast_year, 10, 25), [[5, DateUnit.YEAR], [-6, DateUnit.MONTH]]
+        ) == (ast_year + 5, 4, 25)
+
+    def test_shift_ast_ymd_to_invalid_day(self):
+        common_year = self.random_common_year()
+        leap_year = self.random_leap_year()
+        assert self.julian_cd.shift_ast_ymd(
+            (common_year, 1, 30), [[1, DateUnit.MONTH]]
+        ) == (common_year, 2, 28)
+        assert self.julian_cd.shift_ast_ymd(
+            (leap_year, 1, 31), [[1, DateUnit.MONTH]]
+        ) == (leap_year, 2, 29)
+        assert self.julian_cd.shift_ast_ymd(
+            (5, 3, 31), [[-1, DateUnit.MONTH]]
+        ) == (5, 2, 28)
+        assert self.julian_cd.shift_ast_ymd(
+            (1, 5, 31), [[-1, DateUnit.MONTH]]
+        ) == (1, 4, 30)
+
+    def test_shift_ast_year(self):
+        delta = FAKE.random_int()
+        year = self.random_year()
+        expected_year = year + delta
+        assert self.julian_cd.shift_ast_year(year, delta) == expected_year
+
+    def test_shift_month(self):
+        year, month, _ = self.random_ymd()
+        assert self.julian_cd.shift_month(year, month, -24) == (
+            year - 2,
+            month,
+        )
+        assert self.julian_cd.shift_month(year, month, -12) == (
+            year - 1,
+            month,
+        )
+        assert self.julian_cd.shift_month(year, month, 0) == (year, month)
+        assert self.julian_cd.shift_month(year, month, 12) == (year + 1, month)
+        assert self.julian_cd.shift_month(year, month, 24) == (year + 2, month)
+        assert self.julian_cd.shift_month(year, 2, 3) == (year, 5)
+        assert self.julian_cd.shift_month(year, 12, 1) == (year + 1, 1)
+        assert self.julian_cd.shift_month(year, 8, 7) == (year + 1, 3)
+        assert self.julian_cd.shift_month(year, 3, 14) == (year + 1, 5)
+        assert self.julian_cd.shift_month(year, 6, 29) == (year + 2, 11)
+        assert self.julian_cd.shift_month(year, 10, -1) == (year, 9)
+        assert self.julian_cd.shift_month(year, 1, -1) == (year - 1, 12)
+        assert self.julian_cd.shift_month(year, 2, -3) == (year - 1, 11)
+        assert self.julian_cd.shift_month(year, 5, -7) == (year - 1, 10)
+        assert self.julian_cd.shift_month(year, 7, -15) == (year - 1, 4)
+        assert self.julian_cd.shift_month(year, 12, -28) == (year - 2, 8)
 
     #
     # ConvertibleDate.convert_ast_ymd

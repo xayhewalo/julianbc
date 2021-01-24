@@ -20,8 +20,18 @@ import itertools
 import math
 
 from collections import deque
+from enum import Enum
 from src.db import ConvertibleCalendar
 from typing import Union
+
+
+Ymd_tuple = Union[tuple[int, int, int], tuple[int, None, int]]
+
+
+class DateUnit(Enum):
+    YEAR = 0
+    MONTH = 1
+    DAY = 2
 
 
 class ConvertibleDate:
@@ -59,11 +69,68 @@ class ConvertibleDate:
         self.date_sep = date_sep
         self.calendar = calendar
 
+    def shift_ast_ymd(self, ast_ymd: Ymd_tuple, intervals: list) -> Ymd_tuple:
+        """
+        :param ast_ymd: astronomical year, month, day
+        :param intervals: amount of DateUnits to shift by
+        :return: an astronomical year, month, day
+        :raises ValueError: if given an invalid ast_ymd, shifting a monthless
+            calendar by months
+        """
+        if not self.is_valid_ast_ymd(ast_ymd):
+            msg = f"{ast_ymd} is not a valid ymd for {self.calendar}"
+            raise ValueError(msg)
+
+        year, month, day = ast_ymd
+        for interval in intervals:
+            delta, dateunit = interval
+            if delta == 0:
+                continue
+
+            if dateunit == DateUnit.YEAR:
+                year = self.shift_ast_year(year, delta)
+            elif dateunit == DateUnit.MONTH:
+                if not month:
+                    raise ValueError("Can't shift montheless year, month, day")
+
+                year, month = self.shift_month(year, month, delta)
+            else:
+                raise ValueError(f"Don't shift ymd by {dateunit}")
+
+            if not self.is_valid_ast_ymd((year, month, day)):
+                # i.e going from January 30th -> February 30th, set day to 28th
+                day = self.days_in_month(year, month)
+        assert self.is_valid_ast_ymd(
+            (year, month, day)
+        ), f"Intervals, {intervals}, produced invalid ymd: {year, month, day}"
+        return year, month, day
+
+    @staticmethod
+    def shift_ast_year(ast_year: int, delta: int) -> int:
+        return ast_year + delta
+
+    def shift_month(
+        self, ast_year: int, month: int, delta: int
+    ) -> tuple[int, int]:
+        new_month = month + delta
+        if self.is_valid_month(ast_year, new_month):
+            month = new_month
+            return ast_year, month
+
+        # increment year until month is valid
+        sign = int(math.copysign(1, delta))
+        month = new_month
+        while not self.is_valid_month(ast_year, month):
+            ast_year += sign
+            delta = self.months_in_year(ast_year) * -sign
+            month += delta
+        return ast_year, month
+
     def convert_ast_ymd(
         self,
         foreign_ast_ymd: tuple,
         foreign_datetime: "ConvertibleDate",
-    ) -> tuple[int, Union[int, None], int]:
+    ) -> Ymd_tuple:
         """:returns: native ast_ymd equivalent to the foreign ast_ymd"""
         foreign_ordinal_date = foreign_datetime.ast_ymd_to_ordinal_date(
             foreign_ast_ymd
@@ -372,7 +439,7 @@ class ConvertibleDate:
             start_value, sign = 0, -1
         return start_value, sign
 
-    def ast_ymd_to_ordinal_date(self, ast_ymd: tuple) -> tuple[int, int]:
+    def ast_ymd_to_ordinal_date(self, ast_ymd: Ymd_tuple) -> tuple[int, int]:
         """:raises ValueError: for an invalid year, month, day"""
         if not self.is_valid_ast_ymd(ast_ymd):
             raise ValueError(
@@ -386,7 +453,7 @@ class ConvertibleDate:
             day_of_year = sum(self.days_in_months(ast_year)[: month - 1]) + day
         return ast_year, day_of_year
 
-    def ordinal_date_to_ast_ymd(self, ordinal_date: tuple) -> tuple:
+    def ordinal_date_to_ast_ymd(self, ordinal_date: tuple) -> Ymd_tuple:
         """:raises ValueError: for invalid ordinal date"""
         if not self.is_valid_ordinal_date(ordinal_date):
             raise ValueError(
@@ -493,7 +560,7 @@ class ConvertibleDate:
         ast_year = self.hr_to_ast(hr_year, era_idx)
         return ast_year, month, day
 
-    def format_hr_date(self, ast_ymd: tuple) -> str:
+    def format_hr_date(self, ast_ymd: Ymd_tuple) -> str:
         """inverse operation of :py:meth:`parse_hr_date`"""
         ast_year, month, day = ast_ymd
         hr_year, _ = self.ast_to_hr(ast_year)
@@ -549,7 +616,7 @@ class ConvertibleDate:
         leap_year_cycle_ordinals = self.calendar.leap_year_cycle_ordinals
         return all_cycle_ordinals[cycle_index] in leap_year_cycle_ordinals
 
-    def is_valid_ast_ymd(self, ast_ymd: tuple) -> bool:
+    def is_valid_ast_ymd(self, ast_ymd: Ymd_tuple) -> bool:
         ast_year, month, day = ast_ymd
         if not self.is_valid_month(ast_year, month):
             return False

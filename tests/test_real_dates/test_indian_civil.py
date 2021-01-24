@@ -4,6 +4,7 @@ import pytest
 from .utils import RealCalendarTestCase, FAKE
 from calendar import isleap
 from collections import deque
+from src.customdate import DateUnit
 from unittest.mock import patch
 
 
@@ -107,6 +108,89 @@ class IndianCivilTest(RealCalendarTestCase):
         patch_common_years_in_normal_cycle.__get__ = lambda *_: 303
         patch_days_in_leap_year.__get__ = lambda *_: 366
         patch_days_common_year.__get__ = lambda *_: 365
+
+    #
+    # ConvertibleDate.shift_ast_ymd
+    #
+    @patch(
+        "src.customdate.ConvertibleDate.is_valid_ast_ymd",
+        return_value=True,
+    )
+    def test_shift_ast_ymd_by_multiple_intervals(self, _):
+        plus_delta = FAKE.random_int(min=1, max=11)
+        plus_years = [[plus_delta, DateUnit.YEAR]]
+        plus_months = [[plus_delta, DateUnit.MONTH]]
+        ymd = self.random_ymd()
+        ast_year, _, _ = ymd
+        zero_interval = [[0, DateUnit.YEAR]]
+        assert self.indian_cd.shift_ast_ymd(ymd, zero_interval) == ymd
+        # fmt: off
+        assert self.indian_cd.shift_ast_ymd(
+            (ast_year, 2, 3), plus_years
+        ) == (ast_year + plus_delta, 2, 3)
+        assert self.indian_cd.shift_ast_ymd(
+            (ast_year, 1, 30), plus_months
+        ) == (ast_year, 1 + plus_delta, 30)
+        # fmt: on
+        assert self.indian_cd.shift_ast_ymd(
+            (ast_year, 7, 15), [[10, DateUnit.YEAR], [5, DateUnit.MONTH]]
+        ) == (ast_year + 10, 12, 15)
+        assert self.indian_cd.shift_ast_ymd(
+            (ast_year, 9, 25), [[-7, DateUnit.YEAR], [2, DateUnit.MONTH]]
+        ) == (ast_year - 7, 11, 25)
+
+    def test_shift_ast_ymd_to_invalid_day(self):
+        common_year = self.random_common_year()
+        leap_year = self.random_leap_year()
+        assert self.indian_cd.shift_ast_ymd(
+            (common_year, 6, 31), [[1, DateUnit.MONTH]]
+        ) == (common_year, 7, 30)
+        assert self.indian_cd.shift_ast_ymd(
+            (leap_year, 1, 31), [[6, DateUnit.MONTH]]
+        ) == (leap_year, 7, 30)
+        assert self.indian_cd.shift_ast_ymd(
+            (2, 2, 31), [[-1, DateUnit.MONTH]]
+        ) == (2, 1, 30)
+        assert self.indian_cd.shift_ast_ymd(
+            (leap_year, 1, 31), [[-1, DateUnit.MONTH]]
+        ) == (leap_year - 1, 12, 30)
+
+    def test_shift_ast_year(self):
+        delta = FAKE.random_int()
+        year = self.random_year()
+        expected_year = year + delta
+        assert self.indian_cd.shift_ast_year(year, delta) == expected_year
+
+    def test_shift_month(self):
+        year, month, _ = self.random_ymd()
+        assert self.indian_cd.shift_month(year, month, -24) == (
+            year - 2,
+            month,
+        )
+        assert self.indian_cd.shift_month(year, month, -12) == (
+            year - 1,
+            month,
+        )
+        assert self.indian_cd.shift_month(year, month, 0) == (year, month)
+        assert self.indian_cd.shift_month(year, month, 12) == (
+            year + 1,
+            month,
+        )
+        assert self.indian_cd.shift_month(year, month, 24) == (
+            year + 2,
+            month,
+        )
+        assert self.indian_cd.shift_month(year, 2, 3) == (year, 5)
+        assert self.indian_cd.shift_month(year, 12, 1) == (year + 1, 1)
+        assert self.indian_cd.shift_month(year, 8, 7) == (year + 1, 3)
+        assert self.indian_cd.shift_month(year, 3, 14) == (year + 1, 5)
+        assert self.indian_cd.shift_month(year, 6, 29) == (year + 2, 11)
+        assert self.indian_cd.shift_month(year, 10, -1) == (year, 9)
+        assert self.indian_cd.shift_month(year, 1, -1) == (year - 1, 12)
+        assert self.indian_cd.shift_month(year, 2, -3) == (year - 1, 11)
+        assert self.indian_cd.shift_month(year, 5, -7) == (year - 1, 10)
+        assert self.indian_cd.shift_month(year, 7, -15) == (year - 1, 4)
+        assert self.indian_cd.shift_month(year, 12, -28) == (year - 2, 8)
 
     #
     # ConvertibleDate.convert_ast_ymd

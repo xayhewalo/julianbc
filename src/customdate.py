@@ -99,7 +99,14 @@ class ConvertibleDate:
 
             if not self.is_valid_ast_ymd((year, month, day)):
                 # i.e going from January 30th -> February 30th, set day to 28th
-                day = self.days_in_month(year, month)
+                if self.is_valid_month(year, month):
+                    day = self.days_in_month(year, month)
+                else:
+                    # i.e if the month/day isn't present in new year
+                    month = self.months_in_year(year)
+                    if not self.is_valid_ast_ymd((year, month, day)):
+                        day = self.days_in_month(year, month)
+                    return year, month, day
         assert self.is_valid_ast_ymd(
             (year, month, day)
         ), f"Intervals, {intervals}, produced invalid ymd: {year, month, day}"

@@ -66,7 +66,7 @@ class LunarHijriTest(RealCalendarTestCase):
         patch_days_common_year.__get__ = lambda *_: self.days_in_common_year
 
     #
-    # ConvertibleDate.shift_ast_ymd
+    # Shift year, month, day
     #
     @patch(
         "src.customdate.ConvertibleDate.is_valid_ast_ymd",

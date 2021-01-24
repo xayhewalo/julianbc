@@ -1,6 +1,6 @@
 import pytest
 
-from src.customdate import ConvertibleDate
+from src.customdate import ConvertibleDate, DateUnit
 from src.db import ConvertibleCalendar
 from tests.factories import ConvertibleCalendarFactory
 from tests.utils import CalendarTestCase, FAKE
@@ -94,9 +94,62 @@ class ConvertibleDateTest(CalendarTestCase):
     #
     # ConvertibleDate.shift_ast_ymd
     #
-    # todo test monthless calendar
-    # todo test shift_month for diff num months for common and leap years
-    # todo test raises errors
+    @patch(
+        "src.customdate.ConvertibleDate.is_valid_ast_ymd",
+        return_value=True,
+    )
+    def test_shift_ast_ymd_can_raise_with_monthelss_calendar(self, _):
+        monthless_calendar, days_in_year = self.random_monthless_calendar()
+        cd = ConvertibleDate(calendar=monthless_calendar)
+        month_interval = [[FAKE.random_int(min=1), DateUnit.MONTH]]
+        day_interval = [[FAKE.random_int(min=1), DateUnit.DAY]]
+        year = FAKE.random_int(min=-9999)
+        day_of_year = FAKE.random_int(min=1, max=days_in_year)
+        ymd = year, None, day_of_year
+        with pytest.raises(ValueError):
+            cd.shift_ast_ymd(ymd, month_interval)
+        with pytest.raises(ValueError):
+            cd.shift_ast_ymd(ymd, day_interval)
+
+    def test_shift_ast_ymd_raises_for_invalid_ast_ymd(self):
+        calendar = self.calendar_factory.build()
+        cd = ConvertibleDate(calendar=calendar)
+        bad_ymd = FAKE.random_int(), None, FAKE.random_int(min=-9, max=0)
+        with pytest.raises(ValueError):
+            cd.shift_ast_ymd(bad_ymd, [[FAKE.random_int(), DateUnit.YEAR]])
+
+    @pytest.mark.db
+    def test_shift_ast_ymd_with_diff_months_in_leap_and_common_years(self):
+        days_in_common_year_months = FAKE.random_choices(
+            elements=[x for x in range(200)], length=11
+        )
+        days_in_leap_year_months = FAKE.random_choices(
+            elements=[x for x in range(200)], length=12
+        )
+        days_in_common_year_months.append(30)
+        days_in_leap_year_months.append(31)
+        calendar = self.calendar_factory.build(
+            common_year_month_names=FAKE.words(nb=12),
+            days_in_common_year_months=days_in_common_year_months,
+            leap_year_month_names=FAKE.words(nb=13),
+            days_in_leap_year_months=days_in_leap_year_months,
+            leap_year_cycles=[4],
+            leap_year_cycle_start=1,
+            leap_year_cycle_ordinals=[4],
+            special_common_years=(),
+            special_leap_years=(),
+            leap_year_offset=0,
+        )
+        cd = ConvertibleDate(calendar=calendar)
+        plus_one_year = [[1, DateUnit.YEAR]]
+        sub_one_year = [[-1, DateUnit.YEAR]]
+        with self.session:
+            self.session.add(calendar)
+            self.session.flush()
+            assert cd.shift_ast_ymd((4, 13, 1), plus_one_year) == (5, 12, 1)
+            assert cd.shift_ast_ymd((8, 13, 1), sub_one_year) == (7, 12, 1)
+            assert cd.shift_ast_ymd((0, 13, 31), plus_one_year) == (1, 12, 30)
+            assert cd.shift_ast_ymd((-4, 13, 31), sub_one_year) == (-5, 12, 30)
 
     #
     # Ordinal Conversions

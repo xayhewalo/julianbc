@@ -110,7 +110,7 @@ class IndianCivilTest(RealCalendarTestCase):
         patch_days_common_year.__get__ = lambda *_: 365
 
     #
-    # ConvertibleDate.shift_ast_ymd
+    # Shift year, month, day
     #
     @patch(
         "src.customdate.ConvertibleDate.is_valid_ast_ymd",

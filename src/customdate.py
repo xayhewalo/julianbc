@@ -69,174 +69,6 @@ class ConvertibleDate:
         self.date_sep = date_sep
         self.calendar = calendar
 
-    def shift_ast_ymd(self, ast_ymd: Ymd_tuple, intervals: list) -> Ymd_tuple:
-        """
-        :param ast_ymd: astronomical year, month, day
-        :param intervals: amount of DateUnits to shift by
-        :return: an astronomical year, month, day
-        :raises ValueError: if given an invalid ast_ymd, shifting a monthless
-            calendar by months
-        """
-        if not self.is_valid_ast_ymd(ast_ymd):
-            msg = f"{ast_ymd} is not a valid ymd for {self.calendar}"
-            raise ValueError(msg)
-
-        year, month, day = ast_ymd
-        for interval in intervals:
-            delta, dateunit = interval
-            if delta == 0:
-                continue
-
-            if dateunit == DateUnit.YEAR:
-                year = self.shift_ast_year(year, delta)
-            elif dateunit == DateUnit.MONTH:
-                if not month:
-                    raise ValueError("Can't shift montheless year, month, day")
-
-                year, month = self.shift_month(year, month, delta)
-            else:
-                raise ValueError(f"Don't shift ymd by {dateunit}")
-
-            if not self.is_valid_ast_ymd((year, month, day)):
-                # i.e going from January 30th -> February 30th, set day to 28th
-                if self.is_valid_month(year, month):
-                    day = self.days_in_month(year, month)
-                else:
-                    # i.e if the month/day isn't present in new year
-                    month = self.months_in_year(year)
-                    if not self.is_valid_ast_ymd((year, month, day)):
-                        day = self.days_in_month(year, month)
-                    return year, month, day
-        assert self.is_valid_ast_ymd(
-            (year, month, day)
-        ), f"Intervals, {intervals}, produced invalid ymd: {year, month, day}"
-        return year, month, day
-
-    @staticmethod
-    def shift_ast_year(ast_year: int, delta: int) -> int:
-        return ast_year + delta
-
-    def shift_month(
-        self, ast_year: int, month: int, delta: int
-    ) -> tuple[int, int]:
-        new_month = month + delta
-        if self.is_valid_month(ast_year, new_month):
-            month = new_month
-            return ast_year, month
-
-        # increment year until month is valid
-        sign = int(math.copysign(1, delta))
-        month = new_month
-        while not self.is_valid_month(ast_year, month):
-            ast_year += sign
-            delta = self.months_in_year(ast_year) * -sign
-            month += delta
-        return ast_year, month
-
-    def next_ast_ymd(
-        self, ast_ymd: Ymd_tuple, interval: list, forward=True
-    ) -> Ymd_tuple:
-        """
-        If interval is every 10 days and today is February 4th, return
-        February 10th.
-
-        If interval is every month, and today is June 17th,
-        return July 1st.
-        """
-        if not self.is_valid_ast_ymd(ast_ymd):
-            msg = f"{ast_ymd} is not a valid ymd for {self.calendar}"
-            raise ValueError(msg)
-
-        year, month, day = ast_ymd
-        frequency, dateunit = interval
-        if dateunit == DateUnit.YEAR:
-            return self.next_ast_year(year, frequency, forward)
-        elif dateunit == DateUnit.MONTH:
-            return self.next_month(year, month, frequency, forward)
-        elif dateunit == DateUnit.DAY:
-            return self.next_day(ast_ymd, frequency, forward)
-        else:
-            raise ValueError(f"Cannot find next {dateunit}")
-
-    def next_ast_year(
-        self, year: int, frequency: int, forward=True
-    ) -> Ymd_tuple:
-        if frequency <= 0:
-            msg = f"Frequency must be greater than 0, {frequency} is not"
-            raise ValueError(msg)
-
-        delta = self._get_delta(forward)
-        year += delta
-        while year % frequency != 0:
-            year += delta
-        return year, 1, 1
-
-    def next_month(
-        self, year: int, month: int, frequency: int, forward=True
-    ) -> Ymd_tuple:
-        days_in_common_year = self.calendar.days_in_common_year
-        days_in_leap_year = self.calendar.days_in_leap_year
-        if frequency > min(days_in_common_year, days_in_leap_year):
-            msg = f"Can't find every {frequency} month(s) for {self.calendar}"
-            raise ValueError(msg)
-
-        delta = self._get_delta(forward)
-        month += delta
-        year, month = self._overflow_month(year, month)
-        while month % frequency != 0:
-            month += delta
-
-        error_msg = f"{month} not valid for {self.calendar}"
-        assert self.is_valid_month(year, month), error_msg
-        return year, month, 1
-
-    def next_day(
-        self, ast_ymd: Ymd_tuple, frequency: int, forward=True
-    ) -> Ymd_tuple:
-        def shift(ymd: Ymd_tuple, _delta: int, _forward=True) -> Ymd_tuple:
-            """rollover day/month/year if necessary when shifting days"""
-            y, m, d = ymd
-            d += _delta
-            if not self.is_valid_ast_ymd((y, m, d)):
-                m += _delta
-                y, m = self._overflow_month(y, m, _forward)
-                d = 1 if forward else self.days_in_month(y, m)
-            return y, m, d
-
-        min_days_in_month = min(
-            min(self.calendar.days_in_common_year_months),
-            min(self.calendar.days_in_leap_year_months),
-        )
-        if frequency > min_days_in_month:
-            msg = f"Day frequency, {frequency}, invalid for {self.calendar}"
-            raise ValueError(msg)
-
-        delta = self._get_delta(forward)
-        ast_ymd = shift(ast_ymd, delta, forward)
-        day = ast_ymd[2]
-        while day % frequency != 0:
-            ast_ymd = shift(ast_ymd, delta, forward)
-            day = ast_ymd[2]
-
-        msg = f"{ast_ymd} is invalid for {self.calendar}"
-        assert self.is_valid_ast_ymd(ast_ymd), msg
-        return ast_ymd
-
-    def _overflow_month(
-        self, year: int, month: int, forward=True
-    ) -> tuple[int, int]:
-        """rollover to next month when shifting into a different year"""
-        if not self.is_valid_month(year, month):
-            delta = self._get_delta(forward)
-            year += delta
-            month = 1 if forward else self.months_in_year(year)
-            return year, month
-        return year, month
-
-    @staticmethod
-    def _get_delta(forward: bool) -> int:
-        return 1 if forward else -1
-
     def convert_ast_ymd(
         self,
         foreign_ast_ymd: tuple,
@@ -587,6 +419,181 @@ class ConvertibleDate:
             days_into_year += days_in_months[month]
         month += 1  # convert from index into human-readable month
         return ast_year, month, day
+
+    def shift_ast_ymd(self, ast_ymd: Ymd_tuple, intervals: list) -> Ymd_tuple:
+        """
+        :param ast_ymd: astronomical year, month, day
+        :param intervals: amount of DateUnits to shift by
+        :return: an astronomical year, month, day
+        :raises ValueError: if given an invalid ast_ymd, shifting a monthless
+            calendar by months
+        """
+        if not self.is_valid_ast_ymd(ast_ymd):
+            msg = f"{ast_ymd} is not a valid ymd for {self.calendar}"
+            raise ValueError(msg)
+
+        year, month, day = ast_ymd
+        for interval in intervals:
+            delta, dateunit = interval
+            if delta == 0:
+                continue
+
+            if dateunit == DateUnit.YEAR:
+                year = self.shift_ast_year(year, delta)
+            elif dateunit == DateUnit.MONTH:
+                if not month:
+                    raise ValueError("Can't shift montheless year, month, day")
+
+                year, month = self.shift_month(year, month, delta)
+            else:
+                raise ValueError(f"Don't shift ymd by {dateunit}")
+
+            if not self.is_valid_ast_ymd((year, month, day)):
+                # i.e going from January 30th -> February 30th, set day to 28th
+                if self.is_valid_month(year, month):
+                    day = self.days_in_month(year, month)
+                else:
+                    # i.e if the month/day isn't present in new year
+                    month = self.months_in_year(year)
+                    if not self.is_valid_ast_ymd((year, month, day)):
+                        day = self.days_in_month(year, month)
+                    return year, month, day
+        assert self.is_valid_ast_ymd(
+            (year, month, day)
+        ), f"Intervals, {intervals}, produced invalid ymd: {year, month, day}"
+        return year, month, day
+
+    @staticmethod
+    def shift_ast_year(ast_year: int, delta: int) -> int:
+        return ast_year + delta
+
+    def shift_month(
+        self, ast_year: int, month: int, delta: int
+    ) -> tuple[int, int]:
+        new_month = month + delta
+        if self.is_valid_month(ast_year, new_month):
+            month = new_month
+            return ast_year, month
+
+        # increment year until month is valid
+        sign = int(math.copysign(1, delta))
+        month = new_month
+        while not self.is_valid_month(ast_year, month):
+            ast_year += sign
+            delta = self.months_in_year(ast_year) * -sign
+            month += delta
+        return ast_year, month
+
+    def next_ast_ymd(
+        self, ast_ymd: Ymd_tuple, interval: list, forward=True
+    ) -> Ymd_tuple:
+        """
+        If interval is every 10 days and today is February 4th, return
+        February 10th.
+
+        If interval is every month, and today is June 17th,
+        return July 1st.
+        """
+        if not self.is_valid_ast_ymd(ast_ymd):
+            msg = f"{ast_ymd} is not a valid ymd for {self.calendar}"
+            raise ValueError(msg)
+
+        year, month, day = ast_ymd
+        frequency, dateunit = interval
+        if dateunit == DateUnit.YEAR:
+            return self.next_ast_year(year, frequency, forward)
+        elif dateunit == DateUnit.MONTH:
+            return self.next_month(year, month, frequency, forward)
+        elif dateunit == DateUnit.DAY:
+            return self.next_day(ast_ymd, frequency, forward)
+        else:
+            raise ValueError(f"Cannot find next {dateunit}")
+
+    def next_ast_year(
+        self, year: int, frequency: int, forward=True
+    ) -> Ymd_tuple:
+        """:returns: first day of the first month of the next year"""
+        if frequency <= 0:
+            msg = f"Frequency must be greater than 0, {frequency} is not"
+            raise ValueError(msg)
+
+        delta = self._get_delta(forward)
+        year += delta
+        while year % frequency != 0:
+            year += delta
+        return year, 1, 1
+
+    def next_month(
+        self, year: int, month: int, frequency: int, forward=True
+    ) -> Ymd_tuple:
+        """:returns: the first day of the next month"""
+        days_in_common_year = self.calendar.days_in_common_year
+        days_in_leap_year = self.calendar.days_in_leap_year
+        if frequency > min(days_in_common_year, days_in_leap_year):
+            msg = f"Can't find every {frequency} month(s) for {self.calendar}"
+            raise ValueError(msg)
+
+        delta = self._get_delta(forward)
+        month += delta
+        year, month = self._overflow_month(year, month)
+        while month % frequency != 0:
+            month += delta
+
+        error_msg = f"{month} not valid for {self.calendar}"
+        assert self.is_valid_month(year, month), error_msg
+        return year, month, 1
+
+    def next_day(
+        self, ast_ymd: Ymd_tuple, frequency: int, forward=True
+    ) -> Ymd_tuple:
+        """
+        :returns: every nth day, defined by te frequency, changing the month
+            or year if necessary
+        """
+
+        def shift(ymd: Ymd_tuple, _delta: int, _forward=True) -> Ymd_tuple:
+            """rollover day/month/year if necessary when shifting days"""
+            y, m, d = ymd
+            d += _delta
+            if not self.is_valid_ast_ymd((y, m, d)):
+                m += _delta
+                y, m = self._overflow_month(y, m, _forward)
+                d = 1 if forward else self.days_in_month(y, m)
+            return y, m, d
+
+        min_days_in_month = min(
+            min(self.calendar.days_in_common_year_months),
+            min(self.calendar.days_in_leap_year_months),
+        )
+        if frequency > min_days_in_month:
+            msg = f"Day frequency, {frequency}, invalid for {self.calendar}"
+            raise ValueError(msg)
+
+        delta = self._get_delta(forward)
+        ast_ymd = shift(ast_ymd, delta, forward)
+        day = ast_ymd[2]
+        while day % frequency != 0:
+            ast_ymd = shift(ast_ymd, delta, forward)
+            day = ast_ymd[2]
+
+        msg = f"{ast_ymd} is invalid for {self.calendar}"
+        assert self.is_valid_ast_ymd(ast_ymd), msg
+        return ast_ymd
+
+    def _overflow_month(
+        self, year: int, month: int, forward=True
+    ) -> tuple[int, int]:
+        """rollover to next month when shifting into a different year"""
+        if not self.is_valid_month(year, month):
+            delta = self._get_delta(forward)
+            year += delta
+            month = 1 if forward else self.months_in_year(year)
+            return year, month
+        return year, month
+
+    @staticmethod
+    def _get_delta(forward: bool) -> int:
+        return 1 if forward else -1
 
     def hr_to_ast(self, hr_year: int, era_idx: int) -> int:
         """

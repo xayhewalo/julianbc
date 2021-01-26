@@ -92,161 +92,6 @@ class ConvertibleDateTest(CalendarTestCase):
         return leapless_calendar
 
     #
-    # ConvertibleDate.shift_ast_ymd
-    #
-    @patch(
-        "src.customdate.ConvertibleDate.is_valid_ast_ymd",
-        return_value=True,
-    )
-    def test_shift_ast_ymd_can_raise_with_monthelss_calendar(self, _):
-        monthless_calendar, days_in_year = self.random_monthless_calendar()
-        cd = ConvertibleDate(calendar=monthless_calendar)
-        month_interval = [[FAKE.random_int(min=1), DateUnit.MONTH]]
-        day_interval = [[FAKE.random_int(min=1), DateUnit.DAY]]
-        year = FAKE.random_int(min=-9999)
-        day_of_year = FAKE.random_int(min=1, max=days_in_year)
-        ymd = year, None, day_of_year
-        with pytest.raises(ValueError):
-            cd.shift_ast_ymd(ymd, month_interval)
-        with pytest.raises(ValueError):
-            cd.shift_ast_ymd(ymd, day_interval)
-
-    def test_shift_ast_ymd_raises_for_invalid_ast_ymd(self):
-        calendar = self.calendar_factory.build()
-        cd = ConvertibleDate(calendar=calendar)
-        bad_ymd = FAKE.random_int(), None, FAKE.random_int(min=-9, max=0)
-        with pytest.raises(ValueError):
-            cd.shift_ast_ymd(bad_ymd, [[FAKE.random_int(), DateUnit.YEAR]])
-
-    @pytest.mark.db
-    def test_shift_ast_ymd_with_diff_months_in_leap_and_common_years(self):
-        days_in_common_year_months = FAKE.random_choices(
-            elements=[x for x in range(200)], length=11
-        )
-        days_in_leap_year_months = FAKE.random_choices(
-            elements=[x for x in range(200)], length=12
-        )
-        days_in_common_year_months.append(30)
-        days_in_leap_year_months.append(31)
-        calendar = self.calendar_factory.build(
-            common_year_month_names=FAKE.words(nb=12),
-            days_in_common_year_months=days_in_common_year_months,
-            leap_year_month_names=FAKE.words(nb=13),
-            days_in_leap_year_months=days_in_leap_year_months,
-            leap_year_cycles=[4],
-            leap_year_cycle_start=1,
-            leap_year_cycle_ordinals=[4],
-            special_common_years=(),
-            special_leap_years=(),
-            leap_year_offset=0,
-        )
-        cd = ConvertibleDate(calendar=calendar)
-        plus_one_year = [[1, DateUnit.YEAR]]
-        sub_one_year = [[-1, DateUnit.YEAR]]
-        with self.session:
-            self.session.add(calendar)
-            self.session.flush()
-            assert cd.shift_ast_ymd((4, 13, 1), plus_one_year) == (5, 12, 1)
-            assert cd.shift_ast_ymd((8, 13, 1), sub_one_year) == (7, 12, 1)
-            assert cd.shift_ast_ymd((0, 13, 31), plus_one_year) == (1, 12, 30)
-            assert cd.shift_ast_ymd((-4, 13, 31), sub_one_year) == (-5, 12, 30)
-
-    #
-    # Next dateunit
-    #
-    @patch(
-        "src.customdate.ConvertibleDate.is_valid_ast_ymd",
-        return_value=True,
-    )
-    @patch("src.customdate.ConvertibleDate.next_ast_year")
-    @patch("src.customdate.ConvertibleDate.next_month")
-    @patch("src.customdate.ConvertibleDate.next_day")
-    def test_next_ast_ymd(self, *patches):
-        patch_next_day, patch_next_month, patch_next_ast_year, _ = patches
-        calendar = self.calendar_factory.build()
-        fake_ymd = FAKE.random_int(), FAKE.random_int(), FAKE.random_int()
-        positive_frequency = FAKE.random_int()
-        negative_frequency = FAKE.random_int(min=-20, max=-1)
-        cd = ConvertibleDate(calendar=calendar)
-        cd.next_ast_ymd(fake_ymd, [positive_frequency, DateUnit.YEAR])
-        cd.next_ast_ymd(fake_ymd, [positive_frequency, DateUnit.MONTH])
-        cd.next_ast_ymd(fake_ymd, [positive_frequency, DateUnit.DAY])
-        cd.next_ast_ymd(fake_ymd, [negative_frequency, DateUnit.YEAR])
-        cd.next_ast_ymd(fake_ymd, [negative_frequency, DateUnit.MONTH])
-        cd.next_ast_ymd(fake_ymd, [negative_frequency, DateUnit.DAY])
-
-        assert patch_next_ast_year.call_count == 2
-        assert patch_next_month.call_count == 2
-        assert patch_next_day.call_count == 2
-        with pytest.raises(ValueError):
-            cd.next_ast_ymd(fake_ymd, FAKE.words(nb=2))
-
-    @patch(
-        "src.customdate.ConvertibleDate.is_valid_ast_ymd",
-        return_value=False,
-    )
-    def test_next_ast_ymd_fo_invalid_ymd(self, _):
-        calendar = self.calendar_factory.build()
-        cd = ConvertibleDate(calendar=calendar)
-        with pytest.raises(ValueError):
-            cd.next_ast_ymd(FAKE.pytuple(), FAKE.pylist(), FAKE.pybool())
-
-    @patch("src.customdate.ConvertibleDate._get_delta", return_value=1)
-    def test_next_ast_year_moving_forward(self, _):
-        calendar = self.calendar_factory.build()
-        cd = ConvertibleDate(calendar=calendar)
-        assert cd.next_ast_year(4, 5) == (5, 1, 1)
-        assert cd.next_ast_year(101, 10) == (110, 1, 1)
-
-    @patch("src.customdate.ConvertibleDate._get_delta", return_value=-1)
-    def test_next_ast_year_moving_backwards(self, _):
-        calendar = self.calendar_factory.build()
-        cd = ConvertibleDate(calendar=calendar)
-        assert cd.next_ast_year(2020, 2, forward=False) == (2018, 1, 1)
-        assert cd.next_ast_year(1001, 10, forward=False) == (1000, 1, 1)
-
-    def test_next_ast_year_raises(self):
-        calendar = self.calendar_factory.build()
-        cd = ConvertibleDate(calendar=calendar)
-        non_positive_frequency = FAKE.random_int(min=-9999, max=0)
-        with pytest.raises(ValueError):
-            cd.next_ast_year(FAKE.pyint(), non_positive_frequency)
-
-    @patch("src.db.ConvertibleCalendar.days_in_common_year")
-    @patch("src.db.ConvertibleCalendar.days_in_leap_year")
-    def test_next_month_for_invalid_frequency(self, *patches):
-        patch_days_in_common_year, patch_days_in_leap_year = patches
-        days_in_leap_year = FAKE.random_int(min=1)
-        days_in_common_year = FAKE.random_int(min=1)
-        patch_days_in_leap_year.__get__ = lambda *_: days_in_leap_year
-        patch_days_in_common_year.__get__ = lambda *_: days_in_common_year
-
-        calendar = self.calendar_factory.build()
-        cd = ConvertibleDate(calendar=calendar)
-        bad_frequency = FAKE.random_int(min=10000, max=19999)
-        with pytest.raises(ValueError):
-            cd.next_month(FAKE.pyint(), FAKE.pyint(), bad_frequency)
-
-    # todo test next_month with diff num months in leap and common year
-
-    def test_next_day_for_invalid_frequency(self):
-        calendar = self.calendar_factory.build(
-            days_in_common_year_months=[30], days_in_leap_year_months=[31]
-        )
-        bad_frequency = FAKE.random_int(min=32)
-        cd = ConvertibleDate(calendar=calendar)
-        with pytest.raises(ValueError):
-            cd.next_day(FAKE.pytuple(), bad_frequency)
-
-    # test ConvertibleDate._overflow_month in test_gregorian.py
-
-    def test__get_delta(self):
-        calendar = self.calendar_factory.build()
-        cd = ConvertibleDate(calendar=calendar)
-        assert cd._get_delta(True) == 1
-        assert cd._get_delta(False) == -1
-
-    #
     # Ordinal Conversions
     #
     @patch(
@@ -523,6 +368,161 @@ class ConvertibleDateTest(CalendarTestCase):
             )
             == ordinal_date
         )
+
+    #
+    # ConvertibleDate.shift_ast_ymd
+    #
+    @patch(
+        "src.customdate.ConvertibleDate.is_valid_ast_ymd",
+        return_value=True,
+    )
+    def test_shift_ast_ymd_can_raise_with_monthelss_calendar(self, _):
+        monthless_calendar, days_in_year = self.random_monthless_calendar()
+        cd = ConvertibleDate(calendar=monthless_calendar)
+        month_interval = [[FAKE.random_int(min=1), DateUnit.MONTH]]
+        day_interval = [[FAKE.random_int(min=1), DateUnit.DAY]]
+        year = FAKE.random_int(min=-9999)
+        day_of_year = FAKE.random_int(min=1, max=days_in_year)
+        ymd = year, None, day_of_year
+        with pytest.raises(ValueError):
+            cd.shift_ast_ymd(ymd, month_interval)
+        with pytest.raises(ValueError):
+            cd.shift_ast_ymd(ymd, day_interval)
+
+    def test_shift_ast_ymd_raises_for_invalid_ast_ymd(self):
+        calendar = self.calendar_factory.build()
+        cd = ConvertibleDate(calendar=calendar)
+        bad_ymd = FAKE.random_int(), None, FAKE.random_int(min=-9, max=0)
+        with pytest.raises(ValueError):
+            cd.shift_ast_ymd(bad_ymd, [[FAKE.random_int(), DateUnit.YEAR]])
+
+    @pytest.mark.db
+    def test_shift_ast_ymd_with_diff_months_in_leap_and_common_years(self):
+        days_in_common_year_months = FAKE.random_choices(
+            elements=[x for x in range(200)], length=11
+        )
+        days_in_leap_year_months = FAKE.random_choices(
+            elements=[x for x in range(200)], length=12
+        )
+        days_in_common_year_months.append(30)
+        days_in_leap_year_months.append(31)
+        calendar = self.calendar_factory.build(
+            common_year_month_names=FAKE.words(nb=12),
+            days_in_common_year_months=days_in_common_year_months,
+            leap_year_month_names=FAKE.words(nb=13),
+            days_in_leap_year_months=days_in_leap_year_months,
+            leap_year_cycles=[4],
+            leap_year_cycle_start=1,
+            leap_year_cycle_ordinals=[4],
+            special_common_years=(),
+            special_leap_years=(),
+            leap_year_offset=0,
+        )
+        cd = ConvertibleDate(calendar=calendar)
+        plus_one_year = [[1, DateUnit.YEAR]]
+        sub_one_year = [[-1, DateUnit.YEAR]]
+        with self.session:
+            self.session.add(calendar)
+            self.session.flush()
+            assert cd.shift_ast_ymd((4, 13, 1), plus_one_year) == (5, 12, 1)
+            assert cd.shift_ast_ymd((8, 13, 1), sub_one_year) == (7, 12, 1)
+            assert cd.shift_ast_ymd((0, 13, 31), plus_one_year) == (1, 12, 30)
+            assert cd.shift_ast_ymd((-4, 13, 31), sub_one_year) == (-5, 12, 30)
+
+    #
+    # Next dateunit
+    #
+    @patch(
+        "src.customdate.ConvertibleDate.is_valid_ast_ymd",
+        return_value=True,
+    )
+    @patch("src.customdate.ConvertibleDate.next_ast_year")
+    @patch("src.customdate.ConvertibleDate.next_month")
+    @patch("src.customdate.ConvertibleDate.next_day")
+    def test_next_ast_ymd(self, *patches):
+        patch_next_day, patch_next_month, patch_next_ast_year, _ = patches
+        calendar = self.calendar_factory.build()
+        fake_ymd = FAKE.random_int(), FAKE.random_int(), FAKE.random_int()
+        positive_frequency = FAKE.random_int()
+        negative_frequency = FAKE.random_int(min=-20, max=-1)
+        cd = ConvertibleDate(calendar=calendar)
+        cd.next_ast_ymd(fake_ymd, [positive_frequency, DateUnit.YEAR])
+        cd.next_ast_ymd(fake_ymd, [positive_frequency, DateUnit.MONTH])
+        cd.next_ast_ymd(fake_ymd, [positive_frequency, DateUnit.DAY])
+        cd.next_ast_ymd(fake_ymd, [negative_frequency, DateUnit.YEAR])
+        cd.next_ast_ymd(fake_ymd, [negative_frequency, DateUnit.MONTH])
+        cd.next_ast_ymd(fake_ymd, [negative_frequency, DateUnit.DAY])
+
+        assert patch_next_ast_year.call_count == 2
+        assert patch_next_month.call_count == 2
+        assert patch_next_day.call_count == 2
+        with pytest.raises(ValueError):
+            cd.next_ast_ymd(fake_ymd, FAKE.words(nb=2))
+
+    @patch(
+        "src.customdate.ConvertibleDate.is_valid_ast_ymd",
+        return_value=False,
+    )
+    def test_next_ast_ymd_fo_invalid_ymd(self, _):
+        calendar = self.calendar_factory.build()
+        cd = ConvertibleDate(calendar=calendar)
+        with pytest.raises(ValueError):
+            cd.next_ast_ymd(FAKE.pytuple(), FAKE.pylist(), FAKE.pybool())
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=1)
+    def test_next_ast_year_moving_forward(self, _):
+        calendar = self.calendar_factory.build()
+        cd = ConvertibleDate(calendar=calendar)
+        assert cd.next_ast_year(4, 5) == (5, 1, 1)
+        assert cd.next_ast_year(101, 10) == (110, 1, 1)
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=-1)
+    def test_next_ast_year_moving_backwards(self, _):
+        calendar = self.calendar_factory.build()
+        cd = ConvertibleDate(calendar=calendar)
+        assert cd.next_ast_year(2020, 2, forward=False) == (2018, 1, 1)
+        assert cd.next_ast_year(1001, 10, forward=False) == (1000, 1, 1)
+
+    def test_next_ast_year_raises(self):
+        calendar = self.calendar_factory.build()
+        cd = ConvertibleDate(calendar=calendar)
+        non_positive_frequency = FAKE.random_int(min=-9999, max=0)
+        with pytest.raises(ValueError):
+            cd.next_ast_year(FAKE.pyint(), non_positive_frequency)
+
+    @patch("src.db.ConvertibleCalendar.days_in_common_year")
+    @patch("src.db.ConvertibleCalendar.days_in_leap_year")
+    def test_next_month_for_invalid_frequency(self, *patches):
+        patch_days_in_common_year, patch_days_in_leap_year = patches
+        days_in_leap_year = FAKE.random_int(min=1)
+        days_in_common_year = FAKE.random_int(min=1)
+        patch_days_in_leap_year.__get__ = lambda *_: days_in_leap_year
+        patch_days_in_common_year.__get__ = lambda *_: days_in_common_year
+
+        calendar = self.calendar_factory.build()
+        cd = ConvertibleDate(calendar=calendar)
+        bad_frequency = FAKE.random_int(min=10000, max=19999)
+        with pytest.raises(ValueError):
+            cd.next_month(FAKE.pyint(), FAKE.pyint(), bad_frequency)
+
+    # todo test next_month with diff num months in leap and common year
+
+    def test_next_day_for_invalid_frequency(self):
+        calendar = self.calendar_factory.build(
+            days_in_common_year_months=[30], days_in_leap_year_months=[31]
+        )
+        bad_frequency = FAKE.random_int(min=32)
+        cd = ConvertibleDate(calendar=calendar)
+        with pytest.raises(ValueError):
+            cd.next_day(FAKE.pytuple(), bad_frequency)
+
+    # test ConvertibleDate._overflow_month in test_gregorian.py
+
+    def test__get_delta(self):
+        calendar = self.calendar_factory.build()
+        cd = ConvertibleDate(calendar=calendar)
+        assert cd._get_delta(True) == 1
+        assert cd._get_delta(False) == -1
 
     #
     # Human readable years

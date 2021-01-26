@@ -61,144 +61,6 @@ class CopticTest(RealCalendarTestCase):
         patch_days_common_year.__get__ = lambda *_: self.days_in_common_year
 
     #
-    # Shift year, month, day
-    #
-    @patch(
-        "src.customdate.ConvertibleDate.is_valid_ast_ymd",
-        return_value=True,
-    )
-    def test_shift_ast_ymd_by_multiple_intervals(self, _):
-        plus_delta = FAKE.random_int(min=1, max=12)
-        plus_years = [[plus_delta, DateUnit.YEAR]]
-        plus_months = [[plus_delta, DateUnit.MONTH]]
-        ymd = self.random_ymd()
-        ast_year, _, _ = ymd
-        assert self.coptic_cd.shift_ast_ymd(ymd, [[0, DateUnit.YEAR]]) == ymd
-        # fmt: off
-        assert self.coptic_cd.shift_ast_ymd(
-            (ast_year, 6, 27), plus_years
-        ) == (ast_year + plus_delta, 6, 27)
-        assert self.coptic_cd.shift_ast_ymd(
-            (ast_year, 1, 5), plus_months
-        ) == (ast_year, 1 + plus_delta, 5)
-        # fmt: on
-        assert self.coptic_cd.shift_ast_ymd(
-            (ast_year, 3, 15), [[2, DateUnit.YEAR], [4, DateUnit.MONTH]]
-        ) == (ast_year + 2, 7, 15)
-        assert self.coptic_cd.shift_ast_ymd(
-            (ast_year, 9, 25), [[3, DateUnit.YEAR], [-2, DateUnit.MONTH]]
-        ) == (ast_year + 3, 7, 25)
-
-    def test_shift_ast_ymd_to_invalid_day(self):
-        common_year = self.random_common_year()
-        leap_year = self.random_leap_year()
-        assert self.coptic_cd.shift_ast_ymd(
-            (common_year, 12, 30), [[1, DateUnit.MONTH]]
-        ) == (common_year, 13, 5)
-        assert self.coptic_cd.shift_ast_ymd(
-            (leap_year, 12, 30), [[1, DateUnit.MONTH]]
-        ) == (leap_year, 13, 6)
-        assert self.coptic_cd.shift_ast_ymd(
-            (2, 1, 6), [[-1, DateUnit.MONTH]]
-        ) == (1, 13, 5)
-        assert self.coptic_cd.shift_ast_ymd(
-            (4, 1, 7), [[-1, DateUnit.MONTH]]
-        ) == (3, 13, 6)
-
-    def test_shift_ast_year(self):
-        delta = FAKE.random_int()
-        year = self.random_year()
-        expected_year = year + delta
-        assert self.coptic_cd.shift_ast_year(year, delta) == expected_year
-
-    def test_shift_month(self):
-        year, month, _ = self.random_ymd()
-        assert self.coptic_cd.shift_month(year, month, -26) == (
-            year - 2,
-            month,
-        )
-        assert self.coptic_cd.shift_month(year, month, -13) == (
-            year - 1,
-            month,
-        )
-        assert self.coptic_cd.shift_month(year, month, 0) == (year, month)
-        assert self.coptic_cd.shift_month(year, month, 13) == (year + 1, month)
-        assert self.coptic_cd.shift_month(year, month, 26) == (year + 2, month)
-        assert self.coptic_cd.shift_month(year, 2, 3) == (year, 5)
-        assert self.coptic_cd.shift_month(year, 13, 1) == (year + 1, 1)
-        assert self.coptic_cd.shift_month(year, 8, 7) == (year + 1, 2)
-        assert self.coptic_cd.shift_month(year, 3, 14) == (year + 1, 4)
-        assert self.coptic_cd.shift_month(year, 6, 29) == (year + 2, 9)
-        assert self.coptic_cd.shift_month(year, 10, -1) == (year, 9)
-        assert self.coptic_cd.shift_month(year, 1, -1) == (year - 1, 13)
-        assert self.coptic_cd.shift_month(year, 2, -3) == (year - 1, 12)
-        assert self.coptic_cd.shift_month(year, 5, -7) == (year - 1, 11)
-        assert self.coptic_cd.shift_month(year, 7, -15) == (year - 1, 5)
-        assert self.coptic_cd.shift_month(year, 12, -28) == (year - 2, 10)
-
-    #
-    # Next DateUnit
-    #
-
-    # ConvertibleDate.next_ast_year tested in test_customdate
-
-    @patch("src.customdate.ConvertibleDate._get_delta", return_value=1)
-    def test_next_month_moving_forward(self, _):
-        assert self.coptic_cd.next_month(1000, 5, 2, True) == (1000, 6, 1)
-        assert self.coptic_cd.next_month(231, 1, 3, True) == (231, 3, 1)
-
-    @patch("src.customdate.ConvertibleDate._get_delta", return_value=-1)
-    def test_next_month_moving_backward(self, _):
-        assert self.coptic_cd.next_month(124, 7, 3, False) == (124, 6, 1)
-        assert self.coptic_cd.next_month(435, 11, 4, False) == (435, 8, 1)
-
-    @patch("src.customdate.ConvertibleDate._get_delta", return_value=1)
-    def test_next_day_moving_forward(self, _):
-        assert self.coptic_cd.next_day((123, 9, 15), 5, True) == (123, 9, 20)
-        assert self.coptic_cd.next_day((332, 4, 13), 3, True) == (332, 4, 15)
-        assert self.coptic_cd.next_day((100, 13, 5), 5, True) == (101, 1, 5)
-        assert self.coptic_cd.next_day((99, 13, 4), 2, True) == (99, 13, 6)
-
-    @patch("src.customdate.ConvertibleDate._get_delta", return_value=-1)
-    def test_next_day_moving_backward(self, _):
-        assert self.coptic_cd.next_day((243, 3, 2), 2, False) == (243, 2, 30)
-        assert self.coptic_cd.next_day((384, 10, 10), 4, False) == (384, 10, 8)
-        assert self.coptic_cd.next_day((12, 1, 1), 3, False) == (11, 13, 6)
-        assert self.coptic_cd.next_day((15, 1, 4), 5, False) == (14, 13, 5)
-
-    @patch("src.customdate.ConvertibleDate._get_delta", return_value=1)
-    def test__overflow_month_moving_forward(self, _):
-        year, month, _ = self.random_ymd()
-        common_year = self.random_common_year()
-        leap_year = self.random_leap_year()
-        assert self.coptic_cd._overflow_month(year, month) == (year, month)
-        assert self.coptic_cd._overflow_month(common_year, 14, True) == (
-            common_year + 1,
-            1,
-        )
-        assert self.coptic_cd._overflow_month(leap_year, 14, True) == (
-            leap_year + 1,
-            1,
-        )
-
-    @patch("src.customdate.ConvertibleDate._get_delta", return_value=-1)
-    def test__overflow_month_moving_backward(self, _):
-        year, month, _ = self.random_ymd()
-        common_year = self.random_common_year()
-        leap_year = self.random_leap_year()
-        assert self.coptic_cd._overflow_month(year, month) == (year, month)
-        assert self.coptic_cd._overflow_month(common_year, 0, False) == (
-            common_year - 1,
-            13,
-        )
-        assert self.coptic_cd._overflow_month(leap_year, 0, False) == (
-            leap_year - 1,
-            13,
-        )
-
-    # test ConvertibleDate._get_delta() in test_customdate.py
-
-    #
     # ConvertibleDate.convert_ast_ymd
     #
     @pytest.mark.db
@@ -693,6 +555,144 @@ class CopticTest(RealCalendarTestCase):
     def test_ordinal_date_to_ast_ymd_can_raise(self, _):
         with pytest.raises(ValueError):
             self.coptic_cd.ordinal_date_to_ast_ymd((1, 1))
+
+    #
+    # Shift year, month, day
+    #
+    @patch(
+        "src.customdate.ConvertibleDate.is_valid_ast_ymd",
+        return_value=True,
+    )
+    def test_shift_ast_ymd_by_multiple_intervals(self, _):
+        plus_delta = FAKE.random_int(min=1, max=12)
+        plus_years = [[plus_delta, DateUnit.YEAR]]
+        plus_months = [[plus_delta, DateUnit.MONTH]]
+        ymd = self.random_ymd()
+        ast_year, _, _ = ymd
+        assert self.coptic_cd.shift_ast_ymd(ymd, [[0, DateUnit.YEAR]]) == ymd
+        # fmt: off
+        assert self.coptic_cd.shift_ast_ymd(
+            (ast_year, 6, 27), plus_years
+        ) == (ast_year + plus_delta, 6, 27)
+        assert self.coptic_cd.shift_ast_ymd(
+            (ast_year, 1, 5), plus_months
+        ) == (ast_year, 1 + plus_delta, 5)
+        # fmt: on
+        assert self.coptic_cd.shift_ast_ymd(
+            (ast_year, 3, 15), [[2, DateUnit.YEAR], [4, DateUnit.MONTH]]
+        ) == (ast_year + 2, 7, 15)
+        assert self.coptic_cd.shift_ast_ymd(
+            (ast_year, 9, 25), [[3, DateUnit.YEAR], [-2, DateUnit.MONTH]]
+        ) == (ast_year + 3, 7, 25)
+
+    def test_shift_ast_ymd_to_invalid_day(self):
+        common_year = self.random_common_year()
+        leap_year = self.random_leap_year()
+        assert self.coptic_cd.shift_ast_ymd(
+            (common_year, 12, 30), [[1, DateUnit.MONTH]]
+        ) == (common_year, 13, 5)
+        assert self.coptic_cd.shift_ast_ymd(
+            (leap_year, 12, 30), [[1, DateUnit.MONTH]]
+        ) == (leap_year, 13, 6)
+        assert self.coptic_cd.shift_ast_ymd(
+            (2, 1, 6), [[-1, DateUnit.MONTH]]
+        ) == (1, 13, 5)
+        assert self.coptic_cd.shift_ast_ymd(
+            (4, 1, 7), [[-1, DateUnit.MONTH]]
+        ) == (3, 13, 6)
+
+    def test_shift_ast_year(self):
+        delta = FAKE.random_int()
+        year = self.random_year()
+        expected_year = year + delta
+        assert self.coptic_cd.shift_ast_year(year, delta) == expected_year
+
+    def test_shift_month(self):
+        year, month, _ = self.random_ymd()
+        assert self.coptic_cd.shift_month(year, month, -26) == (
+            year - 2,
+            month,
+        )
+        assert self.coptic_cd.shift_month(year, month, -13) == (
+            year - 1,
+            month,
+        )
+        assert self.coptic_cd.shift_month(year, month, 0) == (year, month)
+        assert self.coptic_cd.shift_month(year, month, 13) == (year + 1, month)
+        assert self.coptic_cd.shift_month(year, month, 26) == (year + 2, month)
+        assert self.coptic_cd.shift_month(year, 2, 3) == (year, 5)
+        assert self.coptic_cd.shift_month(year, 13, 1) == (year + 1, 1)
+        assert self.coptic_cd.shift_month(year, 8, 7) == (year + 1, 2)
+        assert self.coptic_cd.shift_month(year, 3, 14) == (year + 1, 4)
+        assert self.coptic_cd.shift_month(year, 6, 29) == (year + 2, 9)
+        assert self.coptic_cd.shift_month(year, 10, -1) == (year, 9)
+        assert self.coptic_cd.shift_month(year, 1, -1) == (year - 1, 13)
+        assert self.coptic_cd.shift_month(year, 2, -3) == (year - 1, 12)
+        assert self.coptic_cd.shift_month(year, 5, -7) == (year - 1, 11)
+        assert self.coptic_cd.shift_month(year, 7, -15) == (year - 1, 5)
+        assert self.coptic_cd.shift_month(year, 12, -28) == (year - 2, 10)
+
+    #
+    # Next DateUnit
+    #
+
+    # ConvertibleDate.next_ast_year tested in test_customdate
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=1)
+    def test_next_month_moving_forward(self, _):
+        assert self.coptic_cd.next_month(1000, 5, 2, True) == (1000, 6, 1)
+        assert self.coptic_cd.next_month(231, 1, 3, True) == (231, 3, 1)
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=-1)
+    def test_next_month_moving_backward(self, _):
+        assert self.coptic_cd.next_month(124, 7, 3, False) == (124, 6, 1)
+        assert self.coptic_cd.next_month(435, 11, 4, False) == (435, 8, 1)
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=1)
+    def test_next_day_moving_forward(self, _):
+        assert self.coptic_cd.next_day((123, 9, 15), 5, True) == (123, 9, 20)
+        assert self.coptic_cd.next_day((332, 4, 13), 3, True) == (332, 4, 15)
+        assert self.coptic_cd.next_day((100, 13, 5), 5, True) == (101, 1, 5)
+        assert self.coptic_cd.next_day((99, 13, 4), 2, True) == (99, 13, 6)
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=-1)
+    def test_next_day_moving_backward(self, _):
+        assert self.coptic_cd.next_day((243, 3, 2), 2, False) == (243, 2, 30)
+        assert self.coptic_cd.next_day((384, 10, 10), 4, False) == (384, 10, 8)
+        assert self.coptic_cd.next_day((12, 1, 1), 3, False) == (11, 13, 6)
+        assert self.coptic_cd.next_day((15, 1, 4), 5, False) == (14, 13, 5)
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=1)
+    def test__overflow_month_moving_forward(self, _):
+        year, month, _ = self.random_ymd()
+        common_year = self.random_common_year()
+        leap_year = self.random_leap_year()
+        assert self.coptic_cd._overflow_month(year, month) == (year, month)
+        assert self.coptic_cd._overflow_month(common_year, 14, True) == (
+            common_year + 1,
+            1,
+        )
+        assert self.coptic_cd._overflow_month(leap_year, 14, True) == (
+            leap_year + 1,
+            1,
+        )
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=-1)
+    def test__overflow_month_moving_backward(self, _):
+        year, month, _ = self.random_ymd()
+        common_year = self.random_common_year()
+        leap_year = self.random_leap_year()
+        assert self.coptic_cd._overflow_month(year, month) == (year, month)
+        assert self.coptic_cd._overflow_month(common_year, 0, False) == (
+            common_year - 1,
+            13,
+        )
+        assert self.coptic_cd._overflow_month(leap_year, 0, False) == (
+            leap_year - 1,
+            13,
+        )
+
+    # test ConvertibleDate._get_delta() in test_customdate.py
 
     #
     # Human-readable years

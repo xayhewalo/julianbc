@@ -95,151 +95,6 @@ class GregorianTest(RealCalendarTestCase):
         patch_days_common_year.__get__ = lambda *_: self.days_in_common_year
 
     #
-    # Next DateUnit
-    #
-
-    # ConvertibleDate.next_ast_year tested in test_customdate
-
-    @patch("src.customdate.ConvertibleDate._get_delta", return_value=1)
-    def test_next_month_moving_forward(self, _):
-        assert self.gregorian_cd.next_month(1241, 5, 5, True) == (1241, 10, 1)
-        assert self.gregorian_cd.next_month(635, 7, 4, True) == (635, 8, 1)
-
-    @patch("src.customdate.ConvertibleDate._get_delta", return_value=-1)
-    def test_next_month_moving_backward(self, _):
-        assert self.gregorian_cd.next_month(401, 5, 1, False) == (401, 4, 1)
-        assert self.gregorian_cd.next_month(345, 11, 6, False) == (345, 6, 1)
-
-    @patch("src.customdate.ConvertibleDate._get_delta", return_value=1)
-    def test_next_day_moving_forward(self, _):
-        assert self.gregorian_cd.next_day((231, 9, 9), 4, True) == (231, 9, 12)
-        assert self.gregorian_cd.next_day((21, 12, 31), 1, True) == (22, 1, 1)
-        assert self.gregorian_cd.next_day((43, 2, 28), 10, True) == (43, 3, 10)
-        assert self.gregorian_cd.next_day((4, 2, 29), 4, True) == (4, 3, 4)
-
-    @patch("src.customdate.ConvertibleDate._get_delta", return_value=-1)
-    def test_next_day_moving_backward(self, _):
-        assert self.gregorian_cd.next_day((23, 5, 2), 2, False) == (23, 4, 30)
-        assert self.gregorian_cd.next_day((84, 10, 9), 4, False) == (84, 10, 8)
-        assert self.gregorian_cd.next_day((12, 3, 1), 1, False) == (12, 2, 29)
-        assert self.gregorian_cd.next_day((15, 3, 4), 5, False) == (15, 2, 25)
-
-    @patch("src.customdate.ConvertibleDate._get_delta", return_value=1)
-    def test__overflow_month_moving_forward(self, _):
-        year, month, _ = self.random_ymd()
-        common_year = self.random_common_year()
-        leap_year = self.random_leap_year()
-        assert self.gregorian_cd._overflow_month(year, month) == (year, month)
-        assert self.gregorian_cd._overflow_month(common_year, 13, True) == (
-            common_year + 1,
-            1,
-        )
-        assert self.gregorian_cd._overflow_month(leap_year, 13, True) == (
-            leap_year + 1,
-            1,
-        )
-
-    @patch("src.customdate.ConvertibleDate._get_delta", return_value=-1)
-    def test__overflow_month_moving_backward(self, _):
-        year, month, _ = self.random_ymd()
-        common_year = self.random_common_year()
-        leap_year = self.random_leap_year()
-        assert self.gregorian_cd._overflow_month(year, month) == (year, month)
-        assert self.gregorian_cd._overflow_month(common_year, 0, False) == (
-            common_year - 1,
-            12,
-        )
-        assert self.gregorian_cd._overflow_month(leap_year, 0, False) == (
-            leap_year - 1,
-            12,
-        )
-
-    # test ConvertibleDate._get_delta() in test_customdate.py
-
-    #
-    # Shift year, month, day
-    #
-    @patch(
-        "src.customdate.ConvertibleDate.is_valid_ast_ymd",
-        return_value=True,
-    )
-    def test_shift_ast_ymd_by_multiple_intervals(self, _):
-        plus_delta = FAKE.random_int(min=1, max=11)
-        plus_years = [[plus_delta, DateUnit.YEAR]]
-        plus_months = [[plus_delta, DateUnit.MONTH]]
-        ymd = self.random_ymd()
-        ast_year, _, _ = ymd
-        zero_interval = [[0, DateUnit.YEAR]]
-        assert self.gregorian_cd.shift_ast_ymd(ymd, zero_interval) == ymd
-        # fmt: off
-        assert self.gregorian_cd.shift_ast_ymd(
-            (ast_year, 7, 27), plus_years
-        ) == (ast_year + plus_delta, 7, 27)
-        assert self.gregorian_cd.shift_ast_ymd(
-            (ast_year, 1, 28), plus_months
-        ) == (ast_year, 1 + plus_delta, 28)
-        # fmt: on
-        assert self.gregorian_cd.shift_ast_ymd(
-            (ast_year, 3, 15), [[3, DateUnit.YEAR], [2, DateUnit.MONTH]]
-        ) == (ast_year + 3, 5, 15)
-        assert self.gregorian_cd.shift_ast_ymd(
-            (ast_year, 9, 25), [[1, DateUnit.YEAR], [-4, DateUnit.MONTH]]
-        ) == (ast_year + 1, 5, 25)
-
-    def test_shift_ast_ymd_to_invalid_day(self):
-        common_year = self.random_common_year()
-        leap_year = self.random_leap_year()
-        assert self.gregorian_cd.shift_ast_ymd(
-            (common_year, 1, 30), [[1, DateUnit.MONTH]]
-        ) == (common_year, 2, 28)
-        assert self.gregorian_cd.shift_ast_ymd(
-            (leap_year, 1, 31), [[1, DateUnit.MONTH]]
-        ) == (leap_year, 2, 29)
-        assert self.gregorian_cd.shift_ast_ymd(
-            (2, 3, 31), [[-1, DateUnit.MONTH]]
-        ) == (2, 2, 28)
-        assert self.gregorian_cd.shift_ast_ymd(
-            (4, 5, 31), [[-1, DateUnit.MONTH]]
-        ) == (4, 4, 30)
-
-    def test_shift_ast_year(self):
-        delta = FAKE.random_int()
-        year = self.random_year()
-        expected_year = year + delta
-        assert self.gregorian_cd.shift_ast_year(year, delta) == expected_year
-
-    def test_shift_month(self):
-        year, month, _ = self.random_ymd()
-        assert self.gregorian_cd.shift_month(year, month, -24) == (
-            year - 2,
-            month,
-        )
-        assert self.gregorian_cd.shift_month(year, month, -12) == (
-            year - 1,
-            month,
-        )
-        assert self.gregorian_cd.shift_month(year, month, 0) == (year, month)
-        assert self.gregorian_cd.shift_month(year, month, 12) == (
-            year + 1,
-            month,
-        )
-        assert self.gregorian_cd.shift_month(year, month, 24) == (
-            year + 2,
-            month,
-        )
-        assert self.gregorian_cd.shift_month(year, 2, 3) == (year, 5)
-        assert self.gregorian_cd.shift_month(year, 12, 1) == (year + 1, 1)
-        assert self.gregorian_cd.shift_month(year, 8, 7) == (year + 1, 3)
-        assert self.gregorian_cd.shift_month(year, 3, 14) == (year + 1, 5)
-        assert self.gregorian_cd.shift_month(year, 6, 29) == (year + 2, 11)
-        assert self.gregorian_cd.shift_month(year, 10, -1) == (year, 9)
-        assert self.gregorian_cd.shift_month(year, 1, -1) == (year - 1, 12)
-        assert self.gregorian_cd.shift_month(year, 2, -3) == (year - 1, 11)
-        assert self.gregorian_cd.shift_month(year, 5, -7) == (year - 1, 10)
-        assert self.gregorian_cd.shift_month(year, 7, -15) == (year - 1, 4)
-        assert self.gregorian_cd.shift_month(year, 12, -28) == (year - 2, 8)
-
-    #
     # ConvertibleDate.convert_ast_ymd
     #
     @pytest.mark.db
@@ -734,6 +589,151 @@ class GregorianTest(RealCalendarTestCase):
         ordinal_date = self.random_ce_ordinal_and_ordinal_date()
         with pytest.raises(ValueError):
             self.gregorian_cd.ordinal_date_to_ast_ymd(ordinal_date)
+
+    #
+    # Shift year, month, day
+    #
+    @patch(
+        "src.customdate.ConvertibleDate.is_valid_ast_ymd",
+        return_value=True,
+    )
+    def test_shift_ast_ymd_by_multiple_intervals(self, _):
+        plus_delta = FAKE.random_int(min=1, max=11)
+        plus_years = [[plus_delta, DateUnit.YEAR]]
+        plus_months = [[plus_delta, DateUnit.MONTH]]
+        ymd = self.random_ymd()
+        ast_year, _, _ = ymd
+        zero_interval = [[0, DateUnit.YEAR]]
+        assert self.gregorian_cd.shift_ast_ymd(ymd, zero_interval) == ymd
+        # fmt: off
+        assert self.gregorian_cd.shift_ast_ymd(
+            (ast_year, 7, 27), plus_years
+        ) == (ast_year + plus_delta, 7, 27)
+        assert self.gregorian_cd.shift_ast_ymd(
+            (ast_year, 1, 28), plus_months
+        ) == (ast_year, 1 + plus_delta, 28)
+        # fmt: on
+        assert self.gregorian_cd.shift_ast_ymd(
+            (ast_year, 3, 15), [[3, DateUnit.YEAR], [2, DateUnit.MONTH]]
+        ) == (ast_year + 3, 5, 15)
+        assert self.gregorian_cd.shift_ast_ymd(
+            (ast_year, 9, 25), [[1, DateUnit.YEAR], [-4, DateUnit.MONTH]]
+        ) == (ast_year + 1, 5, 25)
+
+    def test_shift_ast_ymd_to_invalid_day(self):
+        common_year = self.random_common_year()
+        leap_year = self.random_leap_year()
+        assert self.gregorian_cd.shift_ast_ymd(
+            (common_year, 1, 30), [[1, DateUnit.MONTH]]
+        ) == (common_year, 2, 28)
+        assert self.gregorian_cd.shift_ast_ymd(
+            (leap_year, 1, 31), [[1, DateUnit.MONTH]]
+        ) == (leap_year, 2, 29)
+        assert self.gregorian_cd.shift_ast_ymd(
+            (2, 3, 31), [[-1, DateUnit.MONTH]]
+        ) == (2, 2, 28)
+        assert self.gregorian_cd.shift_ast_ymd(
+            (4, 5, 31), [[-1, DateUnit.MONTH]]
+        ) == (4, 4, 30)
+
+    def test_shift_ast_year(self):
+        delta = FAKE.random_int()
+        year = self.random_year()
+        expected_year = year + delta
+        assert self.gregorian_cd.shift_ast_year(year, delta) == expected_year
+
+    def test_shift_month(self):
+        year, month, _ = self.random_ymd()
+        assert self.gregorian_cd.shift_month(year, month, -24) == (
+            year - 2,
+            month,
+        )
+        assert self.gregorian_cd.shift_month(year, month, -12) == (
+            year - 1,
+            month,
+        )
+        assert self.gregorian_cd.shift_month(year, month, 0) == (year, month)
+        assert self.gregorian_cd.shift_month(year, month, 12) == (
+            year + 1,
+            month,
+        )
+        assert self.gregorian_cd.shift_month(year, month, 24) == (
+            year + 2,
+            month,
+        )
+        assert self.gregorian_cd.shift_month(year, 2, 3) == (year, 5)
+        assert self.gregorian_cd.shift_month(year, 12, 1) == (year + 1, 1)
+        assert self.gregorian_cd.shift_month(year, 8, 7) == (year + 1, 3)
+        assert self.gregorian_cd.shift_month(year, 3, 14) == (year + 1, 5)
+        assert self.gregorian_cd.shift_month(year, 6, 29) == (year + 2, 11)
+        assert self.gregorian_cd.shift_month(year, 10, -1) == (year, 9)
+        assert self.gregorian_cd.shift_month(year, 1, -1) == (year - 1, 12)
+        assert self.gregorian_cd.shift_month(year, 2, -3) == (year - 1, 11)
+        assert self.gregorian_cd.shift_month(year, 5, -7) == (year - 1, 10)
+        assert self.gregorian_cd.shift_month(year, 7, -15) == (year - 1, 4)
+        assert self.gregorian_cd.shift_month(year, 12, -28) == (year - 2, 8)
+
+    #
+    # Next DateUnit
+    #
+
+    # ConvertibleDate.next_ast_year tested in test_customdate
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=1)
+    def test_next_month_moving_forward(self, _):
+        assert self.gregorian_cd.next_month(1241, 5, 5, True) == (1241, 10, 1)
+        assert self.gregorian_cd.next_month(635, 7, 4, True) == (635, 8, 1)
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=-1)
+    def test_next_month_moving_backward(self, _):
+        assert self.gregorian_cd.next_month(401, 5, 1, False) == (401, 4, 1)
+        assert self.gregorian_cd.next_month(345, 11, 6, False) == (345, 6, 1)
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=1)
+    def test_next_day_moving_forward(self, _):
+        assert self.gregorian_cd.next_day((231, 9, 9), 4, True) == (231, 9, 12)
+        assert self.gregorian_cd.next_day((21, 12, 31), 1, True) == (22, 1, 1)
+        assert self.gregorian_cd.next_day((43, 2, 28), 10, True) == (43, 3, 10)
+        assert self.gregorian_cd.next_day((4, 2, 29), 4, True) == (4, 3, 4)
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=-1)
+    def test_next_day_moving_backward(self, _):
+        assert self.gregorian_cd.next_day((23, 5, 2), 2, False) == (23, 4, 30)
+        assert self.gregorian_cd.next_day((84, 10, 9), 4, False) == (84, 10, 8)
+        assert self.gregorian_cd.next_day((12, 3, 1), 1, False) == (12, 2, 29)
+        assert self.gregorian_cd.next_day((15, 3, 4), 5, False) == (15, 2, 25)
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=1)
+    def test__overflow_month_moving_forward(self, _):
+        year, month, _ = self.random_ymd()
+        common_year = self.random_common_year()
+        leap_year = self.random_leap_year()
+        assert self.gregorian_cd._overflow_month(year, month) == (year, month)
+        assert self.gregorian_cd._overflow_month(common_year, 13, True) == (
+            common_year + 1,
+            1,
+        )
+        assert self.gregorian_cd._overflow_month(leap_year, 13, True) == (
+            leap_year + 1,
+            1,
+        )
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=-1)
+    def test__overflow_month_moving_backward(self, _):
+        year, month, _ = self.random_ymd()
+        common_year = self.random_common_year()
+        leap_year = self.random_leap_year()
+        assert self.gregorian_cd._overflow_month(year, month) == (year, month)
+        assert self.gregorian_cd._overflow_month(common_year, 0, False) == (
+            common_year - 1,
+            12,
+        )
+        assert self.gregorian_cd._overflow_month(leap_year, 0, False) == (
+            leap_year - 1,
+            12,
+        )
+
+    # test ConvertibleDate._get_delta() in test_customdate.py
 
     #
     # Human-readable years

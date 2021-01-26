@@ -15,10 +15,18 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
+from enum import Enum, unique
 from src.db import ConvertibleClock
 
 
 Hms_tuple = tuple[int, int, int]
+
+
+@unique
+class TimeUnit(Enum):
+    HOUR = 0
+    MINUTE = 1
+    SECOND = 2
 
 
 class ConvertibleTime:
@@ -76,6 +84,64 @@ class ConvertibleTime:
             + (minute * self.clock.seconds_in_minute)
             + second
         )
+
+    def next_hms(
+        self, hms: Hms_tuple, interval: list, forward=True
+    ) -> tuple[Hms_tuple, int]:
+        """
+        :returns: desired hms and if result is in a different day
+        :raises ValueError: if passed an invalid hms; if method moves into a
+            different day twice
+        """
+        if not self.is_valid_hms(hms):
+            raise ValueError(f"{hms} is an invalid hms for {self.clock}")
+
+        frequency, timeunit = interval
+        if not 0 < frequency == int(frequency):
+            msg = f"Frequency: {frequency} is not an integer greater than zero"
+            raise ValueError(msg)
+
+        sign = -1
+        if forward:
+            sign = 1
+
+        if timeunit == TimeUnit.HOUR:
+            max_frequency = self.clock.hours_in_day - 1
+            seconds_in_unit = self.clock.seconds_in_hour
+        elif timeunit == TimeUnit.MINUTE:
+            max_frequency = self.clock.minutes_in_hour - 1
+            seconds_in_unit = self.clock.seconds_in_minute
+        elif timeunit == TimeUnit.SECOND:
+            max_frequency = self.clock.seconds_in_minute - 1
+            seconds_in_unit = 1
+        else:
+            raise ValueError(f"Can't find next hms for interval, {interval}")
+
+        if frequency > max_frequency:
+            msg = f"There are less than {frequency} {timeunit} in {self.clock}"
+            raise ValueError(msg)
+
+        seconds_in_frequency = frequency * seconds_in_unit
+        seconds = self.hms_to_seconds(hms)
+        seconds += sign * 1
+        day_diff = 0
+        err_msg = "day shouldn't be shifted twice"
+        while seconds % seconds_in_frequency != 0:
+            # seconds == 0 will always be returned so frequency must be a
+            # factor of the max human readable TimeUnit value.
+            # I.e only allow 0-6, 10, 12, 15, and 30 for earth time
+            seconds += sign * 1
+            if seconds >= self.clock.seconds_in_day:
+                assert abs(day_diff) == 0, err_msg
+                seconds = 0
+                day_diff = 1
+            elif seconds < 0:
+                assert abs(day_diff) == 0, err_msg
+                seconds = self.clock.seconds_in_day - 1
+                day_diff = -1
+
+        hms = self.seconds_to_hms(seconds)
+        return hms, day_diff
 
     def hour(self, seconds: int) -> int:
         """hour of the day"""

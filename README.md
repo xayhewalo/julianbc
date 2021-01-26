@@ -63,10 +63,8 @@ JulianBC will be a visual-timeline program in the near future
 #### ConvertibleTime
 - [X] remove `convertible_clocks`
 - [X] test error raised for `convert_hms`
-- [ ] add `next_hms`
-    - [ ] different methods for `hour`, `minute`, and `second`
-    - [ ] OR convert `hms` and `frequency` to `seconds` and find when modulo == 0(?)
-    - [ ] refactor so `is_valid_hour` is checked twice
+- [X] add `next_hms`
+    - [X] convert `hms` and `frequency` to `seconds` and find when modulo == 0
 - [ ] add `shift_hms`
     - [ ] add `shift_hour`
     - [ ] add `shift_minute`

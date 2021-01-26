@@ -1,6 +1,7 @@
 import datetime
 import pytest
 
+from src.customtime import TimeUnit
 from tests.factories import ConvertibleTimeFactory, ConvertibleClockFactory
 from tests.utils import DatabaseTestCase, FAKE
 from unittest.mock import patch
@@ -85,12 +86,87 @@ class ConvertibleTimeTest(DatabaseTestCase):
         with pytest.raises(ValueError):
             time.convert_hms(hms, time)
 
+    @patch("src.customtime.ConvertibleTime.is_valid_hms", return_value=True)
+    def test_seconds_to_hms(self, *_):
+        assert self.earth_time.seconds_to_hms(self.seconds) == self.hms
+
     def test_hms_to_seconds(self):
         assert self.earth_time.hms_to_seconds(self.hms) == self.seconds
 
     @patch("src.customtime.ConvertibleTime.is_valid_hms", return_value=True)
-    def test_seconds_to_hms(self, *_):
-        assert self.earth_time.seconds_to_hms(self.seconds) == self.hms
+    def test_next_hms(self, _):
+        earth_time = self.earth_time
+        one_sec = [1, TimeUnit.SECOND]
+        two_sec = [2, TimeUnit.SECOND]
+        five_sec = [5, TimeUnit.SECOND]
+        six_sec = [6, TimeUnit.SECOND]
+        ten_sec = [10, TimeUnit.SECOND]
+
+        one_min = [1, TimeUnit.MINUTE]
+        two_min = [2, TimeUnit.MINUTE]
+        five_min = [5, TimeUnit.MINUTE]
+        six_min = [6, TimeUnit.MINUTE]
+        ten_min = [10, TimeUnit.MINUTE]
+
+        one_hour = [1, TimeUnit.HOUR]
+        two_hour = [2, TimeUnit.HOUR]
+        four_hour = [4, TimeUnit.HOUR]
+        six_hour = [6, TimeUnit.HOUR]
+        assert earth_time.next_hms((0, 0, 0), one_sec) == ((0, 0, 1), 0)
+        assert earth_time.next_hms((8, 4, 4), five_sec) == ((8, 4, 5), 0)
+        assert earth_time.next_hms((9, 3, 59), two_sec) == ((9, 4, 0), 0)
+        assert earth_time.next_hms((23, 59, 51), ten_sec) == ((0, 0, 0), 1)
+        assert earth_time.next_hms((2, 3, 8), one_sec, False) == ((2, 3, 7), 0)
+        assert earth_time.next_hms((1, 5, 8), two_sec, False) == ((1, 5, 6), 0)
+        assert earth_time.next_hms((8, 6, 0), ten_sec, False) == (
+            (8, 5, 50),
+            0,
+        )
+        assert earth_time.next_hms((0, 0, 0), six_sec, False) == (
+            (23, 59, 54),
+            -1,
+        )
+        assert earth_time.next_hms((0, 0, 0), one_min) == ((0, 1, 0), 0)
+        assert earth_time.next_hms((19, 3, 27), two_min) == ((19, 4, 0), 0)
+        assert earth_time.next_hms((20, 16, 11), five_min) == ((20, 20, 0), 0)
+        assert earth_time.next_hms((0, 0, 0), six_min, False) == (
+            (23, 54, 0),
+            -1,
+        )
+        assert earth_time.next_hms((5, 9, 1), ten_min, False) == ((5, 0, 0), 0)
+        assert earth_time.next_hms((0, 0, 0), one_hour) == ((1, 0, 0), 0)
+        assert earth_time.next_hms((13, 24, 22), two_hour) == ((14, 0, 0), 0)
+        assert earth_time.next_hms((23, 45, 55), four_hour) == ((0, 0, 0), 1)
+        assert earth_time.next_hms((0, 0, 0), six_hour, False) == (
+            (18, 0, 0),
+            -1,
+        )
+        assert earth_time.next_hms((16, 21, 33), one_hour, False) == (
+            (16, 0, 0),
+            0,
+        )
+
+    @patch("src.customtime.ConvertibleTime.is_valid_hms", return_value=False)
+    def test_next_hms_for_invalid_hms(self, _):
+        fake_hms = FAKE.pytuple()
+        fake_interval = FAKE.pylist()
+        with pytest.raises(ValueError):
+            assert self.earth_time.next_hms(fake_hms, fake_interval)
+
+    @patch("src.customtime.ConvertibleTime.is_valid_hms", return_value=True)
+    def test_next_hms_raises_other_errors(self, _):
+        fake_timeunit = FAKE.random_int()
+        fake_interval = [FAKE.random_int(), fake_timeunit]
+        timeunit = FAKE.random_element(elements=TimeUnit)
+        big_frequency = FAKE.random_int(min=61)
+        fake_float = FAKE.pyfloat(max_value=-1)
+        earth_time = self.earth_time
+        with pytest.raises(ValueError):
+            assert earth_time.next_hms(self.hms, fake_interval)
+        with pytest.raises(ValueError):
+            assert earth_time.next_hms(self.hms, [big_frequency, timeunit])
+        with pytest.raises(ValueError):
+            assert earth_time.next_hms(self.hms, [fake_float, timeunit])
 
     @patch("src.customtime.ConvertibleTime.is_valid_hms", return_value=True)
     def test_seconds_to_hms_and_hms_to_seconds_are_reversible(self, *_):

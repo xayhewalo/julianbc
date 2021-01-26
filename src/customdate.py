@@ -20,7 +20,7 @@ import itertools
 import math
 
 from collections import deque
-from enum import Enum
+from enum import Enum, unique
 from src.db import ConvertibleCalendar
 from typing import Union
 
@@ -28,6 +28,7 @@ from typing import Union
 Ymd_tuple = Union[tuple[int, int, int], tuple[int, None, int]]
 
 
+@unique
 class DateUnit(Enum):
     YEAR = 0
     MONTH = 1

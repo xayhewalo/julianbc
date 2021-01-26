@@ -66,6 +66,68 @@ class LunarHijriTest(RealCalendarTestCase):
         patch_days_common_year.__get__ = lambda *_: self.days_in_common_year
 
     #
+    # Next DateUnit
+    #
+
+    # ConvertibleDate.next_ast_year tested in test_customdate
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=1)
+    def test_next_month_moving_forward(self, _):
+        assert self.l_hijri_cd.next_month(31, 2, 6, True) == (31, 6, 1)
+        assert self.l_hijri_cd.next_month(55, 7, 5, True) == (55, 10, 1)
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=-1)
+    def test_next_month_moving_backward(self, _):
+        assert self.l_hijri_cd.next_month(410, 11, 3, False) == (410, 9, 1)
+        assert self.l_hijri_cd.next_month(570, 4, 2, False) == (570, 2, 1)
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=1)
+    def test_next_day_moving_forward(self, _):
+        assert self.l_hijri_cd.next_day((99, 3, 1), 15, True) == (99, 3, 15)
+        assert self.l_hijri_cd.next_day((63, 5, 13), 4, True) == (63, 5, 16)
+        assert self.l_hijri_cd.next_day((1, 12, 29), 1, True) == (2, 1, 1)
+        assert self.l_hijri_cd.next_day((2, 12, 29), 2, True) == (2, 12, 30)
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=-1)
+    def test_next_day_moving_backward(self, _):
+        assert self.l_hijri_cd.next_day((39, 6, 9), 4, False) == (39, 6, 8)
+        assert self.l_hijri_cd.next_day((24, 10, 22), 8, False) == (24, 10, 16)
+        assert self.l_hijri_cd.next_day((3, 1, 2), 2, False) == (2, 12, 30)
+        assert self.l_hijri_cd.next_day((2, 1, 2), 2, False) == (1, 12, 28)
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=1)
+    def test__overflow_month_moving_forward(self, _):
+        year, month, _ = self.random_ymd()
+        common_year = self.random_common_year()
+        leap_year = self.random_leap_year()
+        assert self.l_hijri_cd._overflow_month(year, month) == (year, month)
+        assert self.l_hijri_cd._overflow_month(common_year, 13, True) == (
+            common_year + 1,
+            1,
+        )
+        assert self.l_hijri_cd._overflow_month(leap_year, 13, True) == (
+            leap_year + 1,
+            1,
+        )
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=-1)
+    def test__overflow_month_moving_backward(self, _):
+        year, month, _ = self.random_ymd()
+        common_year = self.random_common_year()
+        leap_year = self.random_leap_year()
+        assert self.l_hijri_cd._overflow_month(year, month) == (year, month)
+        assert self.l_hijri_cd._overflow_month(common_year, 0, False) == (
+            common_year - 1,
+            12,
+        )
+        assert self.l_hijri_cd._overflow_month(leap_year, 0, False) == (
+            leap_year - 1,
+            12,
+        )
+
+    # test ConvertibleDate._get_delta() in test_customdate.py
+
+    #
     # Shift year, month, day
     #
     @patch(
@@ -238,10 +300,6 @@ class LunarHijriTest(RealCalendarTestCase):
         return_value=True,
     )
     @patch(
-        "src.customdate.ConvertibleDate.is_descending_era",
-        return_value=True,
-    )
-    @patch(
         "src.customdate.ConvertibleDate._start_and_sign",
         return_value=(0, -1),
     )
@@ -269,10 +327,6 @@ class LunarHijriTest(RealCalendarTestCase):
     @patch(
         "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
-    )
-    @patch(
-        "src.customdate.ConvertibleDate.is_descending_era",
-        return_value=False,
     )
     @patch(
         "src.customdate.ConvertibleDate._start_and_sign",
@@ -353,10 +407,6 @@ class LunarHijriTest(RealCalendarTestCase):
         "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
-    @patch(
-        "src.customdate.ConvertibleDate.is_descending_era",
-        return_value=True,
-    )
     # don't patch _start_and_sign, loops can temporarily move into diff era
     def test_ordinal_to_ordinal_date_is_reversible_for_bh_year(self, *_):
         bh_ordinal = FAKE.random_int(min=-9999, max=0)
@@ -380,10 +430,6 @@ class LunarHijriTest(RealCalendarTestCase):
     @patch(
         "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
-    )
-    @patch(
-        "src.customdate.ConvertibleDate.is_descending_era",
-        return_value=False,
     )
     @patch(
         "src.customdate.ConvertibleDate._start_and_sign",
@@ -743,19 +789,13 @@ class LunarHijriTest(RealCalendarTestCase):
         assert self.l_hijri_cd.format_hr_date(ce_ast_ymd) == ce_hr_date
 
     #
-    # Eras
+    # ConvertibleDate.era
     #
     def test_era(self):
         bh_year = self.random_bce_year()
         ah_year = self.random_ce_year()
         assert self.l_hijri_cd.era(bh_year) == "BH"
         assert self.l_hijri_cd.era(ah_year) == "AH"
-
-    def test_is_descending_era(self):
-        bh_year = self.random_bce_year()
-        sh_year = self.random_ce_year()
-        assert self.l_hijri_cd.is_descending_era(bh_year)
-        assert self.l_hijri_cd.is_descending_era(sh_year) is False
 
     #
     # ConvertibleDate.is_leap_year

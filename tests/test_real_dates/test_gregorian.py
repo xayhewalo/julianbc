@@ -95,6 +95,68 @@ class GregorianTest(RealCalendarTestCase):
         patch_days_common_year.__get__ = lambda *_: self.days_in_common_year
 
     #
+    # Next DateUnit
+    #
+
+    # ConvertibleDate.next_ast_year tested in test_customdate
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=1)
+    def test_next_month_moving_forward(self, _):
+        assert self.gregorian_cd.next_month(1241, 5, 5, True) == (1241, 10, 1)
+        assert self.gregorian_cd.next_month(635, 7, 4, True) == (635, 8, 1)
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=-1)
+    def test_next_month_moving_backward(self, _):
+        assert self.gregorian_cd.next_month(401, 5, 1, False) == (401, 4, 1)
+        assert self.gregorian_cd.next_month(345, 11, 6, False) == (345, 6, 1)
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=1)
+    def test_next_day_moving_forward(self, _):
+        assert self.gregorian_cd.next_day((231, 9, 9), 4, True) == (231, 9, 12)
+        assert self.gregorian_cd.next_day((21, 12, 31), 1, True) == (22, 1, 1)
+        assert self.gregorian_cd.next_day((43, 2, 28), 10, True) == (43, 3, 10)
+        assert self.gregorian_cd.next_day((4, 2, 29), 4, True) == (4, 3, 4)
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=-1)
+    def test_next_day_moving_backward(self, _):
+        assert self.gregorian_cd.next_day((23, 5, 2), 2, False) == (23, 4, 30)
+        assert self.gregorian_cd.next_day((84, 10, 9), 4, False) == (84, 10, 8)
+        assert self.gregorian_cd.next_day((12, 3, 1), 1, False) == (12, 2, 29)
+        assert self.gregorian_cd.next_day((15, 3, 4), 5, False) == (15, 2, 25)
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=1)
+    def test__overflow_month_moving_forward(self, _):
+        year, month, _ = self.random_ymd()
+        common_year = self.random_common_year()
+        leap_year = self.random_leap_year()
+        assert self.gregorian_cd._overflow_month(year, month) == (year, month)
+        assert self.gregorian_cd._overflow_month(common_year, 13, True) == (
+            common_year + 1,
+            1,
+        )
+        assert self.gregorian_cd._overflow_month(leap_year, 13, True) == (
+            leap_year + 1,
+            1,
+        )
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=-1)
+    def test__overflow_month_moving_backward(self, _):
+        year, month, _ = self.random_ymd()
+        common_year = self.random_common_year()
+        leap_year = self.random_leap_year()
+        assert self.gregorian_cd._overflow_month(year, month) == (year, month)
+        assert self.gregorian_cd._overflow_month(common_year, 0, False) == (
+            common_year - 1,
+            12,
+        )
+        assert self.gregorian_cd._overflow_month(leap_year, 0, False) == (
+            leap_year - 1,
+            12,
+        )
+
+    # test ConvertibleDate._get_delta() in test_customdate.py
+
+    #
     # Shift year, month, day
     #
     @patch(
@@ -259,10 +321,6 @@ class GregorianTest(RealCalendarTestCase):
         return_value=True,
     )
     @patch(
-        "src.customdate.ConvertibleDate.is_descending_era",
-        return_value=True,
-    )
-    @patch(
         "src.customdate.ConvertibleDate._start_and_sign",
         return_value=(0, -1),
     )
@@ -285,10 +343,6 @@ class GregorianTest(RealCalendarTestCase):
     @patch(
         "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
-    )
-    @patch(
-        "src.customdate.ConvertibleDate.is_descending_era",
-        return_value=False,
     )
     @patch(
         "src.customdate.ConvertibleDate._start_and_sign",
@@ -382,10 +436,6 @@ class GregorianTest(RealCalendarTestCase):
         "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
-    @patch(
-        "src.customdate.ConvertibleDate.is_descending_era",
-        return_value=True,
-    )
     # don't patch _start_and_sign, loops can temporarily move into diff era
     def test_ordinal_to_ordinal_date_is_reversible_for_bce_year(self, *_):
         bce_ymd = self.random_bce_ymd()
@@ -407,10 +457,6 @@ class GregorianTest(RealCalendarTestCase):
     @patch(
         "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
-    )
-    @patch(
-        "src.customdate.ConvertibleDate.is_descending_era",
-        return_value=False,
     )
     @patch(
         "src.customdate.ConvertibleDate._start_and_sign",
@@ -777,19 +823,13 @@ class GregorianTest(RealCalendarTestCase):
         assert self.gregorian_cd.format_hr_date(ce_ast_ymd) == ce_hr_date
 
     #
-    # Eras
+    # ConvertibleDate.era
     #
     def test_era(self):
         bce_year = self.random_bce_year()
         ce_year = self.random_ce_year()
         assert self.gregorian_cd.era(bce_year) == "BCE"
         assert self.gregorian_cd.era(ce_year) == "CE"
-
-    def test_is_descending_era(self):
-        bce_year = self.random_bce_year()
-        ce_year = self.random_ce_year()
-        assert self.gregorian_cd.is_descending_era(bce_year)
-        assert self.gregorian_cd.is_descending_era(ce_year) is False
 
     #
     # ConvertibleDate.is_leap_year

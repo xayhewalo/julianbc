@@ -26,7 +26,7 @@ JulianBC will be a visual-timeline program in the near future
 - [ ] `CheckConstraint` that calendar and clock are `NOT NULL` when `creation_od` or `destruction_od` are `NOT NULL`
 #### Event
 - [ ] make `duration` a hybrid property based on `end`
-- [ ] make `end` a proper `ColumnProperty`
+- [ ] make `end` a proper `Column`
 
 ### Business Logic
 #### ConvertibleDate
@@ -54,9 +54,11 @@ JulianBC will be a visual-timeline program in the near future
 - [X] add `shift_ast_ymd`
     - [X] `shift_ast_year`
     - [X] `shift_ast_month`
-- [ ] add `next_dateunit`
-    - [ ] check if `frequency` is an integer greater than zero
+- [X] add `next_dateunit`
+    - [X] check if `frequency` is an integer greater than zero
+- [ ] `next_week`(?)
 - [ ] move `make_ordinal` out of `ConvertibleDate`, change name
+- [X] remove `is_decending_era`
 - [X] remove week stuff
 #### ConvertibleTime
 - [X] remove `convertible_clocks`

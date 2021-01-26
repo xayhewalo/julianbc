@@ -110,6 +110,68 @@ class IndianCivilTest(RealCalendarTestCase):
         patch_days_common_year.__get__ = lambda *_: 365
 
     #
+    # Next DateUnit
+    #
+
+    # ConvertibleDate.next_ast_year tested in test_customdate
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=1)
+    def test_next_month_moving_forward(self, _):
+        assert self.indian_cd.next_month(121, 4, 3, True) == (121, 6, 1)
+        assert self.indian_cd.next_month(65, 11, 4, True) == (65, 12, 1)
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=-1)
+    def test_next_month_moving_backward(self, _):
+        assert self.indian_cd.next_month(41, 3, 2, False) == (41, 2, 1)
+        assert self.indian_cd.next_month(450, 12, 5, False) == (450, 10, 1)
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=1)
+    def test_next_day_moving_forward(self, _):
+        assert self.indian_cd.next_day((230, 4, 4), 5, True) == (230, 4, 5)
+        assert self.indian_cd.next_day((411, 12, 1), 10, True) == (411, 12, 10)
+        assert self.indian_cd.next_day((3, 1, 30), 1, True) == (3, 1, 31)
+        assert self.indian_cd.next_day((2, 1, 30), 1, True) == (2, 2, 1)
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=-1)
+    def test_next_day_moving_backward(self, _):
+        assert self.indian_cd.next_day((23, 10, 10), 2, False) == (23, 10, 8)
+        assert self.indian_cd.next_day((4, 1, 22), 4, False) == (4, 1, 20)
+        assert self.indian_cd.next_day((3, 2, 1), 1, False) == (3, 1, 31)
+        assert self.indian_cd.next_day((2, 2, 1), 1, False) == (2, 1, 30)
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=1)
+    def test__overflow_month_moving_forward(self, _):
+        year, month, _ = self.random_ymd()
+        common_year = self.random_common_year()
+        leap_year = self.random_leap_year()
+        assert self.indian_cd._overflow_month(year, month) == (year, month)
+        assert self.indian_cd._overflow_month(common_year, 13, True) == (
+            common_year + 1,
+            1,
+        )
+        assert self.indian_cd._overflow_month(leap_year, 13, True) == (
+            leap_year + 1,
+            1,
+        )
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=-1)
+    def test__overflow_month_moving_backward(self, _):
+        year, month, _ = self.random_ymd()
+        common_year = self.random_common_year()
+        leap_year = self.random_leap_year()
+        assert self.indian_cd._overflow_month(year, month) == (year, month)
+        assert self.indian_cd._overflow_month(common_year, 0, False) == (
+            common_year - 1,
+            12,
+        )
+        assert self.indian_cd._overflow_month(leap_year, 0, False) == (
+            leap_year - 1,
+            12,
+        )
+
+    # test ConvertibleDate._get_delta() in test_customdate.py
+
+    #
     # Shift year, month, day
     #
     @patch(
@@ -282,10 +344,6 @@ class IndianCivilTest(RealCalendarTestCase):
         return_value=True,
     )
     @patch(
-        "src.customdate.ConvertibleDate.is_descending_era",
-        return_value=True,
-    )
-    @patch(
         "src.customdate.ConvertibleDate._start_and_sign",
         return_value=(0, -1),
     )
@@ -310,10 +368,6 @@ class IndianCivilTest(RealCalendarTestCase):
     @patch(
         "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
-    )
-    @patch(
-        "src.customdate.ConvertibleDate.is_descending_era",
-        return_value=False,
     )
     @patch(
         "src.customdate.ConvertibleDate._start_and_sign",
@@ -406,10 +460,6 @@ class IndianCivilTest(RealCalendarTestCase):
         "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
-    @patch(
-        "src.customdate.ConvertibleDate.is_descending_era",
-        return_value=True,
-    )
     # don't patch _start_and_sign, loops can temporarily move into diff era
     def test_ordinal_to_ordinal_date_is_reversible_for_be_year(self, *_):
         be_ordinal = FAKE.random_int(min=-9999, max=0)
@@ -433,10 +483,6 @@ class IndianCivilTest(RealCalendarTestCase):
     @patch(
         "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
-    )
-    @patch(
-        "src.customdate.ConvertibleDate.is_descending_era",
-        return_value=False,
     )
     @patch(
         "src.customdate.ConvertibleDate._start_and_sign",
@@ -801,19 +847,13 @@ class IndianCivilTest(RealCalendarTestCase):
         assert self.indian_cd.format_hr_date(se_ast_ymd) == se_hr_date
 
     #
-    # Eras
+    # ConvertibleDate.era
     #
     def test_era(self):
         be_year = self.random_bce_year()
         se_year = self.random_ce_year()
         assert self.indian_cd.era(be_year) == "बी ई"
         assert self.indian_cd.era(se_year) == "एस ई"
-
-    def test_is_descending_era(self):
-        be_year = self.random_bce_year()
-        se_year = self.random_ce_year()
-        assert self.indian_cd.is_descending_era(be_year)
-        assert self.indian_cd.is_descending_era(se_year) is False
 
     #
     # ConvertibleDate.is_leap_year

@@ -133,6 +133,110 @@ class ConvertibleDate:
             month += delta
         return ast_year, month
 
+    def next_ast_ymd(
+        self, ast_ymd: Ymd_tuple, interval: list, forward=True
+    ) -> Ymd_tuple:
+        """
+        If interval is every 10 days and today is February 4th, return
+        February 10th.
+
+        If interval is every month, and today is June 17th,
+        return July 1st.
+        """
+        if not self.is_valid_ast_ymd(ast_ymd):
+            msg = f"{ast_ymd} is not a valid ymd for {self.calendar}"
+            raise ValueError(msg)
+
+        year, month, day = ast_ymd
+        frequency, dateunit = interval
+        if dateunit == DateUnit.YEAR:
+            return self.next_ast_year(year, frequency, forward)
+        elif dateunit == DateUnit.MONTH:
+            return self.next_month(year, month, frequency, forward)
+        elif dateunit == DateUnit.DAY:
+            return self.next_day(ast_ymd, frequency, forward)
+        else:
+            raise ValueError(f"Cannot find next {dateunit}")
+
+    def next_ast_year(
+        self, year: int, frequency: int, forward=True
+    ) -> Ymd_tuple:
+        if frequency <= 0:
+            msg = f"Frequency must be greater than 0, {frequency} is not"
+            raise ValueError(msg)
+
+        delta = self._get_delta(forward)
+        year += delta
+        while year % frequency != 0:
+            year += delta
+        return year, 1, 1
+
+    def next_month(
+        self, year: int, month: int, frequency: int, forward=True
+    ) -> Ymd_tuple:
+        days_in_common_year = self.calendar.days_in_common_year
+        days_in_leap_year = self.calendar.days_in_leap_year
+        if frequency > min(days_in_common_year, days_in_leap_year):
+            msg = f"Can't find every {frequency} month(s) for {self.calendar}"
+            raise ValueError(msg)
+
+        delta = self._get_delta(forward)
+        month += delta
+        year, month = self._overflow_month(year, month)
+        while month % frequency != 0:
+            month += delta
+
+        error_msg = f"{month} not valid for {self.calendar}"
+        assert self.is_valid_month(year, month), error_msg
+        return year, month, 1
+
+    def next_day(
+        self, ast_ymd: Ymd_tuple, frequency: int, forward=True
+    ) -> Ymd_tuple:
+        def shift(ymd: Ymd_tuple, _delta: int, _forward=True) -> Ymd_tuple:
+            """rollover day/month/year if necessary when shifting days"""
+            y, m, d = ymd
+            d += _delta
+            if not self.is_valid_ast_ymd((y, m, d)):
+                m += _delta
+                y, m = self._overflow_month(y, m, _forward)
+                d = 1 if forward else self.days_in_month(y, m)
+            return y, m, d
+
+        min_days_in_month = min(
+            min(self.calendar.days_in_common_year_months),
+            min(self.calendar.days_in_leap_year_months),
+        )
+        if frequency > min_days_in_month:
+            msg = f"Day frequency, {frequency}, invalid for {self.calendar}"
+            raise ValueError(msg)
+
+        delta = self._get_delta(forward)
+        ast_ymd = shift(ast_ymd, delta, forward)
+        day = ast_ymd[2]
+        while day % frequency != 0:
+            ast_ymd = shift(ast_ymd, delta, forward)
+            day = ast_ymd[2]
+
+        msg = f"{ast_ymd} is invalid for {self.calendar}"
+        assert self.is_valid_ast_ymd(ast_ymd), msg
+        return ast_ymd
+
+    def _overflow_month(
+        self, year: int, month: int, forward=True
+    ) -> tuple[int, int]:
+        """rollover to next month when shifting into a different year"""
+        if not self.is_valid_month(year, month):
+            delta = self._get_delta(forward)
+            year += delta
+            month = 1 if forward else self.months_in_year(year)
+            return year, month
+        return year, month
+
+    @staticmethod
+    def _get_delta(forward: bool) -> int:
+        return 1 if forward else -1
+
     def convert_ast_ymd(
         self,
         foreign_ast_ymd: tuple,
@@ -162,9 +266,9 @@ class ConvertibleDate:
     def ordinal_date_to_ordinal(self, ordinal_date: tuple[int, int]) -> int:
         """:raises ValueError: for an invalid ordinal date"""
 
-        def make_ordinal(day: int, days_elapsed: int) -> int:
+        def make_ordinal(day: int, days_elapsed: int, _sign: int) -> int:
             _ordinal = day + days_elapsed
-            if self.is_descending_era(ast_year):
+            if _sign == -1:
                 _ordinal = -(self.days_in_year(ast_year) - day + days_elapsed)
             return _ordinal
 
@@ -181,7 +285,7 @@ class ConvertibleDate:
                 prev_sign = math.copysign(1, prev_ast_year)
                 prev_ast_year -= prev_sign * 1  # bad name but makes math right
             days_in_elapsed_years = abs(prev_ast_year) * days_in_year
-            ordinal = make_ordinal(day_of_year, days_in_elapsed_years)
+            ordinal = make_ordinal(day_of_year, days_in_elapsed_years, sign)
             return ordinal
 
         completed_cycles = self.completed_cycles(ast_year)
@@ -245,7 +349,7 @@ class ConvertibleDate:
             + num_elapsed_common_years * self.calendar.days_in_common_year
         )
 
-        return make_ordinal(day_of_year, days_in_elapsed_years)
+        return make_ordinal(day_of_year, days_in_elapsed_years, sign)
 
     def ordinal_to_ordinal_date(self, ordinal: int) -> tuple[int, int]:
         """:raises AssertionError: if an invalid ordinal date is made"""
@@ -536,7 +640,6 @@ class ConvertibleDate:
             if years_before_era < ast_year <= era_end_ast_year:
                 years_into_current_era = ast_year - era_start_ast_year
 
-                # don't use self.is_descending_era, we already know the era
                 if era_range[1] > era_range[0]:
                     hr_year = era_start_hr_year + years_into_current_era
                 else:
@@ -591,11 +694,6 @@ class ConvertibleDate:
         raise RuntimeError(
             f"Could not find {self.calendar} era for year: {ast_year}"
         )
-
-    def is_descending_era(self, ast_year: int) -> bool:
-        era = self.era(ast_year)
-        era_range = self.calendar.era_ranges[self.calendar.eras.index(era)]
-        return abs(float(era_range[0])) > abs(float(era_range[1]))
 
     def is_leap_year(self, ast_year: int, count_special: bool = True) -> bool:
         """

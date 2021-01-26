@@ -137,6 +137,68 @@ class CopticTest(RealCalendarTestCase):
         assert self.coptic_cd.shift_month(year, 12, -28) == (year - 2, 10)
 
     #
+    # Next DateUnit
+    #
+
+    # ConvertibleDate.next_ast_year tested in test_customdate
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=1)
+    def test_next_month_moving_forward(self, _):
+        assert self.coptic_cd.next_month(1000, 5, 2, True) == (1000, 6, 1)
+        assert self.coptic_cd.next_month(231, 1, 3, True) == (231, 3, 1)
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=-1)
+    def test_next_month_moving_backward(self, _):
+        assert self.coptic_cd.next_month(124, 7, 3, False) == (124, 6, 1)
+        assert self.coptic_cd.next_month(435, 11, 4, False) == (435, 8, 1)
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=1)
+    def test_next_day_moving_forward(self, _):
+        assert self.coptic_cd.next_day((123, 9, 15), 5, True) == (123, 9, 20)
+        assert self.coptic_cd.next_day((332, 4, 13), 3, True) == (332, 4, 15)
+        assert self.coptic_cd.next_day((100, 13, 5), 5, True) == (101, 1, 5)
+        assert self.coptic_cd.next_day((99, 13, 4), 2, True) == (99, 13, 6)
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=-1)
+    def test_next_day_moving_backward(self, _):
+        assert self.coptic_cd.next_day((243, 3, 2), 2, False) == (243, 2, 30)
+        assert self.coptic_cd.next_day((384, 10, 10), 4, False) == (384, 10, 8)
+        assert self.coptic_cd.next_day((12, 1, 1), 3, False) == (11, 13, 6)
+        assert self.coptic_cd.next_day((15, 1, 4), 5, False) == (14, 13, 5)
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=1)
+    def test__overflow_month_moving_forward(self, _):
+        year, month, _ = self.random_ymd()
+        common_year = self.random_common_year()
+        leap_year = self.random_leap_year()
+        assert self.coptic_cd._overflow_month(year, month) == (year, month)
+        assert self.coptic_cd._overflow_month(common_year, 14, True) == (
+            common_year + 1,
+            1,
+        )
+        assert self.coptic_cd._overflow_month(leap_year, 14, True) == (
+            leap_year + 1,
+            1,
+        )
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=-1)
+    def test__overflow_month_moving_backward(self, _):
+        year, month, _ = self.random_ymd()
+        common_year = self.random_common_year()
+        leap_year = self.random_leap_year()
+        assert self.coptic_cd._overflow_month(year, month) == (year, month)
+        assert self.coptic_cd._overflow_month(common_year, 0, False) == (
+            common_year - 1,
+            13,
+        )
+        assert self.coptic_cd._overflow_month(leap_year, 0, False) == (
+            leap_year - 1,
+            13,
+        )
+
+    # test ConvertibleDate._get_delta() in test_customdate.py
+
+    #
     # ConvertibleDate.convert_ast_ymd
     #
     @pytest.mark.db
@@ -226,10 +288,6 @@ class CopticTest(RealCalendarTestCase):
         return_value=True,
     )
     @patch(
-        "src.customdate.ConvertibleDate.is_descending_era",
-        return_value=True,
-    )
-    @patch(
         "src.customdate.ConvertibleDate._start_and_sign",
         return_value=(0, -1),
     )
@@ -254,10 +312,6 @@ class CopticTest(RealCalendarTestCase):
     @patch(
         "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
-    )
-    @patch(
-        "src.customdate.ConvertibleDate.is_descending_era",
-        return_value=False,
     )
     @patch(
         "src.customdate.ConvertibleDate._start_and_sign",
@@ -342,10 +396,6 @@ class CopticTest(RealCalendarTestCase):
         "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
     )
-    @patch(
-        "src.customdate.ConvertibleDate.is_descending_era",
-        return_value=True,
-    )
     # don't patch _start_and_sign, loops can temporarily move into diff era
     def test_ordinal_to_ordinal_date_is_reversible_for_bce_year(self, *_):
         bce_ordinal = FAKE.random_int(min=-9999, max=0)
@@ -369,10 +419,6 @@ class CopticTest(RealCalendarTestCase):
     @patch(
         "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
-    )
-    @patch(
-        "src.customdate.ConvertibleDate.is_descending_era",
-        return_value=False,
     )
     @patch(
         "src.customdate.ConvertibleDate._start_and_sign",
@@ -732,19 +778,13 @@ class CopticTest(RealCalendarTestCase):
         assert self.coptic_cd.format_hr_date(am_ymd) == am_hr_date
 
     #
-    # Eras
+    # ConvertibleDate.era
     #
     def test_era(self):
         bc_year = self.random_bce_year()
         am_year = self.random_ce_year()
         assert self.coptic_cd.era(bc_year) == "BC"
         assert self.coptic_cd.era(am_year) == "AM"
-
-    def test_is_descending_era(self):
-        bc_year = self.random_bce_year()
-        am_year = self.random_ce_year()
-        assert self.coptic_cd.is_descending_era(bc_year)
-        assert self.coptic_cd.is_descending_era(am_year) is False
 
     #
     # ConvertibleDate.is_leap_year

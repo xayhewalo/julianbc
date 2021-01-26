@@ -54,6 +54,68 @@ class JulianTest(RealCalendarTestCase):
         patch_days_common_year.__get__ = lambda *_: 365
 
     #
+    # Next DateUnit
+    #
+
+    # ConvertibleDate.next_ast_year tested in test_customdate
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=1)
+    def test_next_month_moving_forward(self, _):
+        assert self.julian_cd.next_month(21, 11, 3, True) == (21, 12, 1)
+        assert self.julian_cd.next_month(5, 4, 4, True) == (5, 8, 1)
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=-1)
+    def test_next_month_moving_backward(self, _):
+        assert self.julian_cd.next_month(41, 9, 2, False) == (41, 8, 1)
+        assert self.julian_cd.next_month(50, 7, 5, False) == (50, 5, 1)
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=1)
+    def test_next_day_moving_forward(self, _):
+        assert self.julian_cd.next_day((2000, 7, 1), 5, True) == (2000, 7, 5)
+        assert self.julian_cd.next_day((11, 3, 22), 3, True) == (11, 3, 24)
+        assert self.julian_cd.next_day((16, 2, 28), 1, True) == (16, 2, 29)
+        assert self.julian_cd.next_day((33, 2, 28), 1, True) == (33, 3, 1)
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=-1)
+    def test_next_day_moving_backward(self, _):
+        assert self.julian_cd.next_day((39, 4, 19), 3, False) == (39, 4, 18)
+        assert self.julian_cd.next_day((40, 1, 22), 5, False) == (40, 1, 20)
+        assert self.julian_cd.next_day((20, 3, 1), 1, False) == (20, 2, 29)
+        assert self.julian_cd.next_day((21, 3, 1), 1, False) == (21, 2, 28)
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=1)
+    def test__overflow_month_moving_forward(self, _):
+        year, month, _ = self.random_ymd()
+        common_year = self.random_common_year()
+        leap_year = self.random_leap_year()
+        assert self.julian_cd._overflow_month(year, month) == (year, month)
+        assert self.julian_cd._overflow_month(common_year, 13, True) == (
+            common_year + 1,
+            1,
+        )
+        assert self.julian_cd._overflow_month(leap_year, 13, True) == (
+            leap_year + 1,
+            1,
+        )
+
+    @patch("src.customdate.ConvertibleDate._get_delta", return_value=-1)
+    def test__overflow_month_moving_backward(self, _):
+        year, month, _ = self.random_ymd()
+        common_year = self.random_common_year()
+        leap_year = self.random_leap_year()
+        assert self.julian_cd._overflow_month(year, month) == (year, month)
+        assert self.julian_cd._overflow_month(common_year, 0, False) == (
+            common_year - 1,
+            12,
+        )
+        assert self.julian_cd._overflow_month(leap_year, 0, False) == (
+            leap_year - 1,
+            12,
+        )
+
+    # test ConvertibleDate._get_delta() in test_customdate.py
+
+    #
     # Shift year, month, day
     #
     @patch(
@@ -268,10 +330,6 @@ class JulianTest(RealCalendarTestCase):
         return_value=True,
     )
     @patch(
-        "src.customdate.ConvertibleDate.is_descending_era",
-        return_value=True,
-    )
-    @patch(
         "src.customdate.ConvertibleDate._start_and_sign",
         return_value=(0, -1),
     )
@@ -304,10 +362,6 @@ class JulianTest(RealCalendarTestCase):
     @patch(
         "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
-    )
-    @patch(
-        "src.customdate.ConvertibleDate.is_descending_era",
-        return_value=False,
     )
     @patch(
         "src.customdate.ConvertibleDate._start_and_sign",
@@ -344,10 +398,6 @@ class JulianTest(RealCalendarTestCase):
         return_value=True,
     )
     @patch(
-        "src.customdate.ConvertibleDate.is_descending_era",
-        return_value=True,
-    )
-    @patch(
         "src.customdate.ConvertibleDate._start_and_sign",
         return_value=(0, -1),
     )
@@ -373,10 +423,6 @@ class JulianTest(RealCalendarTestCase):
     @patch(
         "src.customdate.ConvertibleDate.is_valid_ordinal_date",
         return_value=True,
-    )
-    @patch(
-        "src.customdate.ConvertibleDate.is_descending_era",
-        return_value=False,
     )
     @patch(
         "src.customdate.ConvertibleDate._start_and_sign",
@@ -744,19 +790,13 @@ class JulianTest(RealCalendarTestCase):
         assert self.julian_cd.format_hr_date(ad_ast_ymd) == ad_hr_date
 
     #
-    # Eras
+    # ConvertibleDate.era
     #
     def test_era(self):
         bc_year = self.random_bce_year()
         ad_year = self.random_ce_year()
         assert self.julian_cd.era(bc_year) == "BC"
         assert self.julian_cd.era(ad_year) == "AD"
-
-    def test_is_descending_era(self):
-        bc_year = self.random_bce_year()
-        ad_year = self.random_ce_year()
-        assert self.julian_cd.is_descending_era(bc_year)
-        assert self.julian_cd.is_descending_era(ad_year) is False
 
     #
     # ConvertibleDate.is_leap_year

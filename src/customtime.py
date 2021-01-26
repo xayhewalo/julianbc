@@ -15,9 +15,10 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
-import math
-
 from src.db import ConvertibleClock
+
+
+Hms_tuple = tuple[int, int, int]
 
 
 class ConvertibleTime:
@@ -30,10 +31,10 @@ class ConvertibleTime:
     * `HMS` stands for the hour, minute, second of a day.
     * `Hour` is always in military time, i.e 24-hour clock on Earth.
     * `HR time` is human-readable time, which may or may not have hour labels
-    * `Hour labels` are string like "AM" or "PM"
+    * `Hour labels` are strings like "AM" or "PM"
     Clocks can only be converted if they have the same seconds in a day.
 
-    **not** a drop-in replacement for datetime.clock
+    **not** a drop-in replacement for datetime.time
     """
 
     def __init__(
@@ -43,15 +44,14 @@ class ConvertibleTime:
         self.clock_sep = clock_sep
         self.hour_labels = hour_labels or list()
         """I.e AM or PM"""
-        assert self.are_valid_hour_labels(
-            self.hour_labels
-        ), f"{self.hour_labels} are invalid day labels"
+        msg = f"{self.hour_labels} are invalid day labels for {self.clock}"
+        assert self.are_valid_hour_labels(self.hour_labels), msg
 
     def convert_hms(
         self,
-        foreign_hms: tuple[int, int, int],
+        foreign_hms: Hms_tuple,
         foreign_time: "ConvertibleTime",
-    ) -> tuple[int, int, int]:
+    ) -> Hms_tuple:
         foreign_clock = foreign_time.clock
         if foreign_clock not in self.clock.convertible_clocks():
             raise ValueError(f"{foreign_clock} cannot be converted to {self}")
@@ -59,15 +59,7 @@ class ConvertibleTime:
         seconds = foreign_time.hms_to_seconds(foreign_hms)
         return self.seconds_to_hms(seconds)
 
-    def hms_to_seconds(self, hms: tuple[int, int, int]) -> int:
-        hour, minute, second = hms
-        return (
-            (hour * self.clock.seconds_in_hour)
-            + (minute * self.clock.seconds_in_minute)
-            + second
-        )
-
-    def seconds_to_hms(self, seconds: int) -> tuple[int, int, int]:
+    def seconds_to_hms(self, seconds: int) -> Hms_tuple:
         seconds = seconds % self.clock.seconds_in_day
         hour = self.hour(seconds)
         seconds = seconds % self.clock.seconds_in_hour
@@ -77,20 +69,28 @@ class ConvertibleTime:
         assert self.is_valid_hms(hms), f"{hms} is an invalid hms"
         return hour, minute, second
 
+    def hms_to_seconds(self, hms: Hms_tuple) -> int:
+        hour, minute, second = hms
+        return (
+            (hour * self.clock.seconds_in_hour)
+            + (minute * self.clock.seconds_in_minute)
+            + second
+        )
+
     def hour(self, seconds: int) -> int:
         """hour of the day"""
-        hour = math.trunc(seconds / self.clock.seconds_in_hour)
+        hour = int(seconds / self.clock.seconds_in_hour)
         assert self.is_valid_hour(hour), f"{hour} is invalid"
         return hour
 
     def minute(self, seconds: int) -> int:
         """minute of the hour"""
         seconds_in_minute = self.clock.seconds_in_minute
-        minute = math.trunc(seconds / seconds_in_minute) % seconds_in_minute
+        minute = int(seconds / seconds_in_minute) % seconds_in_minute
         assert self.is_valid_minute(minute), f"{minute} is invalid"
         return minute
 
-    def is_valid_hms(self, hms: tuple[int, int, int]) -> bool:
+    def is_valid_hms(self, hms: Hms_tuple) -> bool:
         hour, minute, second = hms
         return (
             self.is_valid_hour(hour)
@@ -104,9 +104,7 @@ class ConvertibleTime:
     def is_valid_minute(self, minute: int) -> bool:
         return 0 <= minute < self.clock.minutes_in_hour
 
-    def hms_to_hr_time(
-        self, hms: tuple[int, int, int], use_hour_label=False
-    ) -> str:
+    def hms_to_hr_time(self, hms: Hms_tuple, use_hour_label=False) -> str:
         hour_digits = len(str(self.clock.hours_in_day))
         minute_digits = len(str(self.clock.minutes_in_hour))
         second_digits = len(str(self.clock.seconds_in_minute))
@@ -125,7 +123,7 @@ class ConvertibleTime:
             )
         return clock_sep.join([hour_str, minute_str, second_str])
 
-    def hr_time_to_hms(self, hr_time: str) -> tuple[int, int, int]:
+    def hr_time_to_hms(self, hr_time: str) -> Hms_tuple:
         hour_label = None
         try:
             hour, minute, second, hour_label = hr_time.split(self.clock_sep)
@@ -177,9 +175,8 @@ class ConvertibleTime:
     def max_hr_hour(self) -> int:
         """:raises AssertionError: if max_hr_hour is not a whole number"""
         max_hr_hour = self.clock.hours_in_day / len(self.hour_labels)
-        assert (
-            int(max_hr_hour) == max_hr_hour
-        ), f"Max hr hour must be a whole number: {max_hr_hour} is not"
+        msg = f"Max hr hour must be a whole number: {max_hr_hour} is not"
+        assert int(max_hr_hour) == max_hr_hour, msg
         return int(max_hr_hour)
 
     def are_valid_hour_labels(self, hour_label: list) -> bool:

@@ -72,10 +72,9 @@ JulianBC will be a visual-timeline program in the near future
 - [ ] add `change_interval`
     - [ ] pass `label_width` and `interval` and pick the smallest interval that's greater than the width(?)
     - [ ] make `change_XXX_interval` DRY
-- [ ] test `ast_ymd_to_od` for proleptic years
 - [ ] add `extend_start_end` (by passed `interval`) to be used in `Timeline` and `Mark`
     - [ ] use `shift_od`
-- [ ] shift days and weeks in `shift_od`
+- [ ] shift days and weeks(?) in `shift_od`
 #### EventController
 - [ ] `fields` in `make` are based on `Event` columns
 - [ ] ensure negative `duraiton` raises error

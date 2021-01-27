@@ -14,7 +14,7 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
-from src.customdate import ConvertibleDate
+from src.customdate import ConvertibleDate, Ymd_tuple
 from src.customtime import ConvertibleTime, Hms_tuple
 
 
@@ -29,6 +29,15 @@ class ConvertibleDateTime:
     def __init__(self, date: ConvertibleDate, time: ConvertibleTime):
         self.date = date
         self.time = time
+
+    def ast_ymd_to_od(self, ast_ymd: Ymd_tuple) -> float:
+        ordinal_date = self.date.ast_ymd_to_ordinal_date(ast_ymd)
+        return float(self.date.ordinal_date_to_ordinal(ordinal_date))
+
+    def od_to_ast_ymd(self, ordinal_decimal: float) -> Ymd_tuple:
+        ordinal = int(ordinal_decimal)
+        ordinal_date = self.date.ordinal_to_ordinal_date(ordinal)
+        return self.date.ordinal_date_to_ast_ymd(ordinal_date)
 
     def od_to_hms(self, ordinal_decimal: float) -> Hms_tuple:
         decimal = ordinal_decimal - int(ordinal_decimal)

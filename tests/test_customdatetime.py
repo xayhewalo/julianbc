@@ -14,10 +14,13 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
+import copy
+import pytest
+
 from tests.factories import ConvertibleCalendarFactory, ConvertibleTimeFactory
 from tests.utils import FAKE, TimeTestCase
-from src.customdate import ConvertibleDate
-from src.customdatetime import ConvertibleDateTime
+from src.customdate import ConvertibleDate, DateUnit
+from src.customdatetime import ConvertibleDateTime, TimeUnit
 from unittest.mock import patch
 
 
@@ -30,8 +33,74 @@ class ConvertibleDateTimeTest(TimeTestCase):
     def test_extend_span(self):
         raise NotImplementedError
 
-    def test_shift_od(self):
-        raise NotImplementedError
+    @patch("src.customdatetime.ConvertibleDateTime.od_to_ast_ymd")
+    @patch("src.customdate.ConvertibleDate.shift_ast_ymd")
+    @patch("src.customdatetime.ConvertibleDateTime.ast_ymd_to_od")
+    @patch("src.customdatetime.ConvertibleDateTime.od_to_hms")
+    @patch("src.customtime.ConvertibleTime.shift_hms")
+    @patch("src.customdatetime.ConvertibleDateTime.hms_to_day_decimal")
+    def test_shift_od(self, *patches):
+        patch_hms_to_day_decimal = patches[0]
+        patch_shift_hms = patches[1]
+        patch_od_to_hms = patches[2]
+        patch_ast_ymd_to_od = patches[3]
+        patch_shift_ast_ymd = patches[4]
+        patch_od_to_ast_ymd = patches[5]
+
+        fake_ordinal_decimal1 = FAKE.pyfloat()
+        fake_ordinal_decimal2 = FAKE.pyfloat()
+        fake_day_delta = FAKE.random_int(min=1)
+        fake_day_decimal = FAKE.pyfloat()
+        fake_ordinal_decimal3 = (
+            int(fake_ordinal_decimal2) + fake_day_delta + fake_day_decimal
+        )
+        fake_ast_ymd1 = FAKE.random_int(), FAKE.random_int(), FAKE.random_int()
+        fake_ast_ymd2 = FAKE.random_int(), FAKE.random_int(), FAKE.random_int()
+        fake_hms1 = FAKE.random_int(), FAKE.random_int(), FAKE.random_int()
+        fake_hms2 = FAKE.random_int(), FAKE.random_int(), FAKE.random_int()
+
+        patch_od_to_ast_ymd.return_value = fake_ast_ymd1
+        patch_shift_ast_ymd.return_value = fake_ast_ymd2
+        patch_ast_ymd_to_od.return_value = fake_ordinal_decimal2
+        patch_od_to_hms.return_value = fake_hms1
+        patch_shift_hms.return_value = fake_hms2, fake_day_delta
+        patch_hms_to_day_decimal.return_value = fake_day_decimal
+
+        date_intervals = []
+        for i in range(FAKE.random_int(min=1, max=3)):
+            date_intervals.append([i, FAKE.random_element(elements=DateUnit)])
+        time_intervals = []
+        for i in range(FAKE.random_int(min=1, max=3)):
+            time_intervals.append([i, FAKE.random_element(elements=TimeUnit)])
+        intervals = copy.deepcopy(date_intervals)
+        intervals.extend(time_intervals)
+
+        cd = ConvertibleDate(calendar=self.calendar_factory.build())
+        cdt = ConvertibleDateTime(date=cd, time=self.time_factory.build())
+        assert cdt.shift_od(fake_ordinal_decimal1, []) == fake_ordinal_decimal1
+        assert (
+            cdt.shift_od(fake_ordinal_decimal1, intervals)
+            == fake_ordinal_decimal3
+        )
+        patch_od_to_ast_ymd.assert_called_once_with(fake_ordinal_decimal1)
+        patch_shift_ast_ymd.assert_called_once_with(
+            fake_ast_ymd1, date_intervals
+        )
+        patch_ast_ymd_to_od.assert_called_once_with(fake_ast_ymd2)
+        patch_od_to_hms.assert_called_once_with(fake_ordinal_decimal2)
+        patch_shift_hms.assert_called_once_with(fake_hms1, time_intervals)
+        patch_hms_to_day_decimal.assert_called_once_with(fake_hms2)
+
+    def test_shift_od_raise(self):
+        from enum import Enum
+
+        class DumEnum(Enum):
+            DUM = 0
+
+        cd = ConvertibleDate(calendar=self.calendar_factory.build())
+        cdt = ConvertibleDateTime(date=cd, time=self.time_factory.build())
+        with pytest.raises(ValueError):
+            cdt.shift_od(FAKE.pyfloat(), [[FAKE.random_int(), DumEnum.DUM]])
 
     @patch("src.customdate.ConvertibleDate.ast_ymd_to_ordinal_date")
     @patch("src.customdate.ConvertibleDate.ordinal_date_to_ordinal")
@@ -67,9 +136,27 @@ class ConvertibleDateTimeTest(TimeTestCase):
 
     @patch("src.customtime.ConvertibleTime.seconds_to_hms")
     def test_od_to_hms(self, patch_seconds_to_hms):
-        seconds_into_day_as_decimal = self.seconds / 86400
-        ordinal_decimal = self.py_dt.toordinal() + seconds_into_day_as_decimal
+        day_decimal = self.seconds / 86400
+        ordinal_decimal = self.py_dt.toordinal() + day_decimal
         cd = ConvertibleDate(calendar=self.calendar_factory.build())
         cdt = ConvertibleDateTime(date=cd, time=self.earth_ct)
         cdt.od_to_hms(ordinal_decimal)
         patch_seconds_to_hms.assert_called_once_with(self.seconds)
+
+    def test_hms_to_day_decimal(self):
+        cd = ConvertibleDate(calendar=self.calendar_factory.build())
+        cdt = ConvertibleDateTime(date=cd, time=self.earth_ct)
+        hours = FAKE.random_int(min=0, max=23)
+        minutes = FAKE.random_int(min=0, max=60)
+        seconds = FAKE.random_int(min=0, max=60)
+        seconds_from_hours = hours * 3600
+        seconds_from_minutes = minutes * 60
+        total_seconds = seconds_from_hours + seconds_from_minutes + seconds
+        hms = hours, minutes, seconds
+        assert cdt.hms_to_day_decimal((0, 0, 0)) == 0
+        assert cdt.hms_to_day_decimal((0, 0, 1)) == 1 / 86400
+        assert cdt.hms_to_day_decimal((0, 1, 0)) == 60 / 86400
+        assert cdt.hms_to_day_decimal((1, 0, 0)) == 3600 / 86400
+        assert cdt.hms_to_day_decimal((1, 1, 1)) == 3661 / 86400
+        assert cdt.hms_to_day_decimal((12, 0, 0)) == 0.5
+        assert cdt.hms_to_day_decimal(hms) == total_seconds / 86400

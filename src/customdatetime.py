@@ -14,8 +14,9 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
-from src.customdate import ConvertibleDate, Ymd_tuple
-from src.customtime import ConvertibleTime, Hms_tuple
+from src.customdate import ConvertibleDate, DateUnit, Ymd_tuple
+from src.customtime import ConvertibleTime, TimeUnit, Hms_tuple
+from typing import Union
 
 
 class ConvertibleDateTime:
@@ -30,6 +31,34 @@ class ConvertibleDateTime:
         self.date = date
         self.time = time
 
+    def shift_od(self, ordinal_decimal: float, intervals: list) -> float:
+        """
+        :param ordinal_decimal: beginning ordinal decimal
+        :param intervals: amount of units to shift by
+        :return: an ordinal decimal
+        """
+        date_intervals = []
+        time_intervals = []
+        for interval in intervals:
+            unit = interval[1]
+            if unit in DateUnit:
+                date_intervals.append(interval)
+            elif unit in TimeUnit:
+                time_intervals.append(interval)
+            else:
+                raise ValueError(f"Can't shift ordinal decimal by {unit}")
+
+        if date_intervals:
+            ast_ymd = self.od_to_ast_ymd(ordinal_decimal)
+            ast_ymd = self.date.shift_ast_ymd(ast_ymd, date_intervals)
+            ordinal_decimal = self.ast_ymd_to_od(ast_ymd)
+        if time_intervals:
+            hms = self.od_to_hms(ordinal_decimal)
+            hms, day_delta = self.time.shift_hms(hms, time_intervals)
+            day_decimal = self.hms_to_day_decimal(hms)
+            ordinal_decimal = int(ordinal_decimal) + day_delta + day_decimal
+        return ordinal_decimal
+
     def ast_ymd_to_od(self, ast_ymd: Ymd_tuple) -> float:
         ordinal_date = self.date.ast_ymd_to_ordinal_date(ast_ymd)
         return float(self.date.ordinal_date_to_ordinal(ordinal_date))
@@ -43,3 +72,7 @@ class ConvertibleDateTime:
         decimal = ordinal_decimal - int(ordinal_decimal)
         seconds = round(self.time.clock.seconds_in_day * decimal)
         return self.time.seconds_to_hms(seconds)
+
+    def hms_to_day_decimal(self, hms: Hms_tuple) -> float:
+        seconds = self.time.hms_to_seconds(hms)
+        return seconds / self.time.clock.seconds_in_day

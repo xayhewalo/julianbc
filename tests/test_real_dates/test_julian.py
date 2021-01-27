@@ -911,10 +911,12 @@ class JulianTest(RealCalendarTestCase):
         return_value=(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31),
     )
     def test_days_in_month_for_common_month(self, _):
-        common_year, month, _ = self.random_common_ymd()
+        common_ad_year, month, _ = self.random_common_ce_ymd()
         assert self.julian_cd.days_in_month(
-            common_year, month
-        ) == convertdate.julian.month_length(common_year, month)
+            common_ad_year, month
+        ) == convertdate.julian.month_length(common_ad_year, month)
+        # convertdate is wrong for bc year
+        assert self.julian_cd.days_in_month(-1, 2) == 28
 
     #
     # ConvertibleDate.days_in_month
@@ -924,10 +926,12 @@ class JulianTest(RealCalendarTestCase):
         return_value=(31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31),
     )
     def test_days_in_month_for_leap_month(self, _):
-        leap_year, month, _ = self.random_leap_ymd()
+        leap_ad_year, month, _ = self.random_leap_ce_ymd()
         assert self.julian_cd.days_in_month(
-            leap_year, month
-        ) == convertdate.julian.month_length(leap_year, month)
+            leap_ad_year, month
+        ) == convertdate.julian.month_length(leap_ad_year, month)
+        # convertdate is wrong for bc year
+        assert self.julian_cd.days_in_month(0, 2) == 29
 
     #
     # ConvertibleDate.days_in_year

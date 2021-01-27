@@ -125,5 +125,5 @@ JulianBC will be a visual-timeline program in the near future
 - [ ] make readable references to timelines
 
 ### Misc.
+- [X] Fix `days_in_month` test for Julian Calendar for BCE years
 - [ ] Probably more stuff...
-- [ ] Fix `days_in_month` test for Julian Calendar for BCE years

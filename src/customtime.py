@@ -85,6 +85,46 @@ class ConvertibleTime:
             + second
         )
 
+    def shift_hms(
+        self, hms: Hms_tuple, intervals: list
+    ) -> tuple[Hms_tuple, int]:
+        """
+        :param hms: hour, minute, second
+        :param intervals: amount of TimeUnits to shift by
+        :returns: an hms and number of days the shift moved through
+        """
+
+        def shift(
+            _seconds: int, _day_delta: int, secs_in_unit: int, _delta: int
+        ) -> tuple[int, int]:
+            _seconds += secs_in_unit * _delta
+            dd, _seconds = divmod(_seconds, self.clock.seconds_in_day)
+            _day_delta += dd
+            return _day_delta, _seconds
+
+        if not self.is_valid_hms(hms):
+            raise ValueError(f"{hms} is invalid for {self.clock}")
+
+        seconds = self.hms_to_seconds(hms)
+        day_delta = 0
+        for interval in intervals:
+            delta, timeunit = interval
+
+            if timeunit == TimeUnit.HOUR:
+                secs_in_hour = self.clock.seconds_in_hour
+                dd_n_secs = shift(seconds, day_delta, secs_in_hour, delta)
+                day_delta, seconds = dd_n_secs
+            elif timeunit == TimeUnit.MINUTE:
+                secs_in_min = self.clock.seconds_in_minute
+                dd_n_secs = shift(seconds, day_delta, secs_in_min, delta)
+                day_delta, seconds = dd_n_secs
+            elif timeunit == TimeUnit.SECOND:
+                day_delta, seconds = shift(seconds, day_delta, 1, delta)
+            else:
+                raise ValueError(f"Can't shift hms by {timeunit}")
+
+        return self.seconds_to_hms(seconds), day_delta
+
     def next_hms(
         self, hms: Hms_tuple, interval: list, forward=True
     ) -> tuple[Hms_tuple, int]:
@@ -124,24 +164,18 @@ class ConvertibleTime:
         seconds_in_frequency = frequency * seconds_in_unit
         seconds = self.hms_to_seconds(hms)
         seconds += sign * 1
-        day_diff = 0
-        err_msg = "day shouldn't be shifted twice"
+        day_delta = 0
         while seconds % seconds_in_frequency != 0:
             # seconds == 0 will always be returned so frequency must be a
             # factor of the max human readable TimeUnit value.
             # I.e only allow 0-6, 10, 12, 15, and 30 for earth time
             seconds += sign * 1
-            if seconds >= self.clock.seconds_in_day:
-                assert abs(day_diff) == 0, err_msg
-                seconds = 0
-                day_diff = 1
-            elif seconds < 0:
-                assert abs(day_diff) == 0, err_msg
-                seconds = self.clock.seconds_in_day - 1
-                day_diff = -1
+            dd, seconds = divmod(seconds, self.clock.seconds_in_day)
+            day_delta += dd
 
+        assert abs(day_delta) <= 1, "day shouldn't be shifted twice"
         hms = self.seconds_to_hms(seconds)
-        return hms, day_diff
+        return hms, day_delta
 
     def hour(self, seconds: int) -> int:
         """hour of the day"""

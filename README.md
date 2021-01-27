@@ -65,17 +65,9 @@ JulianBC will be a visual-timeline program in the near future
 - [X] test error raised for `convert_hms`
 - [X] add `next_hms`
     - [X] convert `hms` and `frequency` to `seconds` and find when modulo == 0
-- [ ] add `shift_hms`
-    - [ ] add `shift_hour`
-    - [ ] add `shift_minute`
-    - [ ] add `shift_second`
-    - [ ] make it DRY
-    - [ ] test every 24 hours returns 0
-    - [ ] test `day_diff` i.e. shift by 50 hours has a `day_diff` >= 2
-    - [ ] add rollover hour function
-    - [ ] add rollover minute function
-    - [ ] add rollover second function
-    - [ ] add terminal hour function (?)
+- [X] add `shift_hms`
+    - [X] make it DRY
+    - [X] test `day_diff` i.e. shift by 50 hours has a `day_diff` >= 2
 #### ConvertibleDateTime
 - [ ] add `change_interval`
     - [ ] pass `label_width` and `interval` and pick the smallest interval that's greater than the width(?)

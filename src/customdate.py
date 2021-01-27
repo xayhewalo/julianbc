@@ -540,7 +540,7 @@ class ConvertibleDate:
         while month % frequency != 0:
             month += delta
 
-        error_msg = f"{month} not valid for {self.calendar}"
+        error_msg = f"Month number {month} not valid for {self.calendar}"
         assert self.is_valid_month(year, month), error_msg
         return year, month, 1
 

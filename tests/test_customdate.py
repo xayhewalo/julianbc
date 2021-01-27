@@ -505,8 +505,6 @@ class ConvertibleDateTest(CalendarTestCase):
         with pytest.raises(ValueError):
             cd.next_month(FAKE.pyint(), FAKE.pyint(), bad_frequency)
 
-    # todo test next_month with diff num months in leap and common year
-
     def test_next_day_for_invalid_frequency(self):
         calendar = self.calendar_factory.build(
             days_in_common_year_months=[30], days_in_leap_year_months=[31]

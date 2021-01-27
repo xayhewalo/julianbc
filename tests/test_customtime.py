@@ -2,8 +2,8 @@ import datetime
 import pytest
 
 from src.customtime import TimeUnit
-from tests.factories import ConvertibleTimeFactory, ConvertibleClockFactory
-from tests.utils import DatabaseTestCase, FAKE
+from tests.factories import ConvertibleClockFactory, ConvertibleTimeFactory
+from tests.utils import FAKE, TimeTestCase
 from unittest.mock import patch
 
 
@@ -25,31 +25,11 @@ def test___init__(patch_are_valid_hour_labels):
 
 
 @pytest.mark.db
-class ConvertibleTimeTest(DatabaseTestCase):
+class ConvertibleTimeTest(TimeTestCase):
     def setUp(self):
         super(ConvertibleTimeTest, self).setUp()
-        self.time_factory = ConvertibleTimeFactory
         self.clock_factory = ConvertibleClockFactory
-
-        earth_clock = self.clock_factory.build(
-            seconds_in_minute=60,
-            minutes_in_hour=60,
-            hours_in_day=24,
-        )
-        self.session.add(earth_clock)
-        self.session.commit()
-
-        self.earth_ct = self.time_factory.build(
-            clock=earth_clock,
-            hour_labels=["AM", "PM"],
-            clock_sep=":",
-        )
-        self.py_dt = FAKE.date_time(tzinfo=datetime.timezone.utc)
-        midnight = self.py_dt.replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
-        self.seconds = (self.py_dt - midnight).seconds
-        self.hms = self.py_dt.hour, self.py_dt.minute, self.py_dt.second
+        self.time_factory = ConvertibleTimeFactory
 
     @patch("src.db.eon.customclock.ConvertibleClock.convertible_clocks")
     @patch("src.customtime.ConvertibleTime.hms_to_seconds")

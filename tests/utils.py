@@ -1,7 +1,10 @@
+import datetime
 # noinspection PyUnresolvedReferences
 import factory
 import factory.random
 
+from src.customtime import ConvertibleTime
+from src.db import ConvertibleClock
 from src.db.utils import Base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -20,7 +23,34 @@ class DatabaseTestCase(TestCase):
         Base.metadata.create_all(self.session.bind)
 
     def tearDown(self):
-        Session.remove()
+        Base.metadata.drop_all(self.session.bind)
+        self.session.close()
+
+
+class TimeTestCase(DatabaseTestCase):
+    def setUp(self):
+        super(TimeTestCase, self).setUp()
+
+        earth_clock = ConvertibleClock(
+            name="Earth",
+            seconds_in_minute=60,
+            minutes_in_hour=60,
+            hours_in_day=24,
+        )
+        self.session.add(earth_clock)
+        self.session.commit()
+
+        self.earth_ct = ConvertibleTime(
+            clock=earth_clock,
+            hour_labels=["AM", "PM"],
+            clock_sep=":",
+        )
+        self.py_dt = FAKE.date_time(tzinfo=datetime.timezone.utc)
+        midnight = self.py_dt.replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        self.seconds = (self.py_dt - midnight).seconds
+        self.hms = self.py_dt.hour, self.py_dt.minute, self.py_dt.second
 
 
 class CalendarTestCase(DatabaseTestCase):

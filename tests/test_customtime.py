@@ -1,6 +1,7 @@
 import datetime
 import pytest
 
+from collections import deque
 from src.customtime import TimeUnit
 from tests.factories import ConvertibleClockFactory, ConvertibleTimeFactory
 from tests.utils import FAKE, TimeTestCase
@@ -266,12 +267,30 @@ class ConvertibleTimeTest(TimeTestCase):
     def test_hms_to_hr_time(self):
         split_hr_time = self.py_dt.time().strftime("%I:%M:%S:%p")
         mil_hr_time = self.py_dt.time().strftime("%H:%M:%S")
+        assert self.earth_ct.hms_to_hr_time((0, 0, 0), True) == "12:00:00:AM"
+        assert self.earth_ct.hms_to_hr_time((0, 0, 0), False) == "00:00:00"
+        assert self.earth_ct.hms_to_hr_time((13, 0, 0), True) == "01:00:00:PM"
+        assert self.earth_ct.hms_to_hr_time((13, 0, 0), False) == "13:00:00"
         assert self.earth_ct.hms_to_hr_time(self.hms, True) == split_hr_time
         assert self.earth_ct.hms_to_hr_time(self.hms, False) == mil_hr_time
 
-    def test_hr_time_to_hms(self):
+    @patch("src.customtime.ConvertibleTime.is_valid_hms", return_value=True)
+    @patch(
+        "src.customtime.ConvertibleTime.day_demarcations",
+        return_value=[0, 12, 24],
+    )
+    @patch(
+        "src.customtime.ConvertibleTime.hr_hours",
+        return_value=[12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+    )
+    def test_hr_time_to_hms(self, *_):
         split_hr_time = self.py_dt.time().strftime("%I:%M:%S:%p")
         mil_hr_time = self.py_dt.time().strftime("%H:%M:%S")
+        assert self.earth_ct.hr_time_to_hms("12:00:00:AM") == (0, 0, 0)
+        assert self.earth_ct.hr_time_to_hms("00:00:00") == (0, 0, 0)
+        assert self.earth_ct.hr_time_to_hms("12:00:00:PM") == (12, 0, 0)
+        assert self.earth_ct.hr_time_to_hms("01:00:00:PM") == (13, 0, 0)
+        assert self.earth_ct.hr_time_to_hms("13:00:00") == (13, 0, 0)
         assert self.earth_ct.hr_time_to_hms(split_hr_time) == self.hms
         assert self.earth_ct.hr_time_to_hms(mil_hr_time) == self.hms
 
@@ -310,6 +329,11 @@ class ConvertibleTimeTest(TimeTestCase):
 
     def test_max_hr_hour(self):
         assert self.earth_ct.max_hr_hour() == 12
+
+    @patch("src.customtime.ConvertibleTime.max_hr_hour", return_value=12)
+    def test_hr_hours(self, _):
+        hours = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+        assert self.earth_ct.hr_hours() == deque(hours)
 
     def test_are_valid_hour_labels(self):
         hours_in_day = FAKE.random_int(min=1, max=100)

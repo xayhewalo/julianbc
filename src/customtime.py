@@ -15,6 +15,7 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
+from collections import deque
 from enum import Enum, unique
 from src.db import ConvertibleClock
 
@@ -234,8 +235,13 @@ class ConvertibleTime:
         if hour_label:
             demarcations = self.day_demarcations()
             index = self.hour_labels.index(hour_label)
-            hour = int(hour) + demarcations[index]  # from 12 -> 24 hour clock
-        return hour, minute, second
+            hour_of_demarcation = demarcations[index]
+            hour = hour_of_demarcation + self.hr_hours().index(hour)
+
+        hms = hour, minute, second
+        msg = f"HR time, {hr_time}, produced invalid hms {hms}"
+        assert self.is_valid_hms(hms), msg
+        return hms
 
     def labeled_hour(self, hour: int) -> tuple[int, str]:
         """
@@ -278,6 +284,12 @@ class ConvertibleTime:
         msg = f"Max hr hour must be a whole number: {max_hr_hour} is not"
         assert int(max_hr_hour) == max_hr_hour, msg
         return int(max_hr_hour)
+
+    def hr_hours(self) -> deque:
+        """human readable numbers that would appear on a clock"""
+        hr_hours = deque(range(1, self.max_hr_hour() + 1))
+        hr_hours.rotate(1)
+        return hr_hours
 
     def are_valid_hour_labels(self, hour_label: list) -> bool:
         num_labels = len(hour_label)

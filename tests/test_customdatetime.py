@@ -35,54 +35,8 @@ class ConvertibleDateTimeTest(TimeTestCase):
         self.calendar_factory = ConvertibleCalendarFactory
         self.time_factory = ConvertibleTimeFactory
 
-    @patch("src.customdatetime.ConvertibleDateTime.shift_od")
-    def test_extend_span_for_days(self, patch_shift_od):
-        start = FAKE.pyfloat()
-        end = FAKE.pyfloat()
-        time_span = end - start
-        delta = FAKE.random_int(min=1)
-        interval = [delta, DateUnit.DAY]
-        factor = FAKE.random_int(min=1)
-
-        cd = ConvertibleDate(calendar=self.calendar_factory.build())
-        cdt = ConvertibleDateTime(date=cd, time=self.time_factory.build())
-        made_start, made_end = cdt.extend_span(start, end, interval, factor)
-        made_time_span = made_end - made_start
-        assert made_start < start
-        assert made_end > end
-        assert made_time_span > time_span
-        assert made_time_span == time_span + (2 * delta * factor)
-        patch_shift_od.assert_not_called()
-
-    @patch("src.customdatetime.ConvertibleDateTime.shift_od")
-    def test_extend_span_for_non_day_units(self, patch_shift_od):
-        start = FAKE.pyfloat()
-        end = FAKE.pyfloat()
-        delta = FAKE.random_int(min=1)
-        factor = FAKE.random_int(min=1)
-        fake_unit = FAKE.random_int(min=-9999, max=-1)
-        interval = [delta, fake_unit]
-        extended_interval = [delta * factor, fake_unit]
-        backwards_interval = [-delta * factor, fake_unit]
-
-        cd = ConvertibleDate(calendar=self.calendar_factory.build())
-        cdt = ConvertibleDateTime(date=cd, time=self.time_factory.build())
-        cdt.extend_span(start, end, interval, factor)
-        patch_shift_od.assert_any_call(start, [backwards_interval])
-        patch_shift_od.assert_any_call(end, [extended_interval])
-
-    def test_extend_span_raises(self):
-        start = FAKE.pyfloat()
-        end = FAKE.pyfloat()
-        bad_interval = [FAKE.random_int(min=-9999, max=0), DateUnit.DAY]
-        bad_factor = FAKE.random_int(min=-9999, max=0)
-
-        cd = ConvertibleDate(calendar=self.calendar_factory.build())
-        cdt = ConvertibleDateTime(date=cd, time=self.time_factory.build())
-        with pytest.raises(ValueError):
-            cdt.extend_span(start, end, FAKE.pylist(), bad_factor)
-        with pytest.raises(ValueError):
-            cdt.extend_span(FAKE.pyfloat(), FAKE.pyfloat(), bad_interval)
+    def test_extend_od(self):
+        raise NotImplementedError
 
     @patch("src.customdatetime.ConvertibleDateTime.od_to_ast_ymd")
     @patch("src.customdate.ConvertibleDate.shift_ast_ymd")

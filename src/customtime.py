@@ -21,13 +21,13 @@ from src.db import ConvertibleClock
 
 
 Hms_tuple = tuple[int, int, int]
-
+# todo time interval type
 
 @unique
 class TimeUnit(Enum):
-    HOUR = 0
+    HOUR = 2
     MINUTE = 1
-    SECOND = 2
+    SECOND = 0
 
 
 class ConvertibleTime:

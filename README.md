@@ -58,8 +58,11 @@ JulianBC will be a visual-timeline program in the near future
     - [X] check if `frequency` is an integer greater than zero
 - [ ] `next_week`(?)
 - [ ] move `make_ordinal` out of `ConvertibleDate`, change name
+- [ ] optimize `is_leap_year` for end of 400 year gregorian cycle
 - [X] remove `is_decending_era`
 - [X] remove week stuff
+- [X] `common_year_cycle_ordinals` generator is slowing the UI, refactor it so it's not generated everytime and change factories so tests to don't forever
+- [ ] Test `__init__` properties
 #### ConvertibleTime
 - [X] remove `convertible_clocks`
 - [X] test error raised for `convert_hms`
@@ -68,13 +71,16 @@ JulianBC will be a visual-timeline program in the near future
 - [X] add `shift_hms`
     - [X] make it DRY
     - [X] test `day_diff` i.e. shift by 50 hours has a `day_diff` >= 2
+- [ ] Test `__init__` properties
 #### ConvertibleDateTime
 - [ ] add `change_interval`
-    - [ ] pass `label_width` and `interval` and pick the smallest interval that's greater than the width(?)
-    - [ ] make `change_XXX_interval` DRY
+    - [X] pass `label_width` and `interval` and pick the smallest interval that's greater than the width
+    - [X] make `change_XXX_interval` DRY
+    - [ ] make proper year frequencies
 - [X] add `extend_start_end` (by passed `interval`) to be used in `Timeline` and `Mark`
     - [X] use `shift_od`
 - [X] shift days and weeks(?) in `shift_od`
+- [ ] Test `__init__` properties
 #### EventController
 - [ ] `fields` in `make` are based on `Event` columns
 - [ ] ensure negative `duraiton` raises error
@@ -88,18 +94,18 @@ JulianBC will be a visual-timeline program in the near future
 #### Timeline
 - [ ] Sync timelines should set start and end ordinals of all timelines
 - [ ] add scroll
-  - [ ] Gain focus when scrolling
-  - [ ] shift + scrollup/scrolldown
-  - [ ] left/right arrow scroll when in focus
+  - [X] Gain focus when scrolling
+  - [X] shift + scrollup/scrolldown
+  - [X] left/right arrow scroll when in focus
   - [ ] up/down scroll when in focus
   - [ ] page up/down scroll when in focus
   - [ ] home/end scroll(?)
-- [ ] add zoom
-  - [ ] Gain focus when zooming
-  - [ ] ctrl + +/- to zoom
-  - [ ] pinch trackpad to zoom
-- [ ] Add `extended_start_ordinal` and `extended_end_ordinal` that's outside the visible `time_span`
-    - [ ] don't do the calculations in `Timeline`
+- [X] add zoom
+  - [X] Gain focus when zooming
+  - [X] ctrl + +/- to zoom
+  - [X] pinch trackpad to zoom
+- [X] Add `extended_start_ordinal` and `extended_end_ordinal` that's outside the visible `time_span`
+    - [X] don't do the calculations in `Timeline`
 - [ ] `TimelineScreen` should handle collapsing
 - [ ] disable `focus` when `Timeline` is collapsed
 - [ ] add proper reference to other timelines when scrolling/zooming while synced
@@ -108,7 +114,10 @@ JulianBC will be a visual-timeline program in the near future
   - [ ] test setting event height when two events ago is really long
   - [ ] test expand event_height and all other events shift y positions
 #### Mark
-- [ ] don't do shift calculations in `Mark`
+- [X] don't do shift calculations in `Mark`
+- [ ] Test middle interval alignment
+- [ ] Fix Mark labels when zoomed in at 2 or 1 second intervals, they don't move
+- [ ] Fix Mark labels and stripes for BCE years
 #### EventEditor
 - [ ] Properly locate `EventEditor`
 - [ ] set widgets by constant align values created at parent level

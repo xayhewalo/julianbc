@@ -38,12 +38,12 @@ class ConvertibleCalendarFactory(BaseFactory):
     )
     leap_year_cycles = factory.Faker(
         "random_elements",
-        elements=[x for x in range(1, FAKE.random_int(min=1, max=3000))],
+        elements=[x for x in range(1, FAKE.random_int(min=1, max=30))],
     )
     leap_year_cycle_start = factory.Faker("random_element", elements=(0, 1))
     leap_year_cycle_ordinals = factory.Faker(
         "random_elements",
-        elements=[x for x in range(1, FAKE.random_int(min=1, max=3000))],
+        elements=[x for x in range(1, FAKE.random_int(min=1, max=30))],
     )
     special_common_years = factory.Faker(
         "random_elements",

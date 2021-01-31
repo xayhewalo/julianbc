@@ -15,7 +15,6 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
-
 import itertools
 import math
 
@@ -26,13 +25,14 @@ from typing import Union
 
 
 Ymd_tuple = Union[tuple[int, int, int], tuple[int, None, int]]
+# todo date_interval_type
 
 
 @unique
 class DateUnit(Enum):
-    YEAR = 0
+    YEAR = 2
     MONTH = 1
-    DAY = 2
+    DAY = 0
 
 
 class ConvertibleDate:
@@ -69,6 +69,25 @@ class ConvertibleDate:
     def __init__(self, calendar: ConvertibleCalendar, date_sep="/"):
         self.date_sep = date_sep
         self.calendar = calendar
+        if self.calendar.has_leap_year:
+            start = self.calendar.leap_year_cycle_start
+            self._all_cycle_ordinals = deque(
+                itertools.chain.from_iterable(
+                    [  # common and leap year cycle ordinals
+                        range(start, cycle + start)
+                        for cycle in self.calendar.leap_year_cycles
+                    ]
+                )
+            )
+            self._all_cycle_ordinals.rotate(self.calendar.leap_year_offset)
+            self._common_year_cycle_ordinals = tuple(
+                _ord
+                for _ord in self._all_cycle_ordinals
+                if _ord not in self.calendar.leap_year_cycle_ordinals
+            )
+        else:
+            self._all_cycle_ordinals = deque([])
+            self._common_year_cycle_ordinals = ()
 
     def convert_ast_ymd(
         self,
@@ -142,6 +161,8 @@ class ConvertibleDate:
             current_ordinal = all_cycle_ordinals[idx]
             all_this_cycles_ordinals_up_to_this_year.append(current_ordinal)
             idx += 1
+        if sign == -1:  # undo reverse for the entire instance
+            all_cycle_ordinals.reverse()
 
         leap_ordinals = self.calendar.leap_year_cycle_ordinals
         this_cycles_elapsed_leap_ordinals = [
@@ -188,9 +209,9 @@ class ConvertibleDate:
         """:raises AssertionError: if an invalid ordinal date is made"""
 
         def make_ordinal_date(
-            ord_: int, days_passed: int, year: int
+            ord_: int, days_in_years_passed: int, year: int
         ) -> tuple[int, int]:
-            day = abs(ord_) - days_passed
+            day = abs(ord_) - days_in_years_passed
             if sign == -1:
                 day = self.days_in_year(ast_year) - day
                 if day == 0:
@@ -277,18 +298,7 @@ class ConvertibleDate:
 
     @property
     def all_cycle_ordinals(self) -> deque:
-        """common and leap year cycle ordinals"""
-        start = self.calendar.leap_year_cycle_start
-        all_cycle_ordinals = deque(
-            itertools.chain.from_iterable(
-                [
-                    range(start, cycle + start)
-                    for cycle in self.calendar.leap_year_cycles
-                ]
-            )
-        )
-        all_cycle_ordinals.rotate(self.calendar.leap_year_offset)
-        return all_cycle_ordinals
+        return self._all_cycle_ordinals
 
     @all_cycle_ordinals.setter
     def all_cycle_ordinals(self, _):
@@ -312,11 +322,7 @@ class ConvertibleDate:
 
     @property
     def common_year_cycle_ordinals(self) -> tuple:
-        return tuple(
-            _ord
-            for _ord in self.all_cycle_ordinals
-            if _ord not in self.calendar.leap_year_cycle_ordinals
-        )
+        return self._common_year_cycle_ordinals
 
     @common_year_cycle_ordinals.setter
     def common_year_cycle_ordinals(self, _):
@@ -727,7 +733,10 @@ class ConvertibleDate:
             ast_year, completed_cycles, start_ast_year, sign
         )
         leap_year_cycle_ordinals = self.calendar.leap_year_cycle_ordinals
-        return all_cycle_ordinals[cycle_index] in leap_year_cycle_ordinals
+        leap = all_cycle_ordinals[cycle_index] in leap_year_cycle_ordinals
+        if sign == -1:  # undo reversing
+            all_cycle_ordinals.reverse()
+        return leap
 
     def is_valid_ast_ymd(self, ast_ymd: Ymd_tuple) -> bool:
         ast_year, month, day = ast_ymd

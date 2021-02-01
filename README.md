@@ -81,6 +81,7 @@ JulianBC will be a visual-timeline program in the near future
     - [X] use `shift_od`
 - [X] shift days and weeks(?) in `shift_od`
 - [ ] Test `__init__` properties
+- [ ] Optimize next_hms while loop
 #### EventController
 - [ ] `fields` in `make` are based on `Event` columns
 - [ ] ensure negative `duraiton` raises error
@@ -116,8 +117,8 @@ JulianBC will be a visual-timeline program in the near future
 #### Mark
 - [X] don't do shift calculations in `Mark`
 - [ ] Test middle interval alignment
-- [ ] Fix Mark labels when zoomed in at 2 or 1 second intervals, they don't move
-- [ ] Fix Mark labels and stripes for BCE years
+- [X] Fix Mark labels when zoomed in at 2 or 1 second intervals, they don't move
+- [X] Fix Mark labels and stripes for BCE years
 #### EventEditor
 - [ ] Properly locate `EventEditor`
 - [ ] set widgets by constant align values created at parent level

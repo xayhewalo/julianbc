@@ -25,6 +25,7 @@ class ZoomBehavior:
     A hacky class to zoom without storing a potentially infinite number.
     Should be inherited before FocusBehavior
     """
+
     disable_zoom_in = BooleanProperty(False)
     disable_zoom_out = BooleanProperty(False)
     zoom_by = NumericProperty()

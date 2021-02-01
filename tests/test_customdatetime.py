@@ -35,6 +35,15 @@ class ConvertibleDateTimeTest(TimeTestCase):
         self.calendar_factory = ConvertibleCalendarFactory
         self.time_factory = ConvertibleTimeFactory
 
+    def test_change_interval(self):
+        raise NotImplementedError
+
+    def test_increase_unit(self):
+        raise NotImplementedError
+
+    def test_decrease_unit(self):
+        raise NotImplementedError
+
     def test_extend_od(self):
         raise NotImplementedError
 
@@ -101,21 +110,6 @@ class ConvertibleDateTimeTest(TimeTestCase):
         with pytest.raises(ValueError):
             cdt.shift_od(FAKE.pyfloat(), [[FAKE.random_int(), DumEnum.DUM]])
 
-    @patch("src.customdate.ConvertibleDate.ast_ymd_to_ordinal_date")
-    @patch("src.customdate.ConvertibleDate.ordinal_date_to_ordinal")
-    def test_ast_ymd_to_od(self, *patches):
-        patch_ordinal_date_to_ordinal = patches[0]
-        patch_ast_ymd_to_ordinal_date = patches[1]
-        fake_ast_ymd = FAKE.random_int(), FAKE.random_int(), FAKE.random_int()
-        fake_ord_date = FAKE.random_int(), FAKE.random_int()
-        patch_ast_ymd_to_ordinal_date.return_value = fake_ord_date
-
-        cd = ConvertibleDate(calendar=self.calendar_factory.build())
-        cdt = ConvertibleDateTime(date=cd, time=self.time_factory.build())
-        assert isinstance(cdt.ast_ymd_to_od(fake_ast_ymd), float)
-        patch_ast_ymd_to_ordinal_date.assert_called_once_with(fake_ast_ymd)
-        patch_ordinal_date_to_ordinal.assert_called_once_with(fake_ord_date)
-
     @patch("src.customdatetime.ConvertibleDateTime.od_to_ast_ymd")
     @patch("src.customdate.ConvertibleDate.next_ast_ymd")
     @patch("src.customdatetime.ConvertibleDateTime.ast_ymd_to_od")
@@ -172,6 +166,21 @@ class ConvertibleDateTimeTest(TimeTestCase):
         with pytest.raises(ValueError):
             cdt.next_od(FAKE.pyfloat(), [FAKE.random_int(), DumEnum.DUM])
 
+    @patch("src.customdate.ConvertibleDate.ast_ymd_to_ordinal_date")
+    @patch("src.customdate.ConvertibleDate.ordinal_date_to_ordinal")
+    def test_ast_ymd_to_od(self, *patches):
+        patch_ordinal_date_to_ordinal = patches[0]
+        patch_ast_ymd_to_ordinal_date = patches[1]
+        fake_ast_ymd = FAKE.random_int(), FAKE.random_int(), FAKE.random_int()
+        fake_ord_date = FAKE.random_int(), FAKE.random_int()
+        patch_ast_ymd_to_ordinal_date.return_value = fake_ord_date
+
+        cd = ConvertibleDate(calendar=self.calendar_factory.build())
+        cdt = ConvertibleDateTime(date=cd, time=self.time_factory.build())
+        assert isinstance(cdt.ast_ymd_to_od(fake_ast_ymd), float)
+        patch_ast_ymd_to_ordinal_date.assert_called_once_with(fake_ast_ymd)
+        patch_ordinal_date_to_ordinal.assert_called_once_with(fake_ord_date)
+
     @patch("src.customdate.ConvertibleDate.ordinal_to_ordinal_date")
     @patch("src.customdate.ConvertibleDate.ordinal_date_to_ast_ymd")
     def test_od_to_ast_ymd(self, *patches):
@@ -188,6 +197,12 @@ class ConvertibleDateTimeTest(TimeTestCase):
 
         patch_ordinal_to_ordinal_date.assert_called_once_with(fake_ordinal)
         patch_ordinal_date_to_ast_ymd.assert_called_once_with(fake_ord_date)
+
+    def get_frequencies(self):
+        raise NotImplementedError
+
+    def od_to_hr_date(self):
+        raise NotImplementedError
 
     @patch("src.customtime.ConvertibleTime.seconds_to_hms")
     def test_od_to_hms(self, patch_seconds_to_hms):

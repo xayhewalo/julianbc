@@ -1,2 +1,3 @@
 sqlalchemy~=1.4.0b1
 kivy~=2.0.0
+numpy  # TODO pin version

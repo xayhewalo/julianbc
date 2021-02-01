@@ -38,8 +38,8 @@ class Timeline(HorScrollBehavior, ZoomBehavior, FocusBehavior, FloatLayout):
     __midnight_today = __now.replace(hour=0, minute=0, second=0, microsecond=0)
     __seconds_into_day = (__now - __midnight_today).seconds
     __now_ordinal_decimal = __now.toordinal() + (__seconds_into_day / 86400)
-    start_od = NumericProperty(__now_ordinal_decimal - 1)  # od @ x = 0
-    end_od = NumericProperty(__now_ordinal_decimal + 1)  # od @ x = self.width
+    start_od = NumericProperty(__now_ordinal_decimal - 2)  # od @ x = 0
+    end_od = NumericProperty(__now_ordinal_decimal + 2)  # od @ x = self.width
 
     def _get_time_span(self):
         return self.end_od - self.start_od
@@ -62,8 +62,7 @@ class Timeline(HorScrollBehavior, ZoomBehavior, FocusBehavior, FloatLayout):
     extended_start_od = AliasProperty(
         _get_extended_start_od,
         None,
-        bind=["start_od", "extend_time_span_by"],
-        cache=True,  # fixme uncommenting makes 1-2 second interval scroll/zoom work...sort off
+        bind=["start_od", "extend_time_span_by", "mark_interval"],
     )
 
     def _get_extended_end_od(self):
@@ -74,8 +73,7 @@ class Timeline(HorScrollBehavior, ZoomBehavior, FocusBehavior, FloatLayout):
     extended_end_od = AliasProperty(
         _get_extended_end_od,
         None,
-        bind=["end_od", "extend_time_span_by"],
-        cache=True,  # fixme uncommenting makes 1-2 second interval scroll/zoom work...sort off
+        bind=["end_od", "extend_time_span_by", "mark_interval"],
     )
 
     def _get_extended_time_span(self):
@@ -85,18 +83,6 @@ class Timeline(HorScrollBehavior, ZoomBehavior, FocusBehavior, FloatLayout):
         _get_extended_time_span,
         None,
         bind=["extended_start_od", "extended_end_od"],
-    )
-
-    def _get_interval_width(self):
-        end_x = self.od_to_x(self.end_od)
-        extended_end_x = self.od_to_x(self.extended_end_od)
-        return (extended_end_x - end_x) / self.extend_time_span_by
-
-    interval_width = AliasProperty(
-        _get_interval_width,
-        None,
-        bind=["extended_end_od", "end_od", "extend_time_span_by"],
-        cache=True,
     )
 
     def __init__(self, **kwargs):
@@ -112,6 +98,10 @@ class Timeline(HorScrollBehavior, ZoomBehavior, FocusBehavior, FloatLayout):
             shift_key=self.disable_zoom,
         )
 
+    def on_kv_post(self, base_widget):
+        self.ids["mark"].bind(interval_width=self.change_mark_interval)
+        return super().on_kv_post(base_widget)
+
     def scroll_start_and_end(self, *_):
         dod = self.dx_to_dod(self.scroll_by)
         self.start_od -= dod
@@ -122,16 +112,19 @@ class Timeline(HorScrollBehavior, ZoomBehavior, FocusBehavior, FloatLayout):
         self.start_od += dod
         self.end_od -= dod
 
-    def on_interval_width(self, *_):
-        # fixme label's don't realign until scroll/another zoom
+    def change_mark_interval(self, *_):
+        """
+        Ensure label width doesn't overlap on zoom out.
+        Ensure there are at least 2 visible marks when zooming in.
+        """
         mark = self.ids["mark"]
         label_width = mark.max_label_width + (2 * mark.label_padding_x)
-        increase_threshold = 0.5
-        decrease_threshold = 0.2
-        if label_width / self.interval_width >= increase_threshold:
+        if mark.interval_width * 3 > self.width:  # todo sync thesh with Mark
+            # increase number of marks
             mark_interval = self.cdt.change_interval(self.mark_interval, self)
             self.mark_interval = mark_interval
-        elif label_width / self.interval_width <= decrease_threshold:
+        elif label_width > mark.interval_width:
+            # decrease number of marks
             self.mark_interval = self.cdt.change_interval(
                 self.mark_interval, self, False
             )

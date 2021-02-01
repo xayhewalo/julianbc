@@ -14,6 +14,8 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
+import numpy
+
 from kivy.clock import Clock
 from kivy.graphics import Color, Rectangle
 from kivy.metrics import sp
@@ -46,20 +48,41 @@ class Mark(Widget):
     mark_width = NumericProperty("2sp")
     mark_height = NumericProperty("100sp")
     mark_color = ObjectProperty(Color([250 / 255] * 3))
+    interval_width = NumericProperty()
 
     def __init__(self, **kwargs):
         self.draw_marks_trigger = Clock.create_trigger(self.draw_marks)
         super().__init__(**kwargs)
         self.bind(pos=self.draw_marks_trigger, size=self.draw_marks_trigger)
 
-    def draw_marks(self, *_, mark_ods=None) -> list:
-        def draw_and_increment(mark_od_: float) -> float:
+    def draw_marks(self, *_, mark_ods: list = None) -> list:
+        self.canvas.clear()
+        self.canvas.add(self.mark_color)
+
+        mark_xs = []
+        visible_mark_xs = []
+        parent = self.parent
+        if mark_ods is None:
+            mark_od = parent.extended_start_od
+            mark_ods = [mark_od]
+            while mark_od <= parent.extended_end_od:
+                mark_x = parent.od_to_x(mark_od)
+                mark_xs.append(mark_x)
+                if 0 <= mark_x <= parent.width:
+                    visible_mark_xs.append(mark_x)
+
+                mark_od = parent.cdt.next_od(mark_od, parent.mark_interval)
+                mark_ods.append(mark_od)
+
+        self.interval_width = float(numpy.diff(visible_mark_xs).mean())
+        for idx, mark_x in enumerate(mark_xs):
             parent = self.parent
-            x = parent.od_to_x(mark_od_)
             unit = parent.mark_interval[1]
-            hr_date = parent.cdt.od_to_hr_date(mark_od_, unit)
-            label = self.make_label(x, hr_date, self.label_align)
-            pos = sp(x), sp(self.mark_y)
+            mark_od = mark_ods[idx]
+
+            hr_date = parent.cdt.od_to_hr_date(mark_od, unit)
+            label = self.make_label(mark_x, hr_date, self.label_align)
+            pos = sp(mark_x), sp(self.mark_y)
             size = sp(self.mark_width), sp(self.mark_height)
             self.canvas.add(self.mark(pos=pos, size=size))
             self.canvas.add(
@@ -69,22 +92,6 @@ class Mark(Widget):
                     texture=label.texture,
                 )
             )
-
-            mark_od_ = parent.cdt.next_od(mark_od_, parent.mark_interval)
-            return mark_od_
-
-        self.canvas.clear()
-        self.canvas.add(self.mark_color)
-
-        if mark_ods:
-            for mark_od in mark_ods:
-                draw_and_increment(mark_od)
-        else:
-            mark_od = self.parent.extended_start_od
-            mark_ods = [mark_od]
-            while mark_od <= self.parent.extended_end_od:
-                mark_od = draw_and_increment(mark_od)
-                mark_ods.append(mark_od)
         return mark_ods
 
     def make_label(self, x: int, text: str, alignment: str) -> TextBoundLabel:
@@ -103,11 +110,8 @@ class Mark(Widget):
         elif alignment == self.LABEL_CENTER:
             label_x = sp(x - int(label.width / 2) + self.label_padding_x)
         else:  # middle interval alignment
-            # todo just set center x?
-            half_interval_width = self.parent.interval_width / 2
-            half_label_width = label.width / 2
-            padding = self.label_padding_x
-            label_x = sp(x + half_interval_width - half_label_width + padding)
+            label.center_x = x + (self.interval_width / 2)
+            label_x = label.x
 
         label_y = self.label_y or sp(
             self.top - self.font_size - self.label_padding_y

@@ -48,61 +48,50 @@ class ConvertibleDateTime:
         recursive=False,
     ) -> list:
         """# increase delta until the new_interval width is > interval_width
-            start_od = timeline.start_od
-            start_x = timeline.od_to_x(start_od)
-            assert start_x == 0, f"start_x should be 0, it's {start_x}"
+        start_od = timeline.start_od
+        start_x = timeline.od_to_x(start_od)
+        assert start_x == 0, f"start_x should be 0, it's {start_x}"
 
-            sign = 1 if increase else -1
-            # delta = 5 * sign
-            if frequency == 1:
-                delta = 2
-            elif frequency == 2:
-                delta = 5
-            else:
-                delta = 5
-            new_frequency = frequency + (delta - (frequency % delta))
+        sign = 1 if increase else -1
+        # delta = 5 * sign
+        if frequency == 1:
+            delta = 2
+        elif frequency == 2:
+            delta = 5
+        else:
+            delta = 5
+        new_frequency = frequency + (delta - (frequency % delta))
+        new_od = self.shift_od(start_od, [[new_frequency, unit]])
+        new_width = timeline.od_to_x(new_od)
+        mark = timeline.ids["mark"]
+        label_width = mark.max_label_width + (2 * mark.label_padding_x)
+        while label_width / new_width >= 0.5:  # fixme
+            new_frequency += delta
             new_od = self.shift_od(start_od, [[new_frequency, unit]])
             new_width = timeline.od_to_x(new_od)
-            mark = timeline.ids["mark"]
-            label_width = mark.max_label_width + (2 * mark.label_padding_x)
-            while label_width / new_width >= 0.5:  # fixme
-                new_frequency += delta
-                new_od = self.shift_od(start_od, [[new_frequency, unit]])
-                new_width = timeline.od_to_x(new_od)
-            return [new_frequency, unit]"""
+        return [new_frequency, unit]"""
 
         frequency, unit = interval
         frequencies = self.get_frequencies(unit)
         max_frequency = max(frequencies)
         min_frequency = min(frequencies)
-        increase_unit = increase and frequency == max_frequency
-        decrease_unit = not increase and frequency == min_frequency
-        unit_idx = self.datetime_units.index(unit)
+        decrease_unit = increase and frequency == min_frequency  # todo DRY
+        increase_unit = not increase and frequency == max_frequency
 
-        if increase_unit:
-            if unit == DateUnit.YEAR:
-                raise ValueError("Interval unit can't be more than a year")
-
-            err_msg = "year must be last datetime_unit"
-            assert self.datetime_units[0] == DateUnit.YEAR, err_msg
-
-            bigger_unit = self.datetime_units[unit_idx - 1]
+        if increase_unit:  # todo DRY
+            bigger_unit = self.increase_unit(unit)
             frequency = min(self.get_frequencies(bigger_unit))
             interval = [frequency, bigger_unit]
             return self.change_interval(interval, timeline, increase, True)
         elif decrease_unit:
-            if unit == TimeUnit.SECOND:
-                raise ValueError("Interval unit can't be less than a second")
-
-            err_msg = "second must be last datetime_unit"
-            assert self.datetime_units[-1] == TimeUnit.SECOND, err_msg
-
-            smaller_unit = self.datetime_units[unit_idx + 1]
+            smaller_unit = self.decrease_unit(unit)
             frequency = max(self.get_frequencies(smaller_unit))
             interval = [frequency, smaller_unit]
             return self.change_interval(interval, timeline, increase, True)
 
-        sign = 1 if increase else -1
+        # increasing the number of marks means decreasing the frequency
+        # trust me it works ;)
+        sign = -1 if increase else 1
         new_frequency = frequency
         if not recursive:
             idx = frequencies.index(frequency)
@@ -114,53 +103,61 @@ class ConvertibleDateTime:
         assert start_x == 0, f"start_od should be at x = 0, it's {start_x}"
 
         new_od = self.extend_od(start_od, [new_frequency, unit])
-        new_width = timeline.od_to_x(new_od)
+        new_interval_width = timeline.od_to_x(new_od)  # an approximation
         mark = timeline.ids["mark"]
-        label_width = mark.max_label_width + (2 * mark.label_padding_x)  # FIXME dry draw_marks?
-        while label_width / new_width >= 0.5:  # fixme
+
+        # FIXME dry
+        label_width = mark.max_label_width + (2 * mark.label_padding_x)
+        while (
+            label_width > new_interval_width
+            or new_interval_width * 3 > timeline.width
+        ):
+            # todo frequency is a bad name
+            decrease_unit = increase and new_frequency == min_frequency
+            increase_unit = not increase and new_frequency == max_frequency
+            if increase_unit:
+                bigger_unit = self.increase_unit(unit)
+                frequency = min(self.get_frequencies(bigger_unit))
+                interval = [frequency, bigger_unit]
+                return self.change_interval(interval, timeline, increase, True)
+            elif decrease_unit:
+                smaller_unit = self.decrease_unit(unit)
+                frequency = max(self.get_frequencies(smaller_unit))
+                interval = [frequency, smaller_unit]
+                return self.change_interval(interval, timeline, increase, True)
+
             idx = frequencies.index(new_frequency)
             new_idx = idx + sign
             new_frequency = frequencies[new_idx]
             new_od = self.extend_od(start_od, [new_frequency, unit])
-            new_width = timeline.od_to_x(new_od)
+            new_interval_width = timeline.od_to_x(new_od)
         return [new_frequency, unit]
 
-    def get_frequencies(self, unit: Union[DateUnit, TimeUnit]) -> list:
-        def exclusive_divisors(num: int) -> list:
-            """:returns: divisors of `num` excluding `num`"""
-            divs = {1}
-            for i in range(2, int(math.sqrt(num)) + 1):
-                if num % i == 0:
-                    divs.update((i, num // i))
-            return list(divs)
+    def increase_unit(
+        self, unit: Union[DateUnit, TimeUnit]
+    ) -> Union[DateUnit, TimeUnit]:
+        """:raises ValueError: if trying to increase DateUnit.Year"""
 
-        if unit == DateUnit.YEAR:  # fixme
-            return [
-                1, 2, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000,
-                7500, 10_000, 25_000, 50_000, 75_000, 100_000,
-            ]
-        elif unit == DateUnit.MONTH:
-            num_common_months = self.date.calendar.months_in_common_year
-            num_leap_months = self.date.calendar.months_in_leap_year
-            least_months_in_year = min(num_common_months, num_leap_months)
-            return exclusive_divisors(least_months_in_year)
-        elif unit == DateUnit.DAY:
-            calendar = self.date.calendar
-            min_common_month_len = min(calendar.days_in_common_year_months)
-            min_leap_month_len = min(calendar.days_in_leap_year_months)
-            min_days_in_month = min(min_leap_month_len, min_common_month_len)
-            multiples_of_five = list(range(0, min_days_in_month + 1, 5))
-            multiples_of_five.remove(0)
-            frequencies = [1, 2]
-            frequencies.extend(multiples_of_five)
-            return frequencies
-        elif unit == TimeUnit.HOUR:
-            return exclusive_divisors(self.time.clock.hours_in_day)
-        elif unit == TimeUnit.MINUTE:
-            return exclusive_divisors(self.time.clock.minutes_in_hour)
-        elif unit == TimeUnit.SECOND:
-            return exclusive_divisors(self.time.clock.seconds_in_minute)
-        raise ValueError(f"Cannot find valid frequencies for {unit}")
+        if unit == DateUnit.YEAR:
+            raise ValueError("Interval unit can't be more than a year")
+
+        # assumes datetime_units sorted largest -> smallest
+        unit_idx = self.datetime_units.index(unit)
+        bigger_unit = self.datetime_units[unit_idx - 1]
+        return bigger_unit
+
+    def decrease_unit(
+        self, unit: Union[DateUnit, TimeUnit]
+    ) -> Union[DateUnit, TimeUnit]:
+        """raises ValueError: if trying to increase DateUnit.Year"""
+
+        if unit == TimeUnit.SECOND:
+            raise ValueError("Interval unit can't be less than a second")
+
+        # assumes datetime_units sorted largest -> smallest
+        unit_idx = self.datetime_units.index(unit)
+        smaller_unit = self.datetime_units[unit_idx + 1]
+        return smaller_unit
 
     def extend_od(
         self,
@@ -224,6 +221,45 @@ class ConvertibleDateTime:
             ordinal_decimal = self.set_hms(ordinal_decimal, hms, day_delta)
             return ordinal_decimal
         raise ValueError(f"Can't shift ordinal decimal by {unit}")
+
+    def get_frequencies(self, unit: Union[DateUnit, TimeUnit]) -> list:
+        def exclusive_divisors(num: int) -> list:
+            """:returns: divisors of `num` excluding `num`"""
+            divs = {1}
+            for i in range(2, int(math.sqrt(num)) + 1):
+                if num % i == 0:
+                    divs.update((i, num // i))
+            return list(divs)
+
+        if unit == DateUnit.YEAR:  # fixme
+            # fmt: off
+            return [
+                1, 2, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000,
+                7500, 10_000, 25_000, 50_000, 75_000, 100_000,
+            ]
+            # fmt: on
+        elif unit == DateUnit.MONTH:
+            num_common_months = self.date.calendar.months_in_common_year
+            num_leap_months = self.date.calendar.months_in_leap_year
+            least_months_in_year = min(num_common_months, num_leap_months)
+            return exclusive_divisors(least_months_in_year)
+        elif unit == DateUnit.DAY:
+            calendar = self.date.calendar
+            min_common_month_len = min(calendar.days_in_common_year_months)
+            min_leap_month_len = min(calendar.days_in_leap_year_months)
+            min_days_in_month = min(min_leap_month_len, min_common_month_len)
+            multiples_of_five = list(range(0, min_days_in_month + 1, 5))
+            multiples_of_five.remove(0)
+            frequencies = [1, 2]
+            frequencies.extend(multiples_of_five)
+            return frequencies
+        elif unit == TimeUnit.HOUR:
+            return exclusive_divisors(self.time.clock.hours_in_day)
+        elif unit == TimeUnit.MINUTE:
+            return exclusive_divisors(self.time.clock.minutes_in_hour)
+        elif unit == TimeUnit.SECOND:
+            return exclusive_divisors(self.time.clock.seconds_in_minute)
+        raise ValueError(f"Cannot find valid frequencies for {unit}")
 
     def od_to_hr_date(self, ordinal_decimal: float, unit) -> str:
         if unit in DateUnit:

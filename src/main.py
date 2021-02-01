@@ -21,17 +21,17 @@ Builder.load_file("ui/timeline.kv")
 
 
 class JulianBC(App):
-    #def on_start(self):
-    #    import cProfile
-    #    self.profile = cProfile.Profile()
-    #    self.profile.enable()
-#
-    #def on_stop(self):
-    #    import pstats
-    #    self.profile.disable()
-    #    self.profile.dump_stats("myapp.profile")
-    #    s = pstats.Stats("myapp.profile")
-    #    s.strip_dirs().sort_stats("time").print_stats()
+    # def on_start(self):
+    #     import cProfile
+    #     self.profile = cProfile.Profile()
+    #     self.profile.enable()
+
+    # def on_stop(self):
+    #     import pstats
+    #     self.profile.disable()
+    #     self.profile.dump_stats("myapp.profile")
+    #     s = pstats.Stats("myapp.profile")
+    #     s.strip_dirs().sort_stats("time").print_stats()
 
     def build(self):
         return Builder.load_file("main.kv")

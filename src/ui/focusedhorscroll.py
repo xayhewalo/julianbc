@@ -47,11 +47,11 @@ class HorScrollBehavior:
             # Touched widget but children didn't use touch, must be scrolling
             self._collision = True
             button = touch.button
-            shift_scrollleft = (button == "scrolldown" and self.shift_key)
-            shift_scrollright = (button == "scrollup" and self.shift_key)
+            shift_scrollleft = button == "scrolldown" and self.shift_key
+            shift_scrollright = button == "scrollup" and self.shift_key
             if touch.button == "scrollleft" or shift_scrollleft:
                 self.focus = True
-                self.scroll_by = - self._scroll_by
+                self.scroll_by = -self._scroll_by
                 self.cleanup_scroll()
                 return True
             elif touch.button == "scrollright" or shift_scrollright:
@@ -115,7 +115,9 @@ class HorScrollBehavior:
         return key == "left" or key == "numpad4"
 
     @staticmethod
-    def right_key_down(keycode: list[int, str], modifiers: list = None) -> bool:
+    def right_key_down(
+        keycode: list[int, str], modifiers: list = None
+    ) -> bool:
         k = keycode[1]
         if modifiers:
             return k == "right" or k == "numpad6" and "numlock" in modifiers

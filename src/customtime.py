@@ -143,10 +143,7 @@ class ConvertibleTime:
             msg = f"Frequency: {frequency} is not an integer greater than zero"
             raise ValueError(msg)
 
-        sign = -1
-        if forward:
-            sign = 1
-
+        sign = 1 if forward else -1
         if timeunit == TimeUnit.HOUR:
             max_frequency = self.clock.hours_in_day - 1
             seconds_in_unit = self.clock.seconds_in_hour
@@ -163,19 +160,18 @@ class ConvertibleTime:
             msg = f"There are less than {frequency} {timeunit} in {self.clock}"
             raise ValueError(msg)
 
-        seconds_in_frequency = frequency * seconds_in_unit
+        seconds_in_freq = frequency * seconds_in_unit
         seconds = self.hms_to_seconds(hms)
-        seconds += sign * 1
-        day_delta = 0
-        while seconds % seconds_in_frequency != 0:
-            # seconds == 0 will always be returned so frequency must be a
-            # factor of the max human readable TimeUnit value.
-            # I.e only allow 0-6, 10, 12, 15, and 30 for earth time
-            seconds += sign * 1
-            dd, seconds = divmod(seconds, self.clock.seconds_in_day)
-            day_delta += dd
+        prev_freq = int(seconds / seconds_in_freq) * seconds_in_freq
 
+        if seconds % seconds_in_freq == 0:
+            seconds += seconds_in_freq * sign
+        else:
+            seconds = prev_freq if sign == -1 else prev_freq + seconds_in_freq
+
+        day_delta, seconds = divmod(seconds, self.clock.seconds_in_day)
         assert abs(day_delta) <= 1, "day shouldn't be shifted twice"
+
         hms = self.seconds_to_hms(seconds)
         return hms, day_delta
 

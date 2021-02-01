@@ -81,7 +81,7 @@ JulianBC will be a visual-timeline program in the near future
     - [X] use `shift_od`
 - [X] shift days and weeks(?) in `shift_od`
 - [ ] Test `__init__` properties
-- [ ] Optimize next_hms while loop
+- [X] Optimize next_hms while loop
 #### EventController
 - [ ] `fields` in `make` are based on `Event` columns
 - [ ] ensure negative `duraiton` raises error

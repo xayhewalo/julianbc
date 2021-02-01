@@ -24,15 +24,15 @@ from src.db import ConvertibleCalendar
 from typing import Union
 
 
-Ymd_tuple = Union[tuple[int, int, int], tuple[int, None, int]]
-# todo date_interval_type
-
-
 @unique
 class DateUnit(Enum):
     YEAR = 2
     MONTH = 1
     DAY = 0
+
+
+Ymd_tuple = Union[tuple[int, int, int], tuple[int, None, int]]
+Date_interval = list[int, DateUnit]
 
 
 class ConvertibleDate:
@@ -492,7 +492,7 @@ class ConvertibleDate:
         return ast_year, month
 
     def next_ast_ymd(
-        self, ast_ymd: Ymd_tuple, interval: list, forward=True
+        self, ast_ymd: Ymd_tuple, interval: Date_interval, forward=True
     ) -> Ymd_tuple:
         """
         If interval is every 10 days and today is February 4th, return

@@ -162,7 +162,7 @@ class ConvertibleDateTime:
     def extend_od(
         self,
         ordinal_decimal: float,
-        interval: list,
+        interval: DateTime_interval,
         factor: int = 1,
         reverse=False,
     ) -> float:
@@ -207,7 +207,9 @@ class ConvertibleDateTime:
             ordinal_decimal = self.set_hms(ordinal_decimal, hms, day_delta)
         return ordinal_decimal
 
-    def next_od(self, ordinal_decimal: float, interval: list) -> float:
+    def next_od(
+        self, ordinal_decimal: float, interval: DateTime_interval
+    ) -> float:
         """Ordinal decimal variation of next_ast_ymd and next_hms"""
         _, unit = interval
 

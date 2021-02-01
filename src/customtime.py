@@ -20,15 +20,15 @@ from enum import Enum, unique
 from src.db import ConvertibleClock
 
 
-Hms_tuple = tuple[int, int, int]
-# todo time interval type
-
-
 @unique
 class TimeUnit(Enum):
     HOUR = 2
     MINUTE = 1
     SECOND = 0
+
+
+Hms_tuple = tuple[int, int, int]
+Time_interval = list[int, TimeUnit]
 
 
 class ConvertibleTime:
@@ -128,7 +128,7 @@ class ConvertibleTime:
         return self.seconds_to_hms(seconds), day_delta
 
     def next_hms(
-        self, hms: Hms_tuple, interval: list, forward=True
+        self, hms: Hms_tuple, interval: Time_interval, forward=True
     ) -> tuple[Hms_tuple, int]:
         """
         :returns: desired hms and if result is in a different day

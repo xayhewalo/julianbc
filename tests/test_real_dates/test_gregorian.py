@@ -245,8 +245,17 @@ class GregorianTest(RealCalendarTestCase):
         bce_ordinal_n_ordinal_date = self.random_bce_ordinal_and_ordinal_date()
         bce_ordinal, bce_ordinal_date = bce_ordinal_n_ordinal_date
         assert self.gregorian_cd.ordinal_to_ordinal_date(0) == (0, 366)
+        assert self.gregorian_cd.ordinal_to_ordinal_date(-365) == (0, 1)
         assert self.gregorian_cd.ordinal_to_ordinal_date(-366) == (-1, 365)
+        assert self.gregorian_cd.ordinal_to_ordinal_date(-730) == (-1, 1)
         assert self.gregorian_cd.ordinal_to_ordinal_date(-731) == (-2, 365)
+        assert self.gregorian_cd.ordinal_to_ordinal_date(-1095) == (-2, 1)
+        assert self.gregorian_cd.ordinal_to_ordinal_date(-1096) == (-3, 365)
+        assert self.gregorian_cd.ordinal_to_ordinal_date(-1460) == (-3, 1)
+        assert self.gregorian_cd.ordinal_to_ordinal_date(-1461) == (-4, 366)
+        assert self.gregorian_cd.ordinal_to_ordinal_date(-1826) == (-4, 1)
+        assert self.gregorian_cd.ordinal_to_ordinal_date(-1827) == (-5, 365)
+        assert self.gregorian_cd.ordinal_to_ordinal_date(-2191) == (-5, 1)
         assert (
             self.gregorian_cd.ordinal_to_ordinal_date(bce_ordinal)
             == bce_ordinal_date
@@ -262,6 +271,11 @@ class GregorianTest(RealCalendarTestCase):
     )
     def test_ordinal_to_ordinal_date_for_ce_year(self, *_):
         ce_ordinal, ce_ordinal_date = self.random_ce_ordinal_and_ordinal_date()
+        assert self.gregorian_cd.ordinal_to_ordinal_date(1462) == (5, 1)
+        assert self.gregorian_cd.ordinal_to_ordinal_date(1461) == (4, 366)
+        assert self.gregorian_cd.ordinal_to_ordinal_date(1096) == (4, 1)
+        assert self.gregorian_cd.ordinal_to_ordinal_date(1095) == (3, 365)
+        assert self.gregorian_cd.ordinal_to_ordinal_date(731) == (3, 1)
         assert self.gregorian_cd.ordinal_to_ordinal_date(730) == (2, 365)
         assert self.gregorian_cd.ordinal_to_ordinal_date(366) == (2, 1)
         assert self.gregorian_cd.ordinal_to_ordinal_date(365) == (1, 365)

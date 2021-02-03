@@ -165,21 +165,17 @@ class ConvertibleDate:
             all_cycle_ordinals.reverse()
 
         leap_ordinals = self.calendar.leap_year_cycle_ordinals
-        this_cycles_elapsed_leap_ordinals = [
-            ord_
-            for ord_ in all_this_cycles_ordinals_up_to_this_year
-            if ord_ in leap_ordinals
-        ]
+        this_cycles_elapsed_leap_ordinals = set(leap_ordinals) & set(
+            all_this_cycles_ordinals_up_to_this_year
+        )
         elapsed_normal_leap_years_in_this_cycle = len(
             this_cycles_elapsed_leap_ordinals
         )
 
         common_ordinals = self.common_year_cycle_ordinals
-        this_cycles_elapsed_common_ordinals = [
-            ord_
-            for ord_ in all_this_cycles_ordinals_up_to_this_year
-            if ord_ in common_ordinals
-        ]
+        this_cycles_elapsed_common_ordinals = set(common_ordinals) & set(
+            all_this_cycles_ordinals_up_to_this_year
+        )
         elapsed_normal_common_years_in_this_cycle = len(
             this_cycles_elapsed_common_ordinals
         )
@@ -213,14 +209,12 @@ class ConvertibleDate:
         ) -> tuple[int, int]:
             day = abs(ord_) - days_in_years_passed
             if sign == -1:
-                day = self.days_in_year(ast_year) - day
+                day = self.days_in_year(year) - day
                 if day == 0:
                     year += sign * 1
                     day = self.days_in_year(year)
-            assert self.is_valid_ordinal_date((year, day)), (
-                f"Ordinal, {ord_}, produced invalid ordinal date, "
-                f"{year, day}, for the {self.calendar} calendar"
-            )
+            m = f"{ord_} made invalid ordinal date {year, day} for {calendar}"
+            assert self.is_valid_ordinal_date((year, day)), m
             return year, day
 
         def days_in_this_cycle(ay: int) -> int:
@@ -236,9 +230,18 @@ class ConvertibleDate:
             net_special_days = net_special_leap_days + net_special_common_days
             return self.days_in_normal_cycle + net_special_days
 
-        ast_year, sign = self._start_and_sign(ordinal)
+        #
+        # NOTE TO FUTURE ME/MAINTAINER
+        # this method avoids calling self.days_in_year for performance reasons
+        # if it wasn't implemented in CPython it could be a lot simpler...
+        #
+        # The philosophy is to count days from a calendar's epoch until the
+        # provided ordinal, counting the years that have elapsed in the process
 
-        if not self.calendar.has_leap_year:
+        start_ast_year, sign = self._start_and_sign(ordinal)
+        ast_year = start_ast_year
+        calendar = self.calendar
+        if not calendar.has_leap_year:
             days_in_year = self.days_in_year(ast_year)
             passed_years = int(abs(ordinal) / days_in_year)
             if ordinal % days_in_year == 0 and sign == 1:  # edge case
@@ -248,10 +251,12 @@ class ConvertibleDate:
             days_in_passed_years = days_in_year * passed_years
             return make_ordinal_date(ordinal, days_in_passed_years, ast_year)
 
-        cycle_length = self.calendar.leap_year_cycle_length
+        cycle_length = calendar.leap_year_cycle_length
 
+        # coarse search for correct ast year, increment by entire cycles
+        #
         # when ast_year == 0, days_in_passed_cycles is negative and the
-        # ast_year is positive, but this error is corrected in next while loop
+        # ast_year is positive. This error is corrected later
         days_in_passed_cycles = 0
         while days_in_passed_cycles < abs(ordinal):
             days_in_passed_cycles += days_in_this_cycle(ast_year)
@@ -259,13 +264,62 @@ class ConvertibleDate:
         days_in_passed_cycles -= days_in_this_cycle(ast_year)
         ast_year -= cycle_length * sign
 
-        days_into_current_cycle = self.days_in_year(ast_year)
-        while days_in_passed_cycles + days_into_current_cycle < abs(ordinal):
-            ast_year += sign * 1
-            days_into_current_cycle += self.days_in_year(ast_year)
-        days_into_current_cycle -= self.days_in_year(ast_year)
+        if days_in_passed_cycles >= 0:
+            # assume all years are leap to guess minimum correct year
+            min_ast_year = ast_year
+            min_days_into_cycle = calendar.days_in_leap_year
+            while days_in_passed_cycles + min_days_into_cycle < abs(ordinal):
+                min_days_into_cycle += calendar.days_in_leap_year
+                min_ast_year += sign * 1
+            min_days_into_cycle -= calendar.days_in_leap_year
+            min_ast_year -= sign * 1
+            guessed_min_days = min_days_into_cycle > 0
+        else:  # skip because of edge case described above
+            guessed_min_days = False
+            min_ast_year = ast_year = 0
+            days_in_passed_cycles = 0
+            min_days_into_cycle = 0
 
-        days_in_passed_years = days_in_passed_cycles + days_into_current_cycle
+        if guessed_min_days:
+            # find the amount of extra leap years only if necessary
+            days_in_leap_year = self.calendar.days_in_leap_year
+            days_in_common_year = self.calendar.days_in_common_year
+
+            completed_cycles = self.completed_cycles(min_ast_year)
+            min_cycle_index = self.cycle_index(
+                min_ast_year, completed_cycles, start_ast_year, sign
+            )
+            all_cycle_ords = list(self.all_cycle_ordinals)
+            if sign == -1:
+                all_cycle_ords.reverse()
+            min_passed_cycle_ords = set(all_cycle_ords[: min_cycle_index + 1])
+            cycle_common_ords = set(self.common_year_cycle_ordinals)
+            extra_leap_years = len(min_passed_cycle_ords & cycle_common_ords)
+            leap_days = days_in_leap_year - days_in_common_year
+            if sign == -1:  # reset for the entire instance
+                all_cycle_ords.reverse()
+
+            # adjust guesses based on extra leap years
+            extra_leap_days = abs(extra_leap_years * leap_days)
+            days_in_leap_year = calendar.days_in_leap_year
+            ast_year = min_ast_year + int(extra_leap_days / days_in_leap_year)
+            skipped_special_years = self.net_elapsed_special_years(ast_year)
+            skipped_special_common_years = skipped_special_years[1]
+            ast_year += skipped_special_common_years
+            min_days_into_cycle -= extra_leap_days
+
+        # iterate year by year
+        if guessed_min_days:
+            days_in_passed_years = days_in_passed_cycles + min_days_into_cycle
+        else:
+            days_in_passed_years = days_in_passed_cycles + self.days_in_year(
+                ast_year
+            )
+        while days_in_passed_years < abs(ordinal):
+            ast_year += sign * 1
+            days_in_passed_years += self.days_in_year(ast_year)
+        days_in_passed_years -= self.days_in_year(ast_year)
+
         return make_ordinal_date(ordinal, days_in_passed_years, ast_year)
 
     def completed_cycles(self, ast_year: int) -> int:

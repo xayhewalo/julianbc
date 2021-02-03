@@ -16,6 +16,7 @@ JulianBC will be a visual-timeline program in the near future
  - [X] add `leap_year_cycle_length`
  - [X] add `days_in_week`
  - [X] move validation methods out of this function
+ - [ ] add validation that `days_in_leap year` is greater than or equal `days_in_common_year`
 #### ConvertibleClock
 - [X] add `convertible_clocks`
 - [X] change table name to "convertible_clock"
@@ -63,6 +64,7 @@ JulianBC will be a visual-timeline program in the near future
 - [X] remove week stuff
 - [X] `common_year_cycle_ordinals` generator is slowing the UI, refactor it so it's not generated everytime and change factories so tests to don't forever
 - [ ] Test `__init__` properties
+- [ ] Test `completed_cycles` with special years
 #### ConvertibleTime
 - [X] remove `convertible_clocks`
 - [X] test error raised for `convert_hms`
@@ -92,6 +94,7 @@ JulianBC will be a visual-timeline program in the near future
 - [ ] Don't interact with the db at all. Rely entirely on business logic
 - [ ] add keyboard equivalents for all mouse interactions
 - [ ] Add Calendar from UI
+- [ ] Force leap years to be >= common years (emphasis on the equal to)
 #### Timeline
 - [ ] Sync timelines should set start and end ordinals of all timelines
 - [ ] add scroll

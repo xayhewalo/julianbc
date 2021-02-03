@@ -25,7 +25,7 @@ class HorScrollBehavior:
     Should be inherited left of FocusBehavior
     """
 
-    scroll_by = NumericProperty()  # this is what events should bind to
+    scroll_by = NumericProperty()
     drag_hor_scrolling = BooleanProperty(False)
     disable_drag_hor_scroll = BooleanProperty(False)
     shift_key = BooleanProperty(False)

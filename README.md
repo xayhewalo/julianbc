@@ -59,7 +59,6 @@ JulianBC will be a visual-timeline program in the near future
     - [X] check if `frequency` is an integer greater than zero
 - [ ] `next_week`(?)
 - [ ] move `make_ordinal` out of `ConvertibleDate`, change name
-- [ ] optimize `is_leap_year` for end of 400 year gregorian cycle
 - [X] remove `is_decending_era`
 - [X] remove week stuff
 - [X] `common_year_cycle_ordinals` generator is slowing the UI, refactor it so it's not generated everytime and change factories so tests to don't forever

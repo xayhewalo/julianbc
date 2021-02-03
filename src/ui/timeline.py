@@ -103,6 +103,8 @@ class Timeline(HorScrollBehavior, ZoomBehavior, FocusBehavior, FloatLayout):
         return super().on_kv_post(base_widget)
 
     def scroll_start_and_end(self, *_):
+        if self.scroll_by == 0:  # for performance
+            return
         dod = self.dx_to_dod(self.scroll_by)
         self.start_od -= dod
         self.end_od -= dod

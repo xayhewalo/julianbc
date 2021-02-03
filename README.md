@@ -55,8 +55,9 @@ JulianBC will be a visual-timeline program in the near future
 - [X] add `shift_ast_ymd`
     - [X] `shift_ast_year`
     - [X] `shift_ast_month`
-- [X] add `next_dateunit`
+- [ ] add `next_dateunit`
     - [X] check if `frequency` is an integer greater than zero
+    - [ ] Should use human-readable years
 - [ ] `next_week`(?)
 - [ ] move `make_ordinal` out of `ConvertibleDate`, change name
 - [X] remove `is_decending_era`
@@ -93,7 +94,6 @@ JulianBC will be a visual-timeline program in the near future
 - [ ] Don't interact with the db at all. Rely entirely on business logic
 - [ ] add keyboard equivalents for all mouse interactions
 - [ ] Add Calendar from UI
-- [ ] Force leap years to be >= common years (emphasis on the equal to)
 #### Timeline
 - [ ] Sync timelines should set start and end ordinals of all timelines
 - [ ] add scroll

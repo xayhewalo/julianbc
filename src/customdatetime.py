@@ -36,7 +36,7 @@ class ConvertibleDateTime:
     def __init__(self, date: ConvertibleDate, time: ConvertibleTime):
         self.date = date
         self.time = time
-        self.initial_interval = [1, DateUnit.DAY]
+        self.initial_interval = [25, DateUnit.DAY]
         self.datetime_units = list(DateUnit)
         self.datetime_units.extend(TimeUnit)  # largest to smallest
 
@@ -47,52 +47,16 @@ class ConvertibleDateTime:
         increase=True,
         recursive=False,
     ) -> list:
-        """# increase delta until the new_interval width is > interval_width
-        start_od = timeline.start_od
-        start_x = timeline.od_to_x(start_od)
-        assert start_x == 0, f"start_x should be 0, it's {start_x}"
-
-        sign = 1 if increase else -1
-        # delta = 5 * sign
-        if frequency == 1:
-            delta = 2
-        elif frequency == 2:
-            delta = 5
-        else:
-            delta = 5
-        new_frequency = frequency + (delta - (frequency % delta))
-        new_od = self.shift_od(start_od, [[new_frequency, unit]])
-        new_width = timeline.od_to_x(new_od)
-        mark = timeline.ids["mark"]
-        label_width = mark.max_label_width + (2 * mark.label_padding_x)
-        while label_width / new_width >= 0.5:  # fixme
-            new_frequency += delta
-            new_od = self.shift_od(start_od, [[new_frequency, unit]])
-            new_width = timeline.od_to_x(new_od)
-        return [new_frequency, unit]"""
 
         frequency, unit = interval
-        frequencies = self.get_frequencies(unit)
-        max_frequency = max(frequencies)
-        min_frequency = min(frequencies)
-        decrease_unit = increase and frequency == min_frequency  # todo DRY
-        increase_unit = not increase and frequency == max_frequency
-
-        if increase_unit:  # todo DRY
-            bigger_unit = self.increase_unit(unit)
-            frequency = min(self.get_frequencies(bigger_unit))
-            interval = [frequency, bigger_unit]
-            return self.change_interval(interval, timeline, increase, True)
-        elif decrease_unit:
-            smaller_unit = self.decrease_unit(unit)
-            frequency = max(self.get_frequencies(smaller_unit))
-            interval = [frequency, smaller_unit]
-            return self.change_interval(interval, timeline, increase, True)
+        changed_interval = self.change_unit(interval, timeline, increase)
+        if changed_interval is not None:
+            return changed_interval
 
         # increasing the number of marks means decreasing the frequency
-        # trust me it works ;)
         sign = -1 if increase else 1
         new_frequency = frequency
+        frequencies = self.get_frequencies(unit)
         if not recursive:
             idx = frequencies.index(frequency)
             new_idx = idx + sign
@@ -106,58 +70,58 @@ class ConvertibleDateTime:
         new_interval_width = timeline.od_to_x(new_od)  # an approximation
         mark = timeline.ids["mark"]
 
-        # FIXME dry
-        label_width = mark.max_label_width + (2 * mark.label_padding_x)
-        while (
-            label_width > new_interval_width
-            or new_interval_width * 3 > timeline.width
-        ):
-            # todo frequency is a bad name
-            decrease_unit = increase and new_frequency == min_frequency
-            increase_unit = not increase and new_frequency == max_frequency
-            if increase_unit:
-                bigger_unit = self.increase_unit(unit)
-                frequency = min(self.get_frequencies(bigger_unit))
-                interval = [frequency, bigger_unit]
-                return self.change_interval(interval, timeline, increase, True)
-            elif decrease_unit:
-                smaller_unit = self.decrease_unit(unit)
-                frequency = max(self.get_frequencies(smaller_unit))
-                interval = [frequency, smaller_unit]
-                return self.change_interval(interval, timeline, increase, True)
+        too_many_marks = mark.max_label_width > new_interval_width
+        too_few_marks = new_interval_width * 3 > timeline.width
+        while too_many_marks or too_few_marks:
+            intvl = self.change_unit([new_frequency, unit], timeline, increase)
+            if intvl is not None:
+                frequency, unit = intvl
+                return [frequency, unit]
 
             idx = frequencies.index(new_frequency)
             new_idx = idx + sign
             new_frequency = frequencies[new_idx]
             new_od = self.extend_od(start_od, [new_frequency, unit])
             new_interval_width = timeline.od_to_x(new_od)
+
+            too_many_marks = mark.max_label_width > new_interval_width
+            too_few_marks = new_interval_width * 3 > timeline.width
+            increase = True if too_few_marks else False
         return [new_frequency, unit]
 
-    def increase_unit(
-        self, unit: Union[DateUnit, TimeUnit]
-    ) -> Union[DateUnit, TimeUnit]:
-        """:raises ValueError: if trying to increase DateUnit.Year"""
+    def change_unit(
+        self, interval: DateTime_interval, timeline: Timeline, increase=True
+    ) -> Union[DateTime_interval, None]:
+        """
+        Change the unit of an interval. Assumes self.datetime_units is sorted
+        largest to smallest
 
-        if unit == DateUnit.YEAR:
-            raise ValueError("Interval unit can't be more than a year")
+        :raises ValueError: when increasing a Year unit or decreasing a second
+        unit.
+        """
+        frequency, unit = interval
+        frequencies = self.get_frequencies(unit)
+        decrease_unit = increase and frequency == min(frequencies)
+        increase_unit = not increase and frequency == max(frequencies)
 
-        # assumes datetime_units sorted largest -> smallest
-        unit_idx = self.datetime_units.index(unit)
-        bigger_unit = self.datetime_units[unit_idx - 1]
-        return bigger_unit
+        if increase_unit:
+            if unit == DateUnit.YEAR:
+                raise ValueError("Interval unit can't be more than a year")
 
-    def decrease_unit(
-        self, unit: Union[DateUnit, TimeUnit]
-    ) -> Union[DateUnit, TimeUnit]:
-        """raises ValueError: if trying to increase DateUnit.Year"""
+            unit_idx = self.datetime_units.index(unit)
+            bigger_unit = self.datetime_units[unit_idx - 1]
+            frequency = min(self.get_frequencies(bigger_unit))
+            interval = [frequency, bigger_unit]
+            return self.change_interval(interval, timeline, increase, True)
+        elif decrease_unit:
+            if unit == TimeUnit.SECOND:
+                raise ValueError("Interval unit can't be less than a second")
 
-        if unit == TimeUnit.SECOND:
-            raise ValueError("Interval unit can't be less than a second")
-
-        # assumes datetime_units sorted largest -> smallest
-        unit_idx = self.datetime_units.index(unit)
-        smaller_unit = self.datetime_units[unit_idx + 1]
-        return smaller_unit
+            unit_idx = self.datetime_units.index(unit)
+            smaller_unit = self.datetime_units[unit_idx + 1]
+            frequency = max(self.get_frequencies(smaller_unit))
+            interval = [frequency, smaller_unit]
+            return self.change_interval(interval, timeline, increase, True)
 
     def extend_od(
         self,
@@ -233,7 +197,7 @@ class ConvertibleDateTime:
                     divs.update((i, num // i))
             return list(divs)
 
-        if unit == DateUnit.YEAR:  # fixme
+        if unit == DateUnit.YEAR:
             # fmt: off
             return [
                 1, 2, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000,

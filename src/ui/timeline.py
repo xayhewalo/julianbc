@@ -38,8 +38,8 @@ class Timeline(HorScrollBehavior, ZoomBehavior, FocusBehavior, FloatLayout):
     __midnight_today = __now.replace(hour=0, minute=0, second=0, microsecond=0)
     __seconds_into_day = (__now - __midnight_today).seconds
     __now_ordinal_decimal = __now.toordinal() + (__seconds_into_day / 86400)
-    start_od = NumericProperty(__now_ordinal_decimal - 2)  # od @ x = 0
-    end_od = NumericProperty(__now_ordinal_decimal + 2)  # od @ x = self.width
+    start_od = NumericProperty(__now_ordinal_decimal - 60)  # od @ x = 0
+    end_od = NumericProperty(__now_ordinal_decimal + 60)  # od @ x = self.width
 
     def _get_time_span(self):
         return self.end_od - self.start_od
@@ -110,6 +110,8 @@ class Timeline(HorScrollBehavior, ZoomBehavior, FocusBehavior, FloatLayout):
         self.end_od -= dod
 
     def zoom_start_and_end(self, *_):
+        if self.zoom_by == 0:  # for performance
+            return
         dod = self.dx_to_dod(self.zoom_by)
         self.start_od += dod
         self.end_od -= dod
@@ -120,12 +122,11 @@ class Timeline(HorScrollBehavior, ZoomBehavior, FocusBehavior, FloatLayout):
         Ensure there are at least 2 visible marks when zooming in.
         """
         mark = self.ids["mark"]
-        label_width = mark.max_label_width + (2 * mark.label_padding_x)
-        if mark.interval_width * 3 > self.width:  # todo sync thesh with Mark
+        if mark.interval_width * 3 > self.width:
             # increase number of marks
             mark_interval = self.cdt.change_interval(self.mark_interval, self)
             self.mark_interval = mark_interval
-        elif label_width > mark.interval_width:
+        elif mark.max_label_width > mark.interval_width:
             # decrease number of marks
             self.mark_interval = self.cdt.change_interval(
                 self.mark_interval, self, False

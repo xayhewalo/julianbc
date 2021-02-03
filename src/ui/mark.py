@@ -56,6 +56,7 @@ class Mark(Widget):
         self.bind(pos=self.draw_marks_trigger, size=self.draw_marks_trigger)
 
     def draw_marks(self, *_, mark_ods: list = None) -> list:
+        """:raises AssertionError: if less than two visible marks drawn"""
         self.canvas.clear()
         self.canvas.add(self.mark_color)
 
@@ -74,6 +75,7 @@ class Mark(Widget):
                 mark_od = parent.cdt.next_od(mark_od, parent.mark_interval)
                 mark_ods.append(mark_od)
 
+        assert len(visible_mark_xs) >= 2, "must be at least 2 visible marks"
         self.interval_width = float(numpy.diff(visible_mark_xs).mean())
         for idx, mark_x in enumerate(mark_xs):
             parent = self.parent
@@ -103,7 +105,7 @@ class Mark(Widget):
         label = TextBoundLabel(text=text, font_size=self.font_size)
         label.texture_update()
         if label.width > self.max_label_width:
-            self.max_label_width = label.width
+            self.max_label_width = label.width + (2 * self.label_padding_x)
 
         if alignment == self.LABEL_LEFT:
             label_x = sp(x + self.label_padding_x)

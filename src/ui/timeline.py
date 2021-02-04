@@ -50,6 +50,7 @@ class Timeline(HorScrollBehavior, ZoomBehavior, FocusBehavior, FloatLayout):
         bind=["start_od", "end_od"],
     )
 
+    mark = ObjectProperty()
     mark_interval = ListProperty()
     extend_time_span_by = NumericProperty(1)
 
@@ -96,10 +97,11 @@ class Timeline(HorScrollBehavior, ZoomBehavior, FocusBehavior, FloatLayout):
             scroll_by=self.scroll_start_and_end,
             zoom_by=self.zoom_start_and_end,
             shift_key=self.disable_zoom,
+            focus=self.give_focus,
         )
 
     def on_kv_post(self, base_widget):
-        self.ids["mark"].bind(interval_width=self.change_mark_interval)
+        self.mark.bind(interval_width=self.change_mark_interval)
         return super().on_kv_post(base_widget)
 
     def scroll_start_and_end(self, *_):
@@ -121,22 +123,21 @@ class Timeline(HorScrollBehavior, ZoomBehavior, FocusBehavior, FloatLayout):
         Ensure label width doesn't overlap on zoom out.
         Ensure there are at least 2 visible marks when zooming in.
         """
-        mark = self.ids["mark"]
-        if mark.interval_width * 3 > self.width:
+        if self.mark.interval_width * 3 > self.width:
             # increase number of marks
             mark_interval = self.cdt.change_interval(self.mark_interval, self)
             self.mark_interval = mark_interval
-        elif mark.max_label_width > mark.interval_width:
+        elif self.mark.max_label_width > self.mark.interval_width:
             # decrease number of marks
             self.mark_interval = self.cdt.change_interval(
                 self.mark_interval, self, False
             )
 
     def draw_mark(self, _):
-        self.ids["mark"].draw_marks()
+        self.mark.draw_marks()
 
     def update_mark_interval(self, *_):
-        self.ids["mark"].interval = self.mark_interval
+        self.mark.interval = self.mark_interval
 
     def on_shift_key(self, *_):
         self.disable_zoom(self.shift_key)
@@ -149,6 +150,12 @@ class Timeline(HorScrollBehavior, ZoomBehavior, FocusBehavior, FloatLayout):
 
     def disable_zoom(self, *_):
         self.disable_zoom_in = self.disable_zoom_out = self.shift_key
+
+    def give_focus(self, *_):
+        if self.focus:
+            # self.focus_next = self.focus_next or self.mark
+            self.focus = False
+            self.focus_next.focus = True
 
     #
     # Time Conversions

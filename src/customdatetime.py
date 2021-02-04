@@ -68,7 +68,7 @@ class ConvertibleDateTime:
 
         new_od = self.extend_od(start_od, [new_frequency, unit])
         new_interval_width = timeline.od_to_x(new_od)  # an approximation
-        mark = timeline.ids["mark"]
+        mark = timeline.mark
 
         too_many_marks = mark.max_label_width > new_interval_width
         too_few_marks = new_interval_width * 3 > timeline.width

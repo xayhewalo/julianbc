@@ -15,6 +15,19 @@
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
 #:kivy 2.0.0
-<TextBoundLabel>:
-    size_hint: None, None
-    size: self.texture_size
+#:import hex kivy.utils.get_color_from_hex
+<EventView>:
+    canvas:
+        # background color
+        Color:
+            rgb: hex("#424242")
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+        # focus highlight
+        Color:
+            rgba: hex("#263238") if self.focus else (0, 0, 0, 0)
+        Rectangle:
+            pos: self.pos
+            size: self.size

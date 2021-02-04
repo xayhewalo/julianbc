@@ -14,7 +14,9 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
-#:kivy 2.0.0
-<TextBoundLabel>:
-    size_hint: None, None
-    size: self.texture_size
+from kivy.uix.behaviors import FocusBehavior
+from kivy.uix.floatlayout import FloatLayout
+
+
+class EventView(FocusBehavior, FloatLayout):
+    """Where the end-user manipulates events"""

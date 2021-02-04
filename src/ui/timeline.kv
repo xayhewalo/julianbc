@@ -15,21 +15,58 @@
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
 #:kivy 2.0.0
+#:import hex kivy.utils.get_color_from_hex
+#:import CollapseBar src.ui.collapsebar.CollapseBar
+#:import EventView src.ui.eventview.EventView
 #:import Mark src.ui.mark.Mark
-<Timeline>:
-    canvas:
-        Color:
-            rgb: 38/255, 50/255, 56/255
-        Rectangle:
-            pos: self.pos
-            size: self.size
+#:import MarkBar src.ui.markbar.MarkBar
 
-    Label:
-        text: str(self.parent.focus) + " " + str(mark.interval_width)
+<CollapsableLayout@RelativeLayout+FocusBehavior>:
+    timeline: None
+
+    EventView:
+        id: event_view
+        size_hint: 1, None
+        top: mark_bar.y
+        height: self.parent.height -  mark_bar.height
+        focus_next: self.parent.focus_next
+
+    MarkBar:
+        id: mark_bar
+        size_hint: 1, None
+        pos_hint: {"top": 1}
+        height: mark.font_size * 2
+        focus_next: event_view
+        focus_previous: self.parent.focus_previous
 
     Mark:
         id: mark
-        pos: self.parent.pos
-        size: self.parent.size
+        size_hint: 1, None
+        top: mark_bar.top
+        height: event_view.height + mark_bar.height
+        timeline: self.parent.timeline
         mark_height: self.height
+        mark_y: self.y
         label_align: self.LABEL_MID_INTERVAL
+
+<Timeline>:
+    id: timeline
+    focus_next: collapse_bar
+    mark: collapsable_layout.ids.mark
+
+    CollapsableLayout:
+        id: collapsable_layout
+        size_hint: 1, None
+        height: timeline.height - collapse_bar.height
+        focus_previous: collapse_bar
+        focus_next: timeline
+        timeline: timeline
+
+    CollapseBar:
+        id: collapse_bar
+        size_hint: 1, None
+        pos_hint: {"top": 1}
+        height: self.font_size * 1.25
+        dependant: collapsable_layout
+        focus_next: collapsable_layout
+        label_text: timeline.cdt.date.calendar.name if timeline.cdt is not None else ""

@@ -32,6 +32,8 @@ from src.ui.textboundlabel import TextBoundLabel
 class Mark(Widget):
     """Marks specific point in time. Should be a child of a BaseTimeline"""
 
+    timeline = ObjectProperty()
+
     LABEL_LEFT = "left"
     LABEL_CENTER = "center"
     LABEL_MID_INTERVAL = "mid_interval"
@@ -62,27 +64,26 @@ class Mark(Widget):
 
         mark_xs = []
         visible_mark_xs = []
-        parent = self.parent
+        tl = self.timeline
         if mark_ods is None:
-            mark_od = parent.extended_start_od
+            mark_od = tl.extended_start_od
             mark_ods = [mark_od]
-            while mark_od <= parent.extended_end_od:
-                mark_x = parent.od_to_x(mark_od)
+            while mark_od <= tl.extended_end_od:
+                mark_x = tl.od_to_x(mark_od)
                 mark_xs.append(mark_x)
-                if 0 <= mark_x <= parent.width:
+                if 0 <= mark_x <= tl.width:
                     visible_mark_xs.append(mark_x)
 
-                mark_od = parent.cdt.next_od(mark_od, parent.mark_interval)
+                mark_od = tl.cdt.next_od(mark_od, tl.mark_interval)
                 mark_ods.append(mark_od)
 
         assert len(visible_mark_xs) >= 2, "must be at least 2 visible marks"
         self.interval_width = float(numpy.diff(visible_mark_xs).mean())
         for idx, mark_x in enumerate(mark_xs):
-            parent = self.parent
-            unit = parent.mark_interval[1]
+            unit = tl.mark_interval[1]
             mark_od = mark_ods[idx]
 
-            hr_date = parent.cdt.od_to_hr_date(mark_od, unit)
+            hr_date = tl.cdt.od_to_hr_date(mark_od, unit)
             label = self.make_label(mark_x, hr_date, self.label_align)
             pos = sp(mark_x), sp(self.mark_y)
             size = sp(self.mark_width), sp(self.mark_height)

@@ -99,3 +99,4 @@ class ZoomBehavior:
         if ctrl_numpadsubtract or ctrl_shift_subtract:
             self.zoom_by = -self._zoom_by
             self.zoom_by = 0
+        return super().keyboard_on_key_down(_, keycode, __, modifiers)

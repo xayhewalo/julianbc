@@ -94,12 +94,14 @@ JulianBC will be a visual-timeline program in the near future
 - [ ] Don't interact with the db at all. Rely entirely on business logic
 - [ ] add keyboard equivalents for all mouse interactions
 - [ ] Add Calendar from UI
+- [ ] Decouple focus and keyboard
 #### Timeline
 - [ ] Sync timelines should set start and end ordinals of all timelines
 - [ ] add scroll
   - [X] Gain focus when scrolling
   - [X] shift + scrollup/scrolldown
   - [X] left/right arrow scroll when in focus
+  - [ ] allow shift scroll up when children are focused
   - [ ] up/down scroll when in focus
   - [ ] page up/down scroll when in focus
   - [ ] home/end scroll(?)
@@ -113,7 +115,7 @@ JulianBC will be a visual-timeline program in the near future
 - [ ] disable `focus` when `Timeline` is collapsed
 - [ ] add proper reference to other timelines when scrolling/zooming while synced
 - [ ] `ComboTimeline` should scroll/zoom its children instead of children manipulating their siblings
-- [ ] Move event graphics to `EventContainer` class
+- [ ] Move event graphics to `EventView` class
   - [ ] test setting event height when two events ago is really long
   - [ ] test expand event_height and all other events shift y positions
 #### Mark

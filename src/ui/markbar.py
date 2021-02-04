@@ -14,7 +14,9 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
-#:kivy 2.0.0
-<TextBoundLabel>:
-    size_hint: None, None
-    size: self.texture_size
+from kivy.uix.behaviors.focus import FocusBehavior
+from kivy.uix.widget import Widget
+
+
+class MarkBar(FocusBehavior, Widget):
+    """Where DateTime labels are"""

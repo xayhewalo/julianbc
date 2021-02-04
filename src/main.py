@@ -17,6 +17,10 @@
 from kivy.app import App
 from kivy.lang import Builder
 
+Builder.load_file("ui/collapsebar.kv")
+Builder.load_file("ui/eventview.kv")
+Builder.load_file("ui/markbar.kv")
+Builder.load_file("ui/textboundlabel.kv")
 Builder.load_file("ui/timeline.kv")
 
 

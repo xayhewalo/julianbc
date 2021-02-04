@@ -1,0 +1,51 @@
+#  Copyright (c) 2021 author(s) of JulianBC.
+#
+#  This file is part of JulianBC.
+#
+#  JulianBC is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  JulianBC is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
+#:kivy 2.0.0
+#:import hex kivy.utils.get_color_from_hex
+#:import TextBoundLabel src.ui.textboundlabel.TextBoundLabel
+<CollapseBar>:
+    id: collapse_bar
+    label_text: ""
+
+    canvas:
+        # background color
+        Color:
+            rgb: hex("#000a12")
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+        # focus indicator
+        Color:
+            rgb: (0, 0, 1, 1) if self.focus else (0, 0, 0, 0)
+        Rectangle:
+            pos: self.pos
+            size: self.width, self.height * 0.2
+
+    Image:
+        id: action_img
+        size_hint: None, 1
+        width: self.height
+        x: self.parent.x
+        center_y: self.parent.center_y
+        source: self.parent.collapse_image if self.parent.visible else self.parent.expand_image
+
+    TextBoundLabel:
+        x: action_img.right
+        center_y: self.parent.center_y
+        font_size: self.parent.font_size
+        text: self.parent.label_text

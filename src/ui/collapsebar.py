@@ -21,11 +21,11 @@ from kivy.properties import (
     ObjectProperty,
     StringProperty,
 )
-from kivy.uix.behaviors.focus import FocusBehavior
 from kivy.uix.floatlayout import FloatLayout
+from src.ui.focusedkeylisten import PassiveFocusBehavior
 
 
-class CollapseBar(FocusBehavior, FloatLayout):
+class CollapseBar(PassiveFocusBehavior, FloatLayout):
     """collapses and expands it's children/dependant"""
 
     dependant = ObjectProperty()
@@ -39,7 +39,8 @@ class CollapseBar(FocusBehavior, FloatLayout):
     expand_image = StringProperty("media/arrow-204-512.png")
 
     def on_touch_up(self, touch):
-        if self.collide_point(*touch.pos):
+        button = touch.button  # todo DRY with Abstract Focus
+        if self.collide_point(*touch.pos) and not button.startswith("scroll"):
             self.animate_dependant()
             return True
         return super().on_touch_up(touch)

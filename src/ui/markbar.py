@@ -14,9 +14,9 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
-from kivy.uix.behaviors.focus import FocusBehavior
 from kivy.uix.widget import Widget
+from src.ui.focusedkeylisten import PassiveFocusBehavior
 
 
-class MarkBar(FocusBehavior, Widget):
+class MarkBar(PassiveFocusBehavior, Widget):
     """Where DateTime labels are"""

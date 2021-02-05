@@ -18,12 +18,8 @@ from kivy.metrics import sp
 from kivy.properties import BooleanProperty, NumericProperty
 
 
-# noinspection PyUnresolvedReferences
 class HorScrollBehavior:
-    """
-    Infinite horizontal scrolling
-    Should be inherited left of FocusBehavior
-    """
+    """Infinite horizontal scrolling"""
 
     scroll_by = NumericProperty()
     drag_hor_scrolling = BooleanProperty(False)
@@ -40,9 +36,11 @@ class HorScrollBehavior:
     def on_touch_down(self, touch):
         """touchpad and mouse scroll scrolling"""
 
+        # noinspection PyUnresolvedReferences
         if super().on_touch_down(touch):
             return True
 
+        # noinspection PyUnresolvedReferences
         if self.collide_point(*touch.pos):
             # Touched widget but children didn't use touch, must be scrolling
             self._collision = True
@@ -67,55 +65,60 @@ class HorScrollBehavior:
 
         disable_drag_hor_scroll = self.disable_drag_hor_scroll
         if self._collision and touch.dx != 0 and not disable_drag_hor_scroll:
-            # Should have already gained focus through FocusBehavior
             if touch.grab_current is not self:
                 self.drag_hor_scrolling = True
                 touch.grab(self)
+                # noinspection PyUnresolvedReferences
                 self.get_root_window().set_system_cursor("hand")
             self.scroll_by = touch.dx
             return True
+        # noinspection PyUnresolvedReferences
         return super().on_touch_move(touch)
 
     def on_touch_up(self, touch):
         if touch.grab_current is self and self.drag_hor_scrolling:
             touch.ungrab(self)
+            # noinspection PyUnresolvedReferences
             self.get_root_window().set_system_cursor("arrow")
             self.cleanup_scroll()
+        # noinspection PyUnresolvedReferences
         return super().on_touch_up(touch)
 
-    def keyboard_on_key_down(self, window, keycode, text, modifiers):
+    def on_keyboard_down(self, keyboard, keycode, text, modifiers):
         if keycode[1] in ("shift", "rshift"):
             self.shift_key = True
             return True
-        elif self.left_key_down(keycode, modifiers):
+        elif self.is_left_key(keycode, modifiers):
             self.left_key = True
             self.scroll_by = -self._scroll_by
             self.cleanup_scroll()
-        elif self.right_key_down(keycode, modifiers):
+        elif self.is_right_key(keycode, modifiers):
             self.right_key = True
             self.scroll_by = self._scroll_by
             self.cleanup_scroll()
-        return super().keyboard_on_key_down(window, keycode, text, modifiers)
+        # noinspection PyUnresolvedReferences
+        return super().on_keyboard_down(keyboard, keycode, text, modifiers)
 
-    def keyboard_on_key_up(self, window, keycode):
+    def on_keyboard_up(self, keyboard, keycode):
         # i don't think we want to consume keys here?...
         if keycode[1] in ("shift", "rshift"):
             self.shift_key = False
-        if self.left_key and self.left_key_down(keycode):
+        if self.left_key and self.is_left_key(keycode):
             self.left_key = False
-        elif self.right_key and self.right_key_down(keycode):
+        if self.right_key and self.is_right_key(keycode):
             self.right_key = False
-        return super().keyboard_on_key_up(window, keycode)
+        # noinspection PyUnresolvedReferences
+        return super().on_keyboard_up(keyboard, keycode)
 
     @staticmethod
-    def left_key_down(keycode: list[int, str], modifiers: list = None) -> bool:
+    def is_left_key(keycode: list[int, str], modifiers: list = None) -> bool:
         key = keycode[1]
         if modifiers:
             return key == "left" or key == "numpad4" and "numlock" in modifiers
         return key == "left" or key == "numpad4"
 
     @staticmethod
-    def right_key_down(
+    def is_right_key(
         keycode: list[int, str], modifiers: list = None
     ) -> bool:
         k = keycode[1]

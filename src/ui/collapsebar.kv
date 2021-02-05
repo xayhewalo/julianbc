@@ -41,11 +41,11 @@
         size_hint: None, 1
         width: self.height
         x: self.parent.x
-        center_y: self.parent.center_y
+        pos_hint: {"center_y": 0.5}
         source: self.parent.collapse_image if self.parent.visible else self.parent.expand_image
 
     TextBoundLabel:
         x: action_img.right
-        center_y: self.parent.center_y
+        pos_hint: {"center_y": 0.5}
         font_size: self.parent.font_size
         text: self.parent.label_text

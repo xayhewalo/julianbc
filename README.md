@@ -94,7 +94,8 @@ JulianBC will be a visual-timeline program in the near future
 - [ ] Don't interact with the db at all. Rely entirely on business logic
 - [ ] add keyboard equivalents for all mouse interactions
 - [ ] Add Calendar from UI
-- [ ] Decouple focus and keyboard
+- [X] Decouple focus and keyboard
+- [ ] Break up Timeline into a `DateTimeView` and a layout containing `DateTimeController` and `CollapseBar`, and have collapse bar change size of `Timeline`
 #### Timeline
 - [ ] Sync timelines should set start and end ordinals of all timelines
 - [ ] add scroll
@@ -118,6 +119,7 @@ JulianBC will be a visual-timeline program in the near future
 - [ ] Move event graphics to `EventView` class
   - [ ] test setting event height when two events ago is really long
   - [ ] test expand event_height and all other events shift y positions
+- [ ] keep timeline behind collapse bar when collapsed and resizing
 #### Mark
 - [X] don't do shift calculations in `Mark`
 - [ ] Test middle interval alignment

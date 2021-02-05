@@ -23,13 +23,18 @@ from kivy.properties import (
     NumericProperty,
     ObjectProperty,
 )
-from kivy.uix.behaviors.focus import FocusBehavior
 from kivy.uix.floatlayout import FloatLayout
+from src.ui.focusedkeylisten import FocusKeyListenBehavior
 from src.ui.focusedhorscroll import HorScrollBehavior
 from src.ui.focusedzoom import ZoomBehavior
 
 
-class Timeline(HorScrollBehavior, ZoomBehavior, FocusBehavior, FloatLayout):
+class Timeline(
+    HorScrollBehavior,
+    ZoomBehavior,
+    FocusKeyListenBehavior,
+    FloatLayout,
+):
     """Where the end-user adds events"""
 
     cdt = ObjectProperty()
@@ -139,8 +144,8 @@ class Timeline(HorScrollBehavior, ZoomBehavior, FocusBehavior, FloatLayout):
     def update_mark_interval(self, *_):
         self.mark.interval = self.mark_interval
 
-    def on_shift_key(self, *_):
-        self.disable_zoom(self.shift_key)
+    def disable_zoom(self, *_):
+        self.disable_zoom_in = self.disable_zoom_out = self.shift_key
 
     def on_touches(self, *_):
         if len(self.touches) > 1:
@@ -148,14 +153,14 @@ class Timeline(HorScrollBehavior, ZoomBehavior, FocusBehavior, FloatLayout):
         else:
             self.disable_drag_hor_scroll = False
 
-    def disable_zoom(self, *_):
-        self.disable_zoom_in = self.disable_zoom_out = self.shift_key
-
     def give_focus(self, *_):
         if self.focus:
-            # self.focus_next = self.focus_next or self.mark
-            self.focus = False
-            self.focus_next.focus = True
+            self.set_focus_next()
+
+    def on_touch_down(self, touch):
+        if touch.button.startswith("scroll"):
+            self.focus_next = self.ids["event_view"]
+        return super().on_touch_down(touch)
 
     #
     # Time Conversions

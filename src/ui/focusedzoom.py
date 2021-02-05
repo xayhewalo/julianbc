@@ -19,12 +19,8 @@ from kivy.properties import BooleanProperty, ListProperty, NumericProperty
 from kivy.vector import Vector
 
 
-# noinspection PyUnresolvedReferences
 class ZoomBehavior:
-    """
-    A hacky class to zoom without storing a potentially infinite number.
-    Should be inherited before FocusBehavior
-    """
+    """A hacky class to zoom without storing a potentially infinite number"""
 
     disable_zoom_in = BooleanProperty(False)
     disable_zoom_out = BooleanProperty(False)
@@ -37,19 +33,24 @@ class ZoomBehavior:
         self._zoom_by = sp(20)
 
     def on_touch_down(self, touch):
+        # noinspection PyUnresolvedReferences
         if super().on_touch_down(touch):
             return True
 
+        # noinspection PyUnresolvedReferences
         if self.collide_point(*touch.pos):
-            # noinspection PyAttributeOutsideInit
-            self.focus = True
             button = touch.button
             self.touches.append(touch)
             if button == "scrollup" and not self.disable_zoom_in:
+                # noinspection PyAttributeOutsideInit
+                self.focus = True
                 self.zoom_by = self._zoom_by
             elif button == "scrolldown" and not self.disable_zoom_out:
+                # noinspection PyAttributeOutsideInit
+                self.focus = True
                 self.zoom_by = -self._zoom_by
             elif len(self.touches) == 2 and not button.startswith("scroll"):
+                # AbstractFocus should handle focusing in this case
                 touch.grab(self)
                 self.pinch_zooming = True
                 self._zoom_by = sp(10)
@@ -74,6 +75,7 @@ class ZoomBehavior:
                 self.zoom_by = -self._zoom_by
                 self.zoom_by = 0
                 return True
+        # noinspection PyUnresolvedReferences
         return super().on_touch_move(touch)
 
     def on_touch_up(self, touch):
@@ -82,9 +84,10 @@ class ZoomBehavior:
             if touch.grab_current is self and self.pinch_zooming:
                 touch.ungrab(self)
                 self._zoom_by = sp(20)
+        # noinspection PyUnresolvedReferences
         return super().on_touch_up(touch)
 
-    def keyboard_on_key_down(self, _, keycode, __, modifiers):
+    def on_keyboard_down(self, keyboard, keycode, text, modifiers):
         """zoom with ctrl + '+' or ctrl + '-'"""
         key = keycode[1]
         ctrl = "ctrl" in modifiers
@@ -99,4 +102,5 @@ class ZoomBehavior:
         if ctrl_numpadsubtract or ctrl_shift_subtract:
             self.zoom_by = -self._zoom_by
             self.zoom_by = 0
-        return super().keyboard_on_key_down(_, keycode, __, modifiers)
+        # noinspection PyUnresolvedReferences
+        return super().on_keyboard_down(keyboard, keycode, text, modifiers)

@@ -14,9 +14,9 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
-from kivy.uix.behaviors import FocusBehavior
 from kivy.uix.floatlayout import FloatLayout
+from src.ui.focusedkeylisten import PassiveFocusBehavior
 
 
-class EventView(FocusBehavior, FloatLayout):
+class EventView(PassiveFocusBehavior, FloatLayout):
     """Where the end-user manipulates events"""

@@ -14,7 +14,6 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
-from kivy.factory import Factory
 from kivy.properties import ObjectProperty
 from src.ui.focus import AbstractFocus
 from src.ui.keylisten import KeyListenBehavior
@@ -23,6 +22,13 @@ from src.ui.keylisten import KeyListenBehavior
 class FocusKeyListenBehavior(AbstractFocus, KeyListenBehavior):
     """cycle through focusable widgets"""
 
+    passive_listener = ObjectProperty(allownone=True)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # noinspection PyUnresolvedReferences
+        self.bind(focus=self.request_keyboard)
+
     def on_keyboard_down(self, keyboard, keycode, text, modifiers):
         if keycode[1] == "tab":
             if "shift" in modifiers:
@@ -30,28 +36,58 @@ class FocusKeyListenBehavior(AbstractFocus, KeyListenBehavior):
             else:
                 self.set_focus_next()
             return True
+
+        if self.passive_listener:
+            if self.passive_listener.on_keyboard_down(
+                keyboard, keycode, text, modifiers
+            ):
+                return True
         return super().on_keyboard_down(keyboard, keycode, text, modifiers)
 
     def on_keyboard_up(self, keyboard, keycode):
         if keycode[1] == "escape":
             self.focus = False
             return True
+
+        if self.passive_listener:
+            if self.passive_listener.on_keyboard_up(keyboard, keycode):
+                return True
         return super().on_keyboard_up(keyboard, keycode)
 
 
 class PassiveFocusBehavior(AbstractFocus):
-    """Dictates what to focus next without actually requesting the keyboard"""
+    """
+    Dictates what to focus next without actually requesting the keyboard
+    Keyboard listener should call on_keyboard_* on behalf of these instances
+    """
 
-    keyboard_listener = ObjectProperty(rebind=True)  # instance of KeyListen
+    keyboard_listener = ObjectProperty(rebind=True)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # noinspection PyUnresolvedReferences
+        self.bind(
+            focus_next=self.set_focus_next_and_previous,
+            focus_previous=self.set_focus_next_and_previous,
+        )
+
+    def set_passive_listener(self):
+        if self.keyboard_listener and self.focus:
+            self.keyboard_listener.passive_listener = self
 
     def on_focus(self, *_):
         self.set_focus_next_and_previous()
+        self.set_passive_listener()
         super().on_focus(*_)
 
-    def set_focus_next_and_previous(self):
+    def set_focus_next_and_previous(self, *_):
         if self.focus:
+            self.keyboard_listener.request_keyboard()
             self.keyboard_listener.focus_next = self.focus_next
             self.keyboard_listener.focus_previous = self.focus_previous
 
+    def on_keyboard_down(self, keyboard, keycode, text, modifiers):
+        pass
 
-Factory.register("FocusKeyListenBehavior", FocusKeyListenBehavior)
+    def on_keyboard_up(self, keyboard, keycode):
+        pass

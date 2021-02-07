@@ -24,6 +24,8 @@ from kivy.properties import (
     ObjectProperty,
 )
 from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.screenmanager import Screen
+from src.ui.collapse import CollapseBehavior
 from src.ui.focusedkeylisten import FocusKeyListenBehavior
 from src.ui.focusedhorscroll import HorScrollBehavior
 from src.ui.focusedzoom import ZoomBehavior
@@ -33,11 +35,13 @@ class Timeline(
     HorScrollBehavior,
     ZoomBehavior,
     FocusKeyListenBehavior,
+    CollapseBehavior,
     FloatLayout,
 ):
     """Where the end-user adds events"""
 
-    cdt = ObjectProperty()
+    cdt = ObjectProperty()  # ConvertibleDateTime
+    event_view = ObjectProperty()
 
     __now = datetime.datetime.now(datetime.timezone.utc).astimezone()
     __midnight_today = __now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -159,7 +163,7 @@ class Timeline(
 
     def on_touch_down(self, touch):
         if touch.button.startswith("scroll"):
-            self.focus_next = self.ids["event_view"]
+            self.focus_next = self.event_view
         return super().on_touch_down(touch)
 
     #
@@ -177,3 +181,10 @@ class Timeline(
     def dx_to_dod(self, dx: float) -> float:
         """convert change in pixels to change in ordinal decimal"""
         return self.time_span * (dx / self.width)
+
+
+class TimelineScreen(Screen):  # todo reposition/resize timelines
+    """Where one or more timelines are displayed"""
+
+    def add_timeline(self, timeline: Timeline):
+        """assumes at least one timeline is already in the screen"""

@@ -95,7 +95,7 @@ JulianBC will be a visual-timeline program in the near future
 - [ ] add keyboard equivalents for all mouse interactions
 - [ ] Add Calendar from UI
 - [X] Decouple focus and keyboard
-- [ ] Break up Timeline into a `DateTimeView` and a layout containing `DateTimeController` and `CollapseBar`, and have collapse bar change size of `Timeline`
+- [ ] Use `kivy.Factory` instead of importing widgets into .kv files
 #### Timeline
 - [ ] Sync timelines should set start and end ordinals of all timelines
 - [ ] add scroll
@@ -115,11 +115,10 @@ JulianBC will be a visual-timeline program in the near future
 - [ ] `TimelineScreen` should handle collapsing
 - [ ] disable `focus` when `Timeline` is collapsed
 - [ ] add proper reference to other timelines when scrolling/zooming while synced
-- [ ] `ComboTimeline` should scroll/zoom its children instead of children manipulating their siblings
 - [ ] Move event graphics to `EventView` class
   - [ ] test setting event height when two events ago is really long
   - [ ] test expand event_height and all other events shift y positions
-- [ ] keep timeline behind collapse bar when collapsed and resizing
+- [X] keep timeline behind collapse bar when collapsed and resizing
 #### Mark
 - [X] don't do shift calculations in `Mark`
 - [ ] Test middle interval alignment

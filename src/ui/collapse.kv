@@ -17,8 +17,16 @@
 #:kivy 2.0.0
 #:import hex kivy.utils.get_color_from_hex
 #:import TextBoundLabel src.ui.textboundlabel.TextBoundLabel
+<CollapseBehavior>:
+    y: self.collapsed_y if self.collapsed and self.collapsable else self.expanded_y
+    height: self.collapsed_height if self.collapsed and self.collapsable else self.expanded_height
+
+<CollapseLayout@CollapseBehavior+RelativeLayout>:
+
 <CollapseBar>:
     id: collapse_bar
+    size_hint_y: None
+    height: self.font_size  # todo padding?
     label_text: ""
 
     canvas:
@@ -31,18 +39,18 @@
 
         # focus indicator
         Color:
-            rgb: (0, 0, 1, 1) if self.focus else (0, 0, 0, 0)
+            rgb: hex("#39796b") if self.focus else (0, 0, 0, 0)
         Rectangle:
             pos: self.pos
             size: self.width, self.height * 0.2
 
     Image:
         id: action_img
-        size_hint: None, 1
+        size_hint: (None, 1) if collapse_bar.collapsable else (0, 0)
         width: self.height
         x: self.parent.x
         pos_hint: {"center_y": 0.5}
-        source: self.parent.collapse_image if self.parent.visible else self.parent.expand_image
+        source: self.parent.expand_image if self.parent.dependant_collapsed else self.parent.collapse_image
 
     TextBoundLabel:
         x: action_img.right

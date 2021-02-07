@@ -20,6 +20,7 @@ from kivy.clock import Clock
 from kivy.graphics import Color, Rectangle
 from kivy.metrics import sp
 from kivy.properties import (
+    BooleanProperty,
     BoundedNumericProperty,
     NumericProperty,
     ObjectProperty,
@@ -41,7 +42,7 @@ class Mark(Widget):
     label_align = OptionProperty(LABEL_LEFT, options=_label_alignments)
     label_padding_x = NumericProperty("2sp")
     label_padding_y = NumericProperty("2sp")
-    label_y = NumericProperty()
+    label_y = NumericProperty(None, allownone=True)
     font_size = BoundedNumericProperty(sp(12), min=sp(12))
     max_label_width = NumericProperty()
 
@@ -50,6 +51,7 @@ class Mark(Widget):
     mark_width = NumericProperty("2sp")
     mark_height = NumericProperty("100sp")
     mark_color = ObjectProperty(Color([250 / 255] * 3))
+    visible = BooleanProperty()
     interval_width = NumericProperty()
 
     def __init__(self, **kwargs):
@@ -87,14 +89,15 @@ class Mark(Widget):
             label = self.make_label(mark_x, hr_date, self.label_align)
             pos = sp(mark_x), sp(self.mark_y)
             size = sp(self.mark_width), sp(self.mark_height)
-            self.canvas.add(self.mark(pos=pos, size=size))
-            self.canvas.add(
-                Rectangle(
-                    pos=label.pos,
-                    size=label.texture_size,
-                    texture=label.texture,
+            if self.visible:
+                self.canvas.add(self.mark(pos=pos, size=size))
+                self.canvas.add(
+                    Rectangle(
+                        pos=label.pos,
+                        size=label.texture_size,
+                        texture=label.texture,
+                    )
                 )
-            )
         return mark_ods
 
     def make_label(self, x: int, text: str, alignment: str) -> TextBoundLabel:
@@ -116,8 +119,9 @@ class Mark(Widget):
             label.center_x = x + (self.interval_width / 2)
             label_x = label.x
 
-        label_y = self.label_y or sp(
-            self.top - self.font_size - self.label_padding_y
-        )
+        label_y = self.label_y
+        if self.label_y is None:
+            label_y = sp(self.top - self.font_size - self.label_padding_y)
+
         label.pos = label_x, label_y
         return label

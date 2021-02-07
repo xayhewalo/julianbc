@@ -17,7 +17,8 @@
 from kivy.app import App
 from kivy.lang import Builder
 
-Builder.load_file("ui/collapsebar.kv")
+# fixme path will only work on Linux, use os join
+Builder.load_file("ui/collapse.kv")
 Builder.load_file("ui/eventview.kv")
 Builder.load_file("ui/markbar.kv")
 Builder.load_file("ui/textboundlabel.kv")

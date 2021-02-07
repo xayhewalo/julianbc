@@ -16,56 +16,68 @@
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
 #:kivy 2.0.0
 #:import hex kivy.utils.get_color_from_hex
-#:import CollapseBar src.ui.collapsebar.CollapseBar
+#:import gregorian_cdt src.dbsetup.gregorian_cdt
+#:import CollapseBar src.ui.collapse.CollapseBar
 #:import EventView src.ui.eventview.EventView
-#:import FocusKeyListenBehavior src.ui.focusedkeylisten.FocusKeyListenBehavior
 #:import Mark src.ui.mark.Mark
 #:import MarkBar src.ui.markbar.MarkBar
+<TimelineScreen>:
+    name: "timeline_screen"
+
+    Timeline:
+        id: timeline_1
+        expanded_height: self.parent.height
+        collapsable: False  # todo let timelinescreen drive collapability
+        cdt: gregorian_cdt
+        mark_interval: gregorian_cdt.initial_interval
+
 <Timeline>:
     id: timeline
-    focus_next: collapse_bar
+    size_hint: None, None
+    width: sp(1366)  # todo monitor resolution
+    collapsed_height: collapse_bar.height
+    collapsed: True if collapse_bar.dependant_collapsed else False
+    focus_next: event_view
     mark: mark
-
-    RelativeLayout:
-        id: collapsable_layout
-        size_hint: 1, None
-        height: timeline.height -  collapse_bar.height
-
-        EventView:
-            id: event_view
-            size_hint: 1, None
-            height: self.parent.height -  mark_bar.height
-            focus_previous: mark_bar
-            focus_next: self  # todo set to next timeline or None?
-            focus_on_scroll: True
-            keyboard_listener: timeline
-
-        MarkBar:
-            id: mark_bar
-            size_hint: 1, None
-            y: event_view.top
-            height: mark.font_size * 2
-            focus_next: event_view
-            focus_previous: collapse_bar
-            keyboard_listener: timeline
-
-        Mark:
-            id: mark
-            size_hint: 1, None
-            height: event_view.height + mark_bar.height
-            timeline: timeline
-            mark_height: self.height
-            mark_y: self.y
-            label_align: self.LABEL_MID_INTERVAL
-
+    event_view: event_view
 
     CollapseBar:
         id: collapse_bar
-        size_hint: 1, None
         pos_hint: {"top": 1}
-        height: self.font_size * 1.25
-        focus_next: mark_bar # todo focus next should be the next timeline because it shouldn't close if there is no other timeline
-        # todo focus previous should be header or previous timeline
+        dependant: collapse_layout
+        collapsable: timeline.collapsable
+        focus_next: mark_bar
+        # todo focus_previous is previous timeline or header bar
         keyboard_listener: timeline
-        dependant: collapsable_layout
-        label_text: timeline.cdt.date.calendar.name if timeline.cdt is not None else ""  # todo short cut to calendar namE
+        label_text: timeline.cdt.date.calendar.name if timeline.cdt else ""  # todo convenience method for calendar name
+
+        CollapseLayout:
+            id: collapse_layout
+            size_hint: 1, None
+            expanded_height: timeline.expanded_height - collapse_bar.height
+            collapsed_height: timeline.collapsed_height
+            expanded_y: collapse_bar.y - self.expanded_height
+
+            EventView:
+                id: event_view
+                size_hint: 1, None
+                height: collapse_layout.height - mark_bar.height
+                focus_next: self # todo focus next should be next event or next collapse bar? focus will always change with right/left scroll in this case, maybe another property like "only gain focus if give focus and focus_next/focus_previous don't ahve focus"
+                focus_previous: mark_bar
+                keyboard_listener: timeline
+
+            MarkBar:
+                id: mark_bar
+                size_hint: 1, None
+                pos_hint: {"top": 1}
+                height: mark.font_size * 2
+                focus_next: event_view
+                focus_previous: collapse_bar
+                keyboard_listener: timeline
+
+            Mark:
+                id: mark
+                timeline: timeline
+                mark_height: self.height
+                label_align: Mark.LABEL_MID_INTERVAL
+                visible: False if collapse_bar.dependant_collapsed else True

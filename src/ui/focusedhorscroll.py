@@ -30,7 +30,6 @@ class HorScrollBehavior:
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._collision = None
         self._scroll_by = sp(20)
 
     def on_touch_down(self, touch):
@@ -43,7 +42,6 @@ class HorScrollBehavior:
         # noinspection PyUnresolvedReferences
         if self.collide_point(*touch.pos):
             # Touched widget but children didn't use touch, must be scrolling
-            self._collision = True
             button = touch.button
             shift_scrollleft = button == "scrolldown" and self.shift_key
             shift_scrollright = button == "scrollup" and self.shift_key
@@ -64,7 +62,12 @@ class HorScrollBehavior:
         """touch/click and drag scrolling"""
 
         disable_drag_hor_scroll = self.disable_drag_hor_scroll
-        if self._collision and touch.dx != 0 and not disable_drag_hor_scroll:
+        # noinspection PyUnresolvedReferences
+        if (
+            self.collide_point(*touch.pos)
+            and touch.dx != 0
+            and not disable_drag_hor_scroll
+        ):
             if touch.grab_current is not self:
                 self.drag_hor_scrolling = True
                 touch.grab(self)
@@ -89,10 +92,13 @@ class HorScrollBehavior:
             self.shift_key = True
             return True
         elif self.is_left_key(keycode, modifiers):
+            self.focus = True
             self.left_key = True
             self.scroll_by = -self._scroll_by
             self.cleanup_scroll()
         elif self.is_right_key(keycode, modifiers):
+            # noinspection PyAttributeOutsideInit
+            self.focus = True
             self.right_key = True
             self.scroll_by = self._scroll_by
             self.cleanup_scroll()
@@ -112,21 +118,17 @@ class HorScrollBehavior:
 
     @staticmethod
     def is_left_key(keycode: list[int, str], modifiers: list = None) -> bool:
-        key = keycode[1]
         if modifiers:
-            return key == "left" or key == "numpad4" and "numlock" in modifiers
-        return key == "left" or key == "numpad4"
+            return keycode[1] in ("left", "numpad4") and "numlock" in modifiers
+        return keycode[1] in ("left", "numpad4")
 
     @staticmethod
-    def is_right_key(
-        keycode: list[int, str], modifiers: list = None
-    ) -> bool:
-        k = keycode[1]
+    def is_right_key(keycode: list[int, str], modifiers: list = None) -> bool:
+        key = keycode[1]
         if modifiers:
-            return k == "right" or k == "numpad6" and "numlock" in modifiers
-        return k == "right" or k == "numpad6"
+            return key in ("right", "numpad6") and "numlock" in modifiers
+        return key in ("right", "numpad6")
 
     def cleanup_scroll(self):
         self.drag_hor_scrolling = False
         self.scroll_by = 0
-        self._collision = False

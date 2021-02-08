@@ -17,6 +17,8 @@
 from kivy.app import App
 from kivy.factory import Factory
 from kivy.lang import Builder
+from kivy.uix.label import Label
+from kivy.uix.modalview import ModalView
 from src.ui.imagebutton import HoverImageButton, HoverImageToggleButton
 
 # fixme path will only work on Linux, use os join
@@ -30,6 +32,15 @@ Builder.load_file("ui/timeline.kv")
 
 
 class JulianBC(App):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.popup = ModalView(size_hint=[0.4, 0.4])
+        label = Label(
+            text="This feature is not implemented yet"
+            "\n\nClick outside this popup to dismiss it."
+        )
+        self.popup.add_widget(label)
+
     # def on_start(self):
     #     import cProfile
     #     self.profile = cProfile.Profile()

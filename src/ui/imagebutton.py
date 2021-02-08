@@ -14,6 +14,7 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
+from kivy.app import App
 from kivy.properties import (
     BooleanProperty,
     DictProperty,
@@ -23,6 +24,7 @@ from kivy.properties import (
 from kivy.uix.behaviors.button import ButtonBehavior
 from kivy.uix.behaviors.togglebutton import ToggleButtonBehavior
 from kivy.uix.floatlayout import FloatLayout
+from src.ui.focusedkeylisten import FocusKeyListenBehavior
 from src.ui.mouselisten import MouseListenBehavior
 
 
@@ -44,7 +46,7 @@ class ChangeButtonBgColor:
             self.current_color = self.down_color
 
 
-class HoverChangeBgColor(MouseListenBehavior):
+class HoverChangeBgColor(FocusKeyListenBehavior, MouseListenBehavior):
     """change color when mouse hovers over the button"""
 
     hover_color = ListProperty([1, 1, 1, 0.2])
@@ -53,14 +55,21 @@ class HoverChangeBgColor(MouseListenBehavior):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # noinspection PyUnresolvedReferences
-        self.bind(hovered=self.change_color)
+        self.bind(hovered=self.change_color, focus=self.change_color)
 
     # noinspection PyUnresolvedReferences
     def change_color(self, *_):
         super().change_color(*_)
-        if self.hovered and self.state == "normal":
+        if (self.hovered or self.focus) and self.state == "normal":
             # noinspection PyAttributeOutsideInit
             self.current_color = self.hover_color
+
+    def on_keyboard_down(self, keyboard, keycode, text, modifiers):
+        if keycode[1] in ("enter", "numpadenter"):
+            # noinspection PyUnresolvedReferences
+            self.on_press()
+            return True
+        return super().on_keyboard_down(keyboard, keycode, text, modifiers)
 
     def on_mouse_pos(self, window, mouse_pos):
         # noinspection PyUnresolvedReferences
@@ -86,7 +95,8 @@ class HoverImageButton(
     ButtonBehavior,
     ImageLayout,
 ):
-    pass
+    def on_press(self):
+        App.get_running_app().popup.open()
 
 
 class HoverImageToggleButton(
@@ -95,4 +105,6 @@ class HoverImageToggleButton(
     ToggleButtonBehavior,
     ImageLayout,
 ):
-    pass
+    def on_press(self):
+        if self.state == "normal":
+            App.get_running_app().popup.open()

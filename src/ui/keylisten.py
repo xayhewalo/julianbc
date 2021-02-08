@@ -23,7 +23,6 @@ class KeyListenBehavior:
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.keyboard = None
-        self.request_keyboard()
 
     def request_keyboard(self, *_):
         self.keyboard = EventLoop.window.request_keyboard(

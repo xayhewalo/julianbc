@@ -15,6 +15,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
 #:kivy 2.0.0
+#:set corner_radius 5.
 <ChangeButtonBgColor>:
     canvas.before:
         Color:
@@ -22,7 +23,15 @@
         RoundedRectangle:
             pos: self.pos
             size: self.size
-            radius: [5.,]
+            radius: [corner_radius,]
+
+<HoverChangeBgColor>:
+    canvas:
+        Color:
+            rgba: (1, 1, 1, 0.9) if self.focus else (0, 0, 0, 0)
+        Line:
+            rounded_rectangle: self.x, self.y, self.width, self.height, corner_radius, 60
+            dashes: [4, 2]
 
 <ImageLayout>:
     Image:

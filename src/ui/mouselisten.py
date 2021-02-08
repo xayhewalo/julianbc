@@ -15,7 +15,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
 from kivy.base import EventLoop
-from kivy.factory import Factory
 
 
 class MouseListenBehavior:

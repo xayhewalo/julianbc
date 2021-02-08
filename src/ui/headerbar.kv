@@ -43,21 +43,28 @@
     HeaderButton:
         id: add_event_button
         image_source: "media/add-list-512.png"
+        focus_next: add_entity_button
 
     HeaderButton:
         id: add_entity_button
         x: add_event_button.right
         image_source: "media/add-user-2-512.png"
+        focus_previous: add_event_button
+        focus_next: swap_calendar_clock_button
 
     HeaderButton:
         id: swap_calendar_clock_button
         x: add_entity_button.right
         image_source: "media/calendar-3-512.png"
+        focus_previous: add_entity_button
+        focus_next: add_thread_button
 
     HeaderButton:
         id: add_thread_button
         x: swap_calendar_clock_button.right
         image_source: "media/shuffle-512.png"
+        focus_previous: swap_calendar_clock_button
+        focus_next: timeline_view_button
 
     #
     # View buttons
@@ -66,23 +73,34 @@
         id: entity_view_button
         pos_hint: {"top": 1, "right": 0.5}
         image_source: "media/conference-512.png"
+        focus_previous: timeline_view_button
+        focus_next: wiki_view_button
+        on_press: self.state = "normal"; timeline_view_button.state = "down"; app.popup.open()
 
     HeaderToggleButton:
         id: wiki_view_button
         pos_hint: {"top": 1, "x": 0.5}
         image_source: "media/globe-7-512.png"
+        focus_previous: entity_view_button
+        focus_next: thread_view_button
+        on_press: self.state = "normal"; timeline_view_button.state = "down"; app.popup.open()
 
     HeaderToggleButton:
         id: timeline_view_button
         state: "down"
         right: entity_view_button.x
         image_source: "media/hourglass_full_white_192x192.png"
+        focus_previous: add_thread_button
+        focus_next: entity_view_button
 
-    HeaderToggleButton:
-        id: thread_view_timeline
+    HeaderToggleButton:  # todo probs delete
+        id: thread_view_button
         x: wiki_view_button.right
         image_size_hint: 0.7, 0.7
         image_source: "media/timeline_white_192x192.png"
+        focus_next: sync_timeline_button
+        focus_previous: wiki_view_button
+        on_press: self.state = "normal"; timeline_view_button.state = "down"; app.popup.open()
 
     #
     # Utility Buttons
@@ -91,19 +109,28 @@
         id: settings_button
         pos_hint: {"top": 1, "right": 1}
         image_source: "media/cog-512.png"
+        # todo focus next should be the first timeline
+        focus_previous: filter_button
 
     HeaderButton:
         id: filter_button
         right: settings_button.x
         image_source: "media/filled-filter-512.png"
+        focus_previous: search_button
+        focus_next: settings_button
 
     HeaderButton:
         id: search_button
         right: filter_button.x
         image_source: "media/search-13-512.png"
+        focus_previous: sync_timeline_button
+        focus_next: filter_button
 
     HeaderToggleButton:
-        id: sync_button
+        id: sync_timeline_button
         right: search_button.x
         image_source: "media/sinchronize-512.png"
         group: None
+        focus_previous: thread_view_button
+        focus_next: search_button
+        on_press: self.state = "normal"; timeline_view_button.state = "down"; app.popup.open()

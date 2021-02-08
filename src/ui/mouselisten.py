@@ -15,30 +15,20 @@
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
 from kivy.base import EventLoop
+from kivy.factory import Factory
 
 
-class KeyListenBehavior:
-    """listen to the Window's keyboard events"""
+class MouseListenBehavior:
+    """Listen to the Window's mouse position"""
 
     def __init__(self, **kwargs):
+        EventLoop.window.bind(mouse_pos=self.on_mouse_pos)
         super().__init__(**kwargs)
-        self.keyboard = None
-        self.request_keyboard()
 
-    def request_keyboard(self, *_):
-        self.keyboard = EventLoop.window.request_keyboard(
-            self.keyboard_closed, self
-        )
-        self.keyboard.bind(
-            on_key_down=self.on_keyboard_down, on_key_up=self.on_keyboard_up
-        )
-
-    def keyboard_closed(self):
-        self.keyboard.unbind(on_key_down=self.on_keyboard_down)
-        self.keyboard = None
-
-    def on_keyboard_down(self, keyboard, keycode, text, modifiers):
-        pass
-
-    def on_keyboard_up(self, keyboard, keycode):
-        pass
+    # noinspection PyUnresolvedReferences
+    def on_mouse_pos(self, window, mouse_pos):
+        if self.disabled:
+            return True
+        for child in self.children:
+            if child.dispatch("on_mouse_pos", window, mouse_pos):
+                return True

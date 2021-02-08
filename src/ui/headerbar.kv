@@ -1,0 +1,109 @@
+#  Copyright (c) 2021 author(s) of JulianBC.
+#
+#  This file is part of JulianBC.
+#
+#  JulianBC is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  JulianBC is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
+#:kivy 2.0.0
+#:import hex kivy.utils.get_color_from_hex
+<HeaderButton@HoverImageButton>:
+    size_hint: None, 1
+    width: self.height
+    pos_hint: {"top": 1}
+    image_size_hint: 0.5, 0.5
+    mipmap: True
+
+<HeaderToggleButton@HoverImageToggleButton>:
+    size_hint: None, 1
+    width: self.height
+    pos_hint: {"top": 1}
+    image_size_hint: 0.5, 0.5
+    mipmap: True
+    group: "view"
+    allow_no_selection: False
+
+<HeaderBar@FloatLayout>:
+    canvas:
+        Color:
+            rgb: hex("#001e26")
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+    HeaderButton:
+        id: add_event_button
+        image_source: "media/add-list-512.png"
+
+    HeaderButton:
+        id: add_entity_button
+        x: add_event_button.right
+        image_source: "media/add-user-2-512.png"
+
+    HeaderButton:
+        id: swap_calendar_clock_button
+        x: add_entity_button.right
+        image_source: "media/calendar-3-512.png"
+
+    HeaderButton:
+        id: add_thread_button
+        x: swap_calendar_clock_button.right
+        image_source: "media/shuffle-512.png"
+
+    #
+    # View buttons
+    #
+    HeaderToggleButton:
+        id: entity_view_button
+        pos_hint: {"top": 1, "right": 0.5}
+        image_source: "media/conference-512.png"
+
+    HeaderToggleButton:
+        id: wiki_view_button
+        pos_hint: {"top": 1, "x": 0.5}
+        image_source: "media/globe-7-512.png"
+
+    HeaderToggleButton:
+        id: timeline_view_button
+        state: "down"
+        right: entity_view_button.x
+        image_source: "media/hourglass_full_white_192x192.png"
+
+    HeaderToggleButton:
+        id: thread_view_timeline
+        x: wiki_view_button.right
+        image_size_hint: 0.7, 0.7
+        image_source: "media/timeline_white_192x192.png"
+
+    #
+    # Utility Buttons
+    #
+    HeaderButton:
+        id: settings_button
+        pos_hint: {"top": 1, "right": 1}
+        image_source: "media/cog-512.png"
+
+    HeaderButton:
+        id: filter_button
+        right: settings_button.x
+        image_source: "media/filled-filter-512.png"
+
+    HeaderButton:
+        id: search_button
+        right: filter_button.x
+        image_source: "media/search-13-512.png"
+
+    HeaderToggleButton:
+        id: sync_button
+        right: search_button.x
+        image_source: "media/sinchronize-512.png"
+        group: None

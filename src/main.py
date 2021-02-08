@@ -15,11 +15,15 @@
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
 from kivy.app import App
+from kivy.factory import Factory
 from kivy.lang import Builder
+from src.ui.imagebutton import HoverImageButton, HoverImageToggleButton
 
 # fixme path will only work on Linux, use os join
 Builder.load_file("ui/collapse.kv")
 Builder.load_file("ui/eventview.kv")
+Builder.load_file("ui/headerbar.kv")
+Builder.load_file("ui/imagebutton.kv")
 Builder.load_file("ui/markbar.kv")
 Builder.load_file("ui/textboundlabel.kv")
 Builder.load_file("ui/timeline.kv")
@@ -43,4 +47,7 @@ class JulianBC(App):
 
 
 if __name__ == "__main__":
+    Factory.register("HoverImageButton", HoverImageButton)
+    Factory.register("HoverImageToggleButton", HoverImageToggleButton)
+
     JulianBC().run()

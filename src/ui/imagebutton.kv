@@ -15,12 +15,18 @@
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
 #:kivy 2.0.0
-#:import TimelineScreen src.ui.timeline.Timeline
-FloatLayout:
-    HeaderBar:
-        pos_hint: {"top": 1}
-        size_hint: 1, 0.05
+<ChangeButtonBgColor>:
+    canvas.before:
+        Color:
+            rgba: self.current_color
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [5.,]
 
-    ScreenManager:
-        size_hint: 1, 0.95
-        TimelineScreen:
+<ImageLayout>:
+    Image:
+        size_hint: self.parent.image_size_hint
+        pos_hint: self.parent.image_pos_hint
+        source: self.parent.image_source
+        mipmap: True

@@ -29,7 +29,8 @@ class AbstractFocus:
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._instances.append(self)
+        # noinspection PyUnresolvedReferences
+        self.__class__._instances.append(self.proxy_ref)
 
     # todo give next focus keyboard if it is keyboardable
     def set_focus_next(self):
@@ -61,8 +62,9 @@ class AbstractFocus:
 
     def defocus_others(self):
         if self.focus:
-            AbstractFocus._current_focused_widget = self
-            for instance in self._instances:
+            # noinspection PyUnresolvedReferences
+            AbstractFocus._current_focused_widget = self.proxy_ref
+            for instance in self.__class__._instances:
                 if self != instance and instance.focus is True:
                     instance.focus = False
 

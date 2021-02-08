@@ -57,7 +57,7 @@ JulianBC will be a visual-timeline program in the near future
     - [X] `shift_ast_month`
 - [ ] add `next_dateunit`
     - [X] check if `frequency` is an integer greater than zero
-    - [ ] Should use human-readable years
+    - [ ] Should use human-readable years (i.e 1 BCE -> 10 BCE instead of 1 BCE -> 11BCE)
 - [ ] `next_week`(?)
 - [ ] move `make_ordinal` out of `ConvertibleDate`, change name
 - [X] remove `is_decending_era`
@@ -96,6 +96,7 @@ JulianBC will be a visual-timeline program in the near future
 - [ ] Add Calendar from UI
 - [X] Decouple focus and keyboard
 - [ ] Use `kivy.Factory` instead of importing widgets into .kv files
+- [ ] figure out why one finger scrolling is fast and two finger scrolling is slow
 #### Timeline
 - [ ] Sync timelines should set start and end ordinals of all timelines
 - [ ] add scroll

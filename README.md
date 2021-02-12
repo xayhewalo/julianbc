@@ -63,7 +63,7 @@ JulianBC will be a visual-timeline program in the near future
 - [X] remove `is_decending_era`
 - [X] remove week stuff
 - [X] `common_year_cycle_ordinals` generator is slowing the UI, refactor it so it's not generated everytime and change factories so tests to don't forever
-- [ ] Test `__init__` properties
+- [X] Test `__init__` properties
 - [ ] Test `completed_cycles` with special years
 #### ConvertibleTime
 - [X] remove `convertible_clocks`

@@ -39,9 +39,8 @@ class ConvertibleDateTimeTest(TimeTestCase):
         cd = ConvertibleDate(calendar=self.calendar_factory.build())
         cdt = ConvertibleDateTime(date=cd, time=self.time_factory.build())
         assert isinstance(cdt.initial_interval[0], int)
-        assert (
-            isinstance(cdt.initial_interval[1], DateUnit)
-            or isinstance(cdt.initial_interval[1], TimeUnit)
+        assert isinstance(cdt.initial_interval[1], DateUnit) or isinstance(
+            cdt.initial_interval[1], TimeUnit
         )
         # fmt: off
         assert cdt.datetime_units == [
@@ -49,6 +48,13 @@ class ConvertibleDateTimeTest(TimeTestCase):
             TimeUnit.HOUR, TimeUnit.MINUTE, TimeUnit.SECOND,
         ]
         # fmt: on
+
+    def test__str__(self):
+        cd = ConvertibleDate(calendar=self.calendar_factory.build())
+        ct = self.time_factory.build()
+        cdt = ConvertibleDateTime(date=cd, time=ct)
+        assert cd.calendar.name in cdt.__str__()
+        assert ct.clock.name in cdt.__str__()
 
     def test_change_interval(self):
         raise NotImplementedError

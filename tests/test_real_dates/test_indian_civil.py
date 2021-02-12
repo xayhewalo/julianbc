@@ -985,9 +985,10 @@ class IndianCivilTest(RealCalendarTestCase):
     )
     def test_days_in_month_for_leap_month(self, _):
         leap_year, month, _ = self.random_leap_ymd()
+        hr_leap_year = leap_year - 1
         assert self.indian_cd.days_in_month(
             leap_year, month
-        ) == convertdate.indian_civil.month_length(leap_year, month)
+        ) == convertdate.indian_civil.month_length(hr_leap_year, month)
 
     #
     # ConvertibleDate.days_in_year

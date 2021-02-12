@@ -297,16 +297,19 @@ class ConvertibleCalendarTest(CalendarTestCase, FactoriesMixin):
         assert calendar.days_in_leap_year == expected_days_in_leap_year
 
     def test_days_in_leap_year_raises(self):
-        num_common_months = FAKE.random_int(min=2)
+        num_common_months = FAKE.random_int(min=11, max=20)
+        num_leap_months = FAKE.random_int(min=1, max=10)
+
         common_month_names = FAKE.words(nb=num_common_months)
         days_in_common_year_months = FAKE.random_choices(
-            elements=list(range(1, num_common_months)),
+            elements=list(range(11, 20)),
             length=num_common_months,
         )
-        leap_month_names = FAKE.words(nb=num_common_months - 1)
+
+        leap_month_names = FAKE.words(nb=num_leap_months)
         days_in_leap_year_months = FAKE.random_choices(
-            elements=list(range(1, num_common_months - 1)),
-            length=num_common_months - 1,
+            elements=list(range(1, 10)),
+            length=num_leap_months,
         )
         too_long_common_year_cal = self.calendar_factory.build(
             common_year_month_names=common_month_names,

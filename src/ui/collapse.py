@@ -14,7 +14,6 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
-from kivy.factory import Factory
 from kivy.properties import (
     AliasProperty,
     BooleanProperty,
@@ -91,6 +90,3 @@ class CollapseBar(PassiveFocusBehavior, FloatLayout):
 
     def on_dependant_collapsed(self, *_):
         self.dependant.collapsed = self.dependant_collapsed
-
-
-Factory.register("CollapseBehavior", CollapseBehavior)

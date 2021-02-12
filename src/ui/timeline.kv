@@ -17,11 +17,6 @@
 #:kivy 2.0.0
 #:import hex kivy.utils.get_color_from_hex
 #:import gregorian_cdt src.dbsetup.gregorian_cdt
-#:import CollapseBar src.ui.collapse.CollapseBar
-#:import EventView src.ui.eventview.EventView
-#:import Mark src.ui.mark.Mark
-#:import MarkBar src.ui.markbar.MarkBar
-#:import Timeline src.ui.timeline.Timeline
 <Timeline>:
     id: timeline
     size_hint: None, None
@@ -73,7 +68,7 @@
                 id: mark
                 timeline: timeline
                 mark_height: self.height
-                label_align: Mark.LABEL_MID_INTERVAL
+                label_align: self.LABEL_MID_INTERVAL
                 visible: False if collapse_bar.dependant_collapsed else True
 
 <TimelineScrollView>:

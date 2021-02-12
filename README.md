@@ -95,7 +95,7 @@ JulianBC will be a visual-timeline program in the near future
 - [ ] add keyboard equivalents for all mouse interactions
 - [ ] Add Calendar from UI
 - [X] Decouple focus and keyboard
-- [ ] Use `kivy.Factory` instead of importing widgets into .kv files
+- [X] Use `kivy.Factory` instead of importing widgets into .kv files
 - [ ] figure out why one finger scrolling is fast and two finger scrolling is slow
 #### Timeline
 - [ ] Sync timelines should set start and end ordinals of all timelines
@@ -114,7 +114,6 @@ JulianBC will be a visual-timeline program in the near future
 - [X] Add `extended_start_ordinal` and `extended_end_ordinal` that's outside the visible `time_span`
     - [X] don't do the calculations in `Timeline`
 - [X] `TimelineScreen` should handle collapsing
-- [ ] disable `focus` when `Timeline` is collapsed
 - [ ] add proper reference to other timelines when scrolling/zooming while synced
 - [ ] Move event graphics to `EventView` class
   - [ ] test setting event height when two events ago is really long

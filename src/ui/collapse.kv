@@ -25,7 +25,8 @@
 <CollapseBar>:
     id: collapse_bar
     size_hint_y: None
-    height: self.font_size  # todo padding?
+    label_padding: sp(3)
+    height: self.font_size + self.label_padding
     label_text: ""
 
     canvas:
@@ -45,7 +46,7 @@
 
     Image:
         id: action_img
-        size_hint: (None, 1) if collapse_bar.collapsable else (0, 0)
+        size_hint: (None, 0.7) if collapse_bar.collapsable else (0, 0)
         width: self.height
         x: self.parent.x
         pos_hint: {"center_y": 0.5}

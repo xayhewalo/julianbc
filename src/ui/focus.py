@@ -33,23 +33,23 @@ class AbstractFocus:
         self.__class__._instances.append(self)
 
     def set_focus_next(self):
-        self.focus = False
+        self.lose_focus()
         try:
-            self.focus_next.focus = True
+            self.focus_next.gain_focus()
         except AttributeError:
             self._ensure_none_focused()
 
     def set_focus_previous(self):
-        self.focus = False
+        self.lose_focus()
         try:
-            self.focus_previous.focus = True
+            self.focus_previous.gain_focus()
         except AttributeError:
             self._ensure_none_focused()
 
     @staticmethod
     def _ensure_none_focused():
         try:
-            AbstractFocus._current_focused_widget.focus = False
+            AbstractFocus._current_focused_widget.lose_focus()
         except AttributeError:
             pass
         else:
@@ -64,15 +64,28 @@ class AbstractFocus:
             AbstractFocus._current_focused_widget = self
             for instance in self.__class__._instances:
                 if self != instance and instance.focus is True:
-                    instance.focus = False
+                    instance.lose_focus()
 
     # noinspection PyUnresolvedReferences
     def on_touch_down(self, touch):
         button = touch.button
         if self.collide_point(*touch.pos):
             if self.focus_on_scroll or not button.startswith("scroll"):
-                self.focus = True
+                self.gain_focus()
         return super().on_touch_down(touch)
+
+    def gain_focus(self, *_):
+        """
+        Should be used instead of directly setting focus to allow a subclass to
+        implement custom logic when gaining focus
+        """
+
+        self.focus = True
+
+    def lose_focus(self, *_):
+        """Similar to gain_focus(), useful for custom losing focus logic"""
+
+        self.focus = False
 
     def give_focus(self, *_):
         """convenience method for widgets/layouts that to pass along focus"""

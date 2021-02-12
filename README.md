@@ -120,7 +120,7 @@ JulianBC will be a visual-timeline program in the near future
   - [ ] test setting event height when two events ago is really long
   - [ ] test expand event_height and all other events shift y positions
 - [X] keep timeline behind collapse bar when collapsed and resizing
-- [ ] Don't allow `MarkBar` and `EventView` to gain focus while collapsed
+- [X] Don't allow `MarkBar` and `EventView` to gain focus while collapsed
 #### Mark
 - [X] don't do shift calculations in `Mark`
 - [ ] Test middle interval alignment
@@ -137,6 +137,7 @@ JulianBC will be a visual-timeline program in the near future
 - [ ] lose focus when after making the event
 - [ ] put `TextInput`s into a collection and reset them in a loop
 - [ ] put `hint_text_color` into a variable
+- [ ] `focus_next` should be first event or next timeline
 #### CalendarChanger
 - [ ] make readable references to timelines
 

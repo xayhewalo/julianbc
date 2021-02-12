@@ -52,7 +52,7 @@ class FocusKeyListenBehavior(AbstractFocus, KeyListenBehavior):
 
     def on_keyboard_up(self, keyboard, keycode):
         if keycode[1] == "escape":
-            self.focus = False
+            self.lose_focus()
             return True
 
         if self.passive_listener:

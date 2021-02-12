@@ -22,6 +22,7 @@ from kivy.properties import (
     ListProperty,
     NumericProperty,
     ObjectProperty,
+    ReferenceListProperty,
 )
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.screenmanager import Screen
@@ -34,7 +35,7 @@ from src.ui.focusedzoom import ZoomBehavior
 from typing import Union
 
 
-class Timeline(  # todo don't gain focus while scrolling if child has focus
+class Timeline(
     HorScrollBehavior,
     ZoomBehavior,
     FocusKeyListenBehavior,
@@ -43,9 +44,14 @@ class Timeline(  # todo don't gain focus while scrolling if child has focus
 ):
     """Determines what datetimes are visible on screen"""
 
-    cdt = ObjectProperty()  # ConvertibleDateTime
+    mark_bar = ObjectProperty()
     collapse_bar = ObjectProperty()
     event_view = ObjectProperty()
+    focusable_descendants = ReferenceListProperty(
+        mark_bar, collapse_bar, event_view, rebind=True
+    )
+
+    cdt = ObjectProperty()  # ConvertibleDateTime
 
     __now = datetime.datetime.now(datetime.timezone.utc).astimezone()
     __midnight_today = __now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -65,7 +71,7 @@ class Timeline(  # todo don't gain focus while scrolling if child has focus
 
     mark = ObjectProperty()
     mark_interval = ListProperty()
-    mark_bar = ObjectProperty()
+
     extend_time_span_by = NumericProperty(1)
 
     def _get_extended_start_od(self):
@@ -162,6 +168,19 @@ class Timeline(  # todo don't gain focus while scrolling if child has focus
         else:
             self.disable_drag_hor_scroll = False
 
+    def gain_focus(self, *_):
+        """don't gain focus if any focusable descendants have focus"""
+
+        if not self.descendant_focused():
+            super().gain_focus()
+
+    def descendant_focused(self) -> bool:
+        for focusable_widget in self.focusable_descendants:
+            if focusable_widget:  # is None during initialization
+                if focusable_widget.focus:
+                    return True
+        return False
+
     #
     # Time Conversions
     #
@@ -193,12 +212,10 @@ class TimelineScrollView(ScrollView):  # todo scroll to child with focus
         child = self.children[0]
         for timeline in child.timelines:
             timeline.bind(focus=self.set_do_scroll_y)
-            if timeline.collapse_bar:  # is None during initialization
-                timeline.collapse_bar.bind(focus=self.set_do_scroll_y)
-            if timeline.event_view:
-                timeline.event_view.bind(focus=self.set_do_scroll_y)
-            if timeline.mark_bar:
-                timeline.mark_bar.bind(focus=self.set_do_scroll_y)
+
+            for focusable_widget in timeline.focusable_descendants:
+                if focusable_widget:  # is None during initialization
+                    focusable_widget.bind(focus=self.set_do_scroll_y)
 
     def set_do_scroll_y(self, *_):
         """disable scroll when a Timeline or its child has focus"""
@@ -210,18 +227,9 @@ class TimelineScrollView(ScrollView):  # todo scroll to child with focus
                 timeline_has_focus = True
                 break
 
-            if timeline.event_view:  # None during initialization
-                if timeline.event_view.focus:
-                    timeline_has_focus = True
-                    break
-            if timeline.mark_bar:
-                if timeline.mark_bar.focus:
-                    timeline_has_focus = True
-                    break
-            if timeline.collapse_bar:
-                if timeline.collapse_bar.focus:
-                    timeline_has_focus = True
-                    break
+            if timeline.descendant_focused():
+                timeline_has_focus = True
+                break
 
         if child.height <= self.height or timeline_has_focus:
             self.do_scroll_y = False
@@ -334,8 +342,3 @@ class TimelineScreen(AbstractFocus, Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.bind(focus=self.give_focus)
-
-    # todo event_view focus next should be next event or next collapse bar?
-    # focus will always change with right/left scroll in this case, maybe
-    # another property like "only gain focus if give focus and
-    # focus_next/focus_previous don't have focus"

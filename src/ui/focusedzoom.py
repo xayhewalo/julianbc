@@ -42,12 +42,12 @@ class ZoomBehavior:
             button = touch.button
             self.touches.append(touch)
             if button == "scrollup" and not self.disable_zoom_in:
-                # noinspection PyAttributeOutsideInit
-                self.focus = True
+                # noinspection PyUnresolvedReferences
+                self.gain_focus()
                 self.zoom_by = self._zoom_by
             elif button == "scrolldown" and not self.disable_zoom_out:
-                # noinspection PyAttributeOutsideInit
-                self.focus = True
+                # noinspection PyUnresolvedReferences
+                self.gain_focus()
                 self.zoom_by = -self._zoom_by
             elif len(self.touches) == 2 and not button.startswith("scroll"):
                 # AbstractFocus should handle focusing in this case
@@ -63,6 +63,7 @@ class ZoomBehavior:
 
     def on_touch_move(self, touch):
         """based on kivy.uix.scatter"""
+
         if touch.grab_current and self.pinch_zooming:
             anchor = Vector(self.touches[0].pos)
             old_distance = anchor.distance(touch.ppos)
@@ -89,6 +90,7 @@ class ZoomBehavior:
 
     def on_keyboard_down(self, keyboard, keycode, text, modifiers):
         """zoom with ctrl + '+' or ctrl + '-'"""
+
         key = keycode[1]
         ctrl = "ctrl" in modifiers
         ctrl_numpadadd_add = key == "numpadadd" and ctrl

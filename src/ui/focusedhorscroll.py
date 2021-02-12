@@ -46,13 +46,14 @@ class HorScrollBehavior:
             shift_scrollleft = button == "scrolldown" and self.shift_key
             shift_scrollright = button == "scrollup" and self.shift_key
             if touch.button == "scrollleft" or shift_scrollleft:
-                self.focus = True
+                # noinspection PyUnresolvedReferences
+                self.gain_focus()
                 self.scroll_by = -self._scroll_by
                 self.cleanup_scroll()
                 return True
             elif touch.button == "scrollright" or shift_scrollright:
-                # noinspection PyAttributeOutsideInit
-                self.focus = True
+                # noinspection PyUnresolvedReferences
+                self.gain_focus()
                 self.scroll_by = self._scroll_by
                 self.cleanup_scroll()
                 return True
@@ -92,13 +93,14 @@ class HorScrollBehavior:
             self.shift_key = True
             return True
         elif self.is_left_key(keycode, modifiers):
-            self.focus = True
+            # noinspection PyUnresolvedReferences
+            self.gain_focus()
             self.left_key = True
             self.scroll_by = -self._scroll_by
             self.cleanup_scroll()
         elif self.is_right_key(keycode, modifiers):
-            # noinspection PyAttributeOutsideInit
-            self.focus = True
+            # noinspection PyUnresolvedReferences
+            self.gain_focus()
             self.right_key = True
             self.scroll_by = self._scroll_by
             self.cleanup_scroll()

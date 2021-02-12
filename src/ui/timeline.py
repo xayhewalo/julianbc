@@ -198,7 +198,7 @@ class Timeline(
         return self.time_span * (dx / self.width)
 
 
-class TimelineScrollView(ScrollView):  # todo scroll to child with focus
+class TimelineScrollView(ScrollView):
     """Viewport for all the timelines"""
 
     def on_children(self, *_):
@@ -212,10 +212,12 @@ class TimelineScrollView(ScrollView):  # todo scroll to child with focus
         child = self.children[0]
         for timeline in child.timelines:
             timeline.bind(focus=self.set_do_scroll_y)
+            timeline.bind(focus=self.scroll_to_focused_widget)
 
             for focusable_widget in timeline.focusable_descendants:
                 if focusable_widget:  # is None during initialization
                     focusable_widget.bind(focus=self.set_do_scroll_y)
+                    focusable_widget.bind(focus=self.scroll_to_focused_widget)
 
     def set_do_scroll_y(self, *_):
         """disable scroll when a Timeline or its child has focus"""
@@ -235,6 +237,10 @@ class TimelineScrollView(ScrollView):  # todo scroll to child with focus
             self.do_scroll_y = False
         else:
             self.do_scroll_y = True
+
+    def scroll_to_focused_widget(self, widget, value):
+        if value:
+            self.scroll_to(widget)
 
 
 class TimelineLayout(FloatLayout):

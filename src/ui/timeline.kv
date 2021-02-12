@@ -79,6 +79,7 @@
 <TimelineScrollView>:
     bar_inactive_color: self.bar_color
     do_scroll_x: False
+    scroll_type: ["bars"]
 
 <TimelineLayout>:
     size_hint_y: None
@@ -100,9 +101,3 @@
                 default_focus_previous: self.previous_active_listener
                 cdt: gregorian_cdt
                 mark_interval: gregorian_cdt.initial_interval
-
-    Button:  # todo move this to header bar
-        size_hint: 0.2, 0.2
-        pos_hint: {"right": 1}
-        text: "Add Timeline"
-        on_release: timeline_layout.add_widget(Timeline(cdt=gregorian_cdt, mark_interval=gregorian_cdt.initial_interval))

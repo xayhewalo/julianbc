@@ -16,7 +16,7 @@ JulianBC will be a visual-timeline program in the near future
  - [X] add `leap_year_cycle_length`
  - [X] add `days_in_week`
  - [X] move validation methods out of this function
- - [ ] add validation that `days_in_leap year` is greater than or equal `days_in_common_year`
+ - [X] add validation that `days_in_leap year` is greater than or equal `days_in_common_year`
 #### ConvertibleClock
 - [X] add `convertible_clocks`
 - [X] change table name to "convertible_clock"
@@ -82,7 +82,7 @@ JulianBC will be a visual-timeline program in the near future
 - [X] add `extend_start_end` (by passed `interval`) to be used in `Timeline` and `Mark`
     - [X] use `shift_od`
 - [X] shift days and weeks(?) in `shift_od`
-- [ ] Test `__init__` properties
+- [X] Test `__init__` properties
 - [X] Optimize next_hms while loop
 #### EventController
 - [ ] `fields` in `make` are based on `Event` columns

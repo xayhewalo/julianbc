@@ -4,8 +4,8 @@ from src.db import CalendarConversion, ConvertibleCalendar
 
 num_weekdays = FAKE.random_int(min=1, max=20)
 weekday_indexes = [x for x in range(num_weekdays)]
-num_common_year_months = FAKE.random_int(min=1, max=20)
-num_leap_year_months = FAKE.random_int(min=1, max=20)
+num_common_year_months = FAKE.random_int(min=1, max=10)
+num_leap_year_months = FAKE.random_int(min=11, max=20)
 num_eras = FAKE.random_int(min=2, max=10)
 
 
@@ -26,14 +26,14 @@ class ConvertibleCalendarFactory(BaseFactory):
     common_year_month_names = factory.Faker("words", nb=num_common_year_months)
     days_in_common_year_months = factory.Faker(
         "random_choices",
-        elements=[x for x in range(1, 200)],
+        elements=list(range(1, 100)),
         length=num_common_year_months,
     )
     has_leap_year = True
     leap_year_month_names = factory.Faker("words", nb=num_leap_year_months)
     days_in_leap_year_months = factory.Faker(
         "random_choices",
-        elements=[x for x in range(1, 200)],
+        elements=list(range(101, 200)),
         length=num_leap_year_months,
     )
     leap_year_cycles = factory.Faker(

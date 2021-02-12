@@ -207,8 +207,13 @@ class ConvertibleCalendar(utils.Base):
     days_in_leap_year_months = Column(JSON, default=list, nullable=False)
 
     @hybrid_property
-    def days_in_leap_year(self):
-        return sum(self.days_in_leap_year_months)
+    def days_in_leap_year(self) -> int:
+        """:raises AssertionError: if leap year is longer than a common year"""
+
+        days_in_leap_year = sum(self.days_in_leap_year_months)
+        err_msg = "Leap year must be longer than common year"
+        assert days_in_leap_year > self.days_in_common_year, err_msg
+        return days_in_leap_year
 
     @validates("common_year_month_names", "leap_year_month_names")
     def _sanitize_month_names(self, _, month_names: list) -> list:

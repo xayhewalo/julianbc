@@ -296,6 +296,27 @@ class ConvertibleCalendarTest(CalendarTestCase, FactoriesMixin):
         expected_days_in_leap_year = sum(calendar.days_in_leap_year_months)
         assert calendar.days_in_leap_year == expected_days_in_leap_year
 
+    def test_days_in_leap_year_raises(self):
+        num_common_months = FAKE.random_int(min=2)
+        common_month_names = FAKE.words(nb=num_common_months)
+        days_in_common_year_months = FAKE.random_choices(
+            elements=list(range(1, num_common_months)),
+            length=num_common_months,
+        )
+        leap_month_names = FAKE.words(nb=num_common_months - 1)
+        days_in_leap_year_months = FAKE.random_choices(
+            elements=list(range(1, num_common_months - 1)),
+            length=num_common_months - 1,
+        )
+        too_long_common_year_cal = self.calendar_factory.build(
+            common_year_month_names=common_month_names,
+            days_in_common_year_months=days_in_common_year_months,
+            leap_year_month_names=leap_month_names,
+            days_in_leap_year_months=days_in_leap_year_months,
+        )
+        with pytest.raises(AssertionError):
+            _ = too_long_common_year_cal.days_in_leap_year
+
     @patch("src.db.utils.string_sanitization")
     def test__sanitize_month_names(self, patch_ss):
         weekday_names, calendar, patch_ss = self.rand_cal_with_patched_ss(

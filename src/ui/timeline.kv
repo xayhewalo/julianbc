@@ -21,25 +21,18 @@
 #:import EventView src.ui.eventview.EventView
 #:import Mark src.ui.mark.Mark
 #:import MarkBar src.ui.markbar.MarkBar
-<TimelineScreen>:
-    name: "timeline_screen"
-
-    Timeline:
-        id: timeline_1
-        expanded_height: self.parent.height
-        collapsable: False  # todo let timelinescreen drive collapability
-        cdt: gregorian_cdt
-        mark_interval: gregorian_cdt.initial_interval
-
+#:import Timeline src.ui.timeline.Timeline
 <Timeline>:
     id: timeline
     size_hint: None, None
     width: sp(1366)  # todo monitor resolution
     collapsed_height: collapse_bar.height
     collapsed: True if collapse_bar.dependant_collapsed else False
-    focus_next: event_view
-    # todo timelinescreen determines focus previous
+    default_focus_next: event_view  # todo default focus next should be collapse bar if collapsed
+    focus_next: self.default_focus_next
+    collapse_bar: collapse_bar
     mark: mark
+    mark_bar: mark_bar
     event_view: event_view
 
     CollapseBar:
@@ -47,8 +40,8 @@
         pos_hint: {"top": 1}
         dependant: collapse_layout
         collapsable: timeline.collapsable
-        focus_next: mark_bar
-        # todo focus_previous is previous timeline or header bar
+        focus_previous: timeline.previous_active_listener
+        focus_next: mark_bar  # todo focus_next is next active listener if collapsed
         keyboard_listener: timeline
         label_text: timeline.cdt.date.calendar.name if timeline.cdt else ""  # todo convenience method for calendar name
 
@@ -63,7 +56,7 @@
                 id: event_view
                 size_hint: 1, None
                 height: collapse_layout.height - mark_bar.height
-                focus_next: self # todo focus next should be next event or next collapse bar? focus will always change with right/left scroll in this case, maybe another property like "only gain focus if give focus and focus_next/focus_previous don't ahve focus"
+                focus_next: timeline.next_active_listener
                 focus_previous: mark_bar
                 keyboard_listener: timeline
 
@@ -82,3 +75,34 @@
                 mark_height: self.height
                 label_align: Mark.LABEL_MID_INTERVAL
                 visible: False if collapse_bar.dependant_collapsed else True
+
+<TimelineScrollView>:
+    bar_inactive_color: self.bar_color
+    do_scroll_x: False
+
+<TimelineLayout>:
+    size_hint_y: None
+
+<TimelineScreen>:
+    id: timeline_screen
+    name: "timeline_screen"
+    timeline_layout: timeline_layout
+
+    TimelineScrollView:
+
+        TimelineLayout:
+            id: timeline_layout
+            size_hint_x: 1
+
+            Timeline:
+                id: timeline
+                previous_active_listener: timeline_screen.focus_previous
+                default_focus_previous: self.previous_active_listener
+                cdt: gregorian_cdt
+                mark_interval: gregorian_cdt.initial_interval
+
+    Button:  # todo move this to header bar
+        size_hint: 0.2, 0.2
+        pos_hint: {"right": 1}
+        text: "Add Timeline"
+        on_release: timeline_layout.add_widget(Timeline(cdt=gregorian_cdt, mark_interval=gregorian_cdt.initial_interval))

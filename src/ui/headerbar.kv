@@ -32,7 +32,7 @@
     group: "view"
     allow_no_selection: False
 
-<HeaderBar@FloatLayout>:
+<HeaderBar@AbstractFocus+FloatLayout>:
     canvas:
         Color:
             rgb: hex("#001e26")
@@ -109,7 +109,7 @@
         id: settings_button
         pos_hint: {"top": 1, "right": 1}
         image_source: "media/cog-512.png"
-        # todo focus next should be the first timeline
+        focus_next: self.parent.focus_next
         focus_previous: filter_button
 
     HeaderButton:

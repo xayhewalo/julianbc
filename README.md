@@ -103,7 +103,7 @@ JulianBC will be a visual-timeline program in the near future
   - [X] Gain focus when scrolling
   - [X] shift + scrollup/scrolldown
   - [X] left/right arrow scroll when in focus
-  - [ ] allow shift scroll up when children are focused
+  - [X] allow shift scroll up when children are focused
   - [ ] up/down scroll when in focus
   - [ ] page up/down scroll when in focus
   - [ ] home/end scroll(?)
@@ -113,13 +113,14 @@ JulianBC will be a visual-timeline program in the near future
   - [X] pinch trackpad to zoom
 - [X] Add `extended_start_ordinal` and `extended_end_ordinal` that's outside the visible `time_span`
     - [X] don't do the calculations in `Timeline`
-- [ ] `TimelineScreen` should handle collapsing
+- [X] `TimelineScreen` should handle collapsing
 - [ ] disable `focus` when `Timeline` is collapsed
 - [ ] add proper reference to other timelines when scrolling/zooming while synced
 - [ ] Move event graphics to `EventView` class
   - [ ] test setting event height when two events ago is really long
   - [ ] test expand event_height and all other events shift y positions
 - [X] keep timeline behind collapse bar when collapsed and resizing
+- [ ] Don't allow `MarkBar` and `EventView` to gain focus while collapsed
 #### Mark
 - [X] don't do shift calculations in `Mark`
 - [ ] Test middle interval alignment

@@ -27,7 +27,7 @@ from src.ui.focusedkeylisten import PassiveFocusBehavior
 
 
 class CollapseBehavior:
-    """animates a widget's collapsing and expanding"""
+    """defines a widget's collapsed and expanded size"""
 
     collapsed = BooleanProperty(False)
     collapsable = BooleanProperty(True)
@@ -47,7 +47,7 @@ class CollapseBehavior:
         _get_collapsed_y,
         None,
         rebind=True,
-        bind=["expanded_y", "expanded_height"],
+        bind=["expanded_y", "expanded_height", "collapsed_height"],
     )
 
 
@@ -82,6 +82,7 @@ class CollapseBar(PassiveFocusBehavior, FloatLayout):
 
     def modify_dependant(self):
         """collapse or expand dependant"""
+
         if self.dependant_collapsed:
             self.add_widget(self.dependant)
         else:

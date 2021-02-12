@@ -25,22 +25,26 @@ from kivy.properties import (
 )
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.screenmanager import Screen
+from kivy.uix.scrollview import ScrollView
 from src.ui.collapse import CollapseBehavior
+from src.ui.focus import AbstractFocus
 from src.ui.focusedkeylisten import FocusKeyListenBehavior
 from src.ui.focusedhorscroll import HorScrollBehavior
 from src.ui.focusedzoom import ZoomBehavior
+from typing import Union
 
 
-class Timeline(
+class Timeline(  # todo don't gain focus while scrolling if child has focus
     HorScrollBehavior,
     ZoomBehavior,
     FocusKeyListenBehavior,
     CollapseBehavior,
     FloatLayout,
 ):
-    """Where the end-user adds events"""
+    """Determines what datetimes are visible on screen"""
 
     cdt = ObjectProperty()  # ConvertibleDateTime
+    collapse_bar = ObjectProperty()
     event_view = ObjectProperty()
 
     __now = datetime.datetime.now(datetime.timezone.utc).astimezone()
@@ -61,6 +65,7 @@ class Timeline(
 
     mark = ObjectProperty()
     mark_interval = ListProperty()
+    mark_bar = ObjectProperty()
     extend_time_span_by = NumericProperty(1)
 
     def _get_extended_start_od(self):
@@ -157,15 +162,6 @@ class Timeline(
         else:
             self.disable_drag_hor_scroll = False
 
-    def give_focus(self, *_):
-        if self.focus:
-            self.set_focus_next()
-
-    def on_touch_down(self, touch):
-        if touch.button.startswith("scroll"):
-            self.focus_next = self.event_view
-        return super().on_touch_down(touch)
-
     #
     # Time Conversions
     #
@@ -183,8 +179,163 @@ class Timeline(
         return self.time_span * (dx / self.width)
 
 
-class TimelineScreen(Screen):  # todo reposition/resize timelines
+class TimelineScrollView(ScrollView):  # todo scroll to child with focus
+    """Viewport for all the timelines"""
+
+    def on_children(self, *_):
+        child = self.children[0]
+        child.bind(height=self.set_do_scroll_y, timelines=self.set_do_scroll_y)
+        child.bind(timelines=self.bind_child_timelines)
+
+    def bind_child_timelines(self, *_):
+        """listen to the focus of all Timelines and their focusable children"""
+
+        child = self.children[0]
+        for timeline in child.timelines:
+            timeline.bind(focus=self.set_do_scroll_y)
+            if timeline.collapse_bar:  # is None during initialization
+                timeline.collapse_bar.bind(focus=self.set_do_scroll_y)
+            if timeline.event_view:
+                timeline.event_view.bind(focus=self.set_do_scroll_y)
+            if timeline.mark_bar:
+                timeline.mark_bar.bind(focus=self.set_do_scroll_y)
+
+    def set_do_scroll_y(self, *_):
+        """disable scroll when a Timeline or its child has focus"""
+
+        child = self.children[0]
+        timeline_has_focus = False
+        for timeline in child.timelines:
+            if timeline.focus:
+                timeline_has_focus = True
+                break
+
+            if timeline.event_view:  # None during initialization
+                if timeline.event_view.focus:
+                    timeline_has_focus = True
+                    break
+            if timeline.mark_bar:
+                if timeline.mark_bar.focus:
+                    timeline_has_focus = True
+                    break
+            if timeline.collapse_bar:
+                if timeline.collapse_bar.focus:
+                    timeline_has_focus = True
+                    break
+
+        if child.height <= self.height or timeline_has_focus:
+            self.do_scroll_y = False
+        else:
+            self.do_scroll_y = True
+
+
+class TimelineLayout(FloatLayout):
+    """Manages Timeline sizes. Should be the child of TimelineScrollView"""
+
+    timelines = ListProperty([])
+
+    def add_widget(self, widget, index=0, canvas=None):
+        super().add_widget(widget, index=0, canvas=None)
+        if isinstance(widget, Timeline):
+            self.timelines.insert(index, widget)
+            widget.bind(height=self.resize_timelines)
+
+    def remove_widget(self, widget):
+        super().remove_widget(widget)
+        if widget in self.timelines:
+            self.timelines.remove(widget)
+
+    def on_kv_post(self, base_widget):
+        self.parent.bind(height=self.resize_timelines)
+
+    def on_timelines(self, *_):
+        Clock.schedule_once(self.resize_timelines, -1)
+
+    def resize_timelines(self, *_):
+        self.set_collapsable_timelines()
+
+        top_tl = self.top_timeline
+        if len(self.timelines) == 1:
+            # only one timeline, set it to full available height
+            self.set_height()
+            top_tl.expanded_height = self.parent.height
+            top_tl.expanded_y = self.parent.y
+            return
+
+        self.set_height()
+
+        top_tl.expanded_height = self.default_timeline_height
+        top_tl.expanded_y = self.top - top_tl.expanded_height
+        top_tl_index = self.timelines.index(top_tl)
+        for idx, timeline in reversed(list(enumerate(self.timelines))):
+            if idx == top_tl_index:
+                continue
+
+            above_tl = self.above_timeline(timeline)
+            timeline.expanded_height = self.default_timeline_height
+            timeline.expanded_y = above_tl.y - timeline.expanded_height
+
+        self.set_timeline_listeners()
+
+    def set_height(self, *_):
+        height = 0.0
+        for timeline in self.timelines:
+            if timeline.collapsed:
+                height += timeline.collapsed_height
+            else:
+                height += self.default_timeline_height
+        self.height = max(height, self.parent.height)
+
+    def set_collapsable_timelines(self):
+        num_expanded = len([tl for tl in self.timelines if not tl.collapsed])
+        allow_collapse = num_expanded > 2
+        for tl in self.timelines:
+            if not tl.collapsed:
+                tl.collapsable = allow_collapse
+
+    def set_timeline_listeners(self):
+        for tl in self.timelines:
+            if tl != self.top_timeline:
+                # let kv file sets previous active listener for top timeline
+                tl.previous_active_listener = self.above_timeline(tl)
+            tl.next_active_listener = self.below_timeline(tl)
+
+    def below_timeline(self, timeline: Timeline) -> Union[Timeline, None]:
+        below_idx = self.timelines.index(timeline) - 1
+        if below_idx < 0:
+            return None
+        return self.timelines[below_idx]
+
+    def above_timeline(self, timeline: Timeline) -> Union[Timeline, None]:
+        above_idx = self.timelines.index(timeline) + 1
+        try:
+            return self.timelines[above_idx]
+        except IndexError:
+            return None
+
+    @property
+    def top_timeline(self) -> Timeline:
+        return self.timelines[-1]
+
+    @property
+    def bottom_timeline(self) -> Timeline:
+        return self.timelines[0]
+
+    @property
+    def default_timeline_height(self) -> float:
+        return self.parent.height / 2
+
+
+class TimelineScreen(AbstractFocus, Screen):
     """Where one or more timelines are displayed"""
 
-    def add_timeline(self, timeline: Timeline):
-        """assumes at least one timeline is already in the screen"""
+    timeline_layout = ObjectProperty()
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.bind(focus=self.give_focus)
+
+    # todo event_view focus next should be next event or next collapse bar?
+    # focus will always change with right/left scroll in this case, maybe
+    # another property like "only gain focus if give focus and
+    # focus_next/focus_previous don't have focus"

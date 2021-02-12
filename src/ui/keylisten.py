@@ -15,14 +15,13 @@
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
 from kivy.base import EventLoop
+from kivy.properties import ObjectProperty
 
 
 class KeyListenBehavior:
     """listen to the Window's keyboard events"""
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.keyboard = None
+    keyboard = ObjectProperty(allownone=True)
 
     def request_keyboard(self, *_):
         self.keyboard = EventLoop.window.request_keyboard(

@@ -22,7 +22,13 @@ from src.ui.keylisten import KeyListenBehavior
 class FocusKeyListenBehavior(AbstractFocus, KeyListenBehavior):
     """cycle through focusable widgets"""
 
-    passive_listener = ObjectProperty(allownone=True)
+    passive_listener = ObjectProperty(allownone=True, rebind=True)
+
+    # useful when passive_listener changes focus_next and focus_previous
+    default_focus_previous = ObjectProperty(allownone=True, rebind=True)
+    default_focus_next = ObjectProperty(allownone=True, rebind=True)
+    next_active_listener = ObjectProperty(alllownone=True, rebind=True)
+    previous_active_listener = ObjectProperty(allownone=True, rebind=True)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -70,6 +76,17 @@ class PassiveFocusBehavior(AbstractFocus):
             focus_next=self.set_focus_next_and_previous,
             focus_previous=self.set_focus_next_and_previous,
         )
+
+    def on_kv_post(self, base_widget):
+        # noinspection PyUnresolvedReferences
+        super().on_kv_post(base_widget)
+        self.keyboard_listener.bind(keyboard=self.reset_listener)
+
+    def reset_listener(self, *_):
+        kb_listener = self.keyboard_listener
+        if kb_listener.keyboard is None:
+            kb_listener.focus_next = kb_listener.default_focus_next
+            kb_listener.focus_previous = kb_listener.default_focus_previous
 
     def set_passive_listener(self):
         if self.keyboard_listener and self.focus:

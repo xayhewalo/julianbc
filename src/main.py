@@ -20,6 +20,7 @@ from kivy.lang import Builder
 from kivy.uix.label import Label
 from kivy.uix.modalview import ModalView
 from src.ui.imagebutton import HoverImageButton, HoverImageToggleButton
+from src.ui.focus import AbstractFocus
 
 # fixme path will only work on Linux, use os join
 Builder.load_file("ui/collapse.kv")
@@ -58,6 +59,7 @@ class JulianBC(App):
 
 
 if __name__ == "__main__":
+    Factory.register("AbstractFocus", AbstractFocus)
     Factory.register("HoverImageButton", HoverImageButton)
     Factory.register("HoverImageToggleButton", HoverImageToggleButton)
 

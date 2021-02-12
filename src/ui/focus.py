@@ -30,9 +30,8 @@ class AbstractFocus:
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # noinspection PyUnresolvedReferences
-        self.__class__._instances.append(self.proxy_ref)
+        self.__class__._instances.append(self)
 
-    # todo give next focus keyboard if it is keyboardable
     def set_focus_next(self):
         self.focus = False
         try:
@@ -40,7 +39,6 @@ class AbstractFocus:
         except AttributeError:
             self._ensure_none_focused()
 
-    # todo give next focus keyboard if it is keyboardable
     def set_focus_previous(self):
         self.focus = False
         try:
@@ -63,7 +61,7 @@ class AbstractFocus:
     def defocus_others(self):
         if self.focus:
             # noinspection PyUnresolvedReferences
-            AbstractFocus._current_focused_widget = self.proxy_ref
+            AbstractFocus._current_focused_widget = self
             for instance in self.__class__._instances:
                 if self != instance and instance.focus is True:
                     instance.focus = False
@@ -75,3 +73,9 @@ class AbstractFocus:
             if self.focus_on_scroll or not button.startswith("scroll"):
                 self.focus = True
         return super().on_touch_down(touch)
+
+    def give_focus(self, *_):
+        """convenience method for widgets/layouts that to pass along focus"""
+
+        if self.focus:
+            self.set_focus_next()

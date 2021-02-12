@@ -15,12 +15,20 @@
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
 #:kivy 2.0.0
-#:import TimelineScreen src.ui.timeline.Timeline
+<FocusedScreenManager@AbstractFocus+ScreenManager>:
+
 FloatLayout:
     HeaderBar:
+        id: header_bar
         pos_hint: {"top": 1}
         size_hint: 1, 0.05
+        focus_next: screen_manager.current_screen
 
-    ScreenManager:
+    FocusedScreenManager:
+        id: screen_manager
         size_hint: 1, 0.95
+        focus_next: self.current_screen
+
         TimelineScreen:
+            focus_previous: header_bar.ids.settings_button
+            focus_next: self.timeline_layout.top_timeline

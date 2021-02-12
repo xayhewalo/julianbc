@@ -88,7 +88,7 @@ class AbstractFocus:
         self.focus = False
 
     def give_focus(self, *_):
-        """convenience method for widgets/layouts that to pass along focus"""
+        """convenience method for widgets/layouts that pass along focus"""
 
         if self.focus:
             self.set_focus_next()

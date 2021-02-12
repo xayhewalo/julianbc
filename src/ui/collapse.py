@@ -22,7 +22,9 @@ from kivy.properties import (
     StringProperty,
 )
 from kivy.uix.floatlayout import FloatLayout
+from os.path import join
 from src.ui.focusedkeylisten import PassiveFocusBehavior
+from src.utils import media_directory
 
 
 class CollapseBehavior:
@@ -33,9 +35,6 @@ class CollapseBehavior:
     expanded_height = NumericProperty()
     expanded_y = NumericProperty()
     collapsed_height = NumericProperty()
-
-    transition = StringProperty("in_quint")
-    duration = NumericProperty(0.2)
 
     def _get_collapsed_y(self):
         expanded_top = self.expanded_y + self.expanded_height
@@ -58,9 +57,8 @@ class CollapseBar(PassiveFocusBehavior, FloatLayout):
     collapsable = BooleanProperty(True)
 
     font_size = NumericProperty("12sp")
-    # todo won't work on windows, use os join
-    collapse_image = StringProperty("media/arrow-142-512.png")
-    expand_image = StringProperty("media/arrow-204-512.png")
+    collapse_image = StringProperty(join(media_directory, "arrow-142-512.png"))
+    expand_image = StringProperty(join(media_directory, "arrow-204-512.png"))
 
     def on_touch_up(self, touch):
         button = touch.button  # todo DRY with Abstract Focus

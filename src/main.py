@@ -14,6 +14,8 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
+import os
+
 from kivy.app import App
 from kivy.factory import Factory
 from kivy.lang import Builder
@@ -26,14 +28,14 @@ from src.ui.imagebutton import HoverImageButton, HoverImageToggleButton
 from src.ui.mark import Mark
 from src.ui.markbar import MarkBar
 
-# fixme path will only work on Linux, use os join
-Builder.load_file("ui/collapse.kv")
-Builder.load_file("ui/eventview.kv")
-Builder.load_file("ui/headerbar.kv")
-Builder.load_file("ui/imagebutton.kv")
-Builder.load_file("ui/markbar.kv")
-Builder.load_file("ui/textboundlabel.kv")
-Builder.load_file("ui/timeline.kv")
+ui_directory = "ui"
+Builder.load_file(os.path.join(ui_directory, "collapse.kv"))
+Builder.load_file(os.path.join(ui_directory, "eventview.kv"))
+Builder.load_file(os.path.join(ui_directory, "headerbar.kv"))
+Builder.load_file(os.path.join(ui_directory, "imagebutton.kv"))
+Builder.load_file(os.path.join(ui_directory, "markbar.kv"))
+Builder.load_file(os.path.join(ui_directory, "textboundlabel.kv"))
+Builder.load_file(os.path.join(ui_directory, "timeline.kv"))
 
 
 class JulianBC(App):

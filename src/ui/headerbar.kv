@@ -15,7 +15,9 @@
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
 #:kivy 2.0.0
+#:import os os
 #:import hex kivy.utils.get_color_from_hex
+#:import media_directory src.utils.media_directory
 <HeaderButton@HoverImageButton>:
     size_hint: None, 1
     width: self.height
@@ -42,20 +44,20 @@
 
     HeaderButton:
         id: add_event_button
-        image_source: "media/add-list-512.png"
+        image_source: os.path.join(media_directory, "add-list-512.png")
         focus_next: add_entity_button
 
     HeaderButton:
         id: add_entity_button
         x: add_event_button.right
-        image_source: "media/add-user-2-512.png"
+        image_source: os.path.join(media_directory, "add-user-2-512.png")
         focus_previous: add_event_button
         focus_next: swap_calendar_clock_button
 
     HeaderButton:
         id: swap_calendar_clock_button
         x: add_entity_button.right
-        image_source: "media/calendar-3-512.png"
+        image_source: os.path.join(media_directory, "calendar-3-512.png")
         focus_previous: add_entity_button
         focus_next: timeline_view_button
 
@@ -65,7 +67,7 @@
     HeaderToggleButton:
         id: entity_view_button
         pos_hint: {"top": 1, "center_x": 0.5}
-        image_source: "media/conference-512.png"
+        image_source: os.path.join(media_directory, "conference-512.png")
         focus_previous: timeline_view_button
         focus_next: wiki_view_button
         on_press: self.state = "normal"; timeline_view_button.state = "down"; app.popup.open()
@@ -73,7 +75,7 @@
     HeaderToggleButton:
         id: wiki_view_button
         x: entity_view_button.right
-        image_source: "media/globe-7-512.png"
+        image_source: os.path.join(media_directory, "globe-7-512.png")
         focus_previous: entity_view_button
         focus_next: sync_timeline_button
         on_press: self.state = "normal"; timeline_view_button.state = "down"; app.popup.open()
@@ -82,7 +84,7 @@
         id: timeline_view_button
         state: "down"
         right: entity_view_button.x
-        image_source: "media/hourglass_full_white_192x192.png"  # todo os join
+        image_source: os.path.join(media_directory, "hourglass_full_white_192x192.png")
         focus_previous: swap_calendar_clock_button
         focus_next: entity_view_button
 
@@ -92,28 +94,28 @@
     HeaderButton:
         id: settings_button
         pos_hint: {"top": 1, "right": 1}
-        image_source: "media/cog-512.png"
+        image_source: os.path.join(media_directory, "cog-512.png")
         focus_next: self.parent.focus_next
         focus_previous: filter_button
 
     HeaderButton:
         id: filter_button
         right: settings_button.x
-        image_source: "media/filled-filter-512.png"
+        image_source: os.path.join(media_directory, "filled-filter-512.png")
         focus_previous: search_button
         focus_next: settings_button
 
     HeaderButton:
         id: search_button
         right: filter_button.x
-        image_source: "media/search-13-512.png"
+        image_source: os.path.join(media_directory, "search-13-512.png")
         focus_previous: sync_timeline_button
         focus_next: filter_button
 
     HeaderToggleButton:
         id: sync_timeline_button
         right: search_button.x
-        image_source: "media/sinchronize-512.png"
+        image_source: os.path.join(media_directory, "sinchronize-512.png")
         group: None
         focus_previous: wiki_view_button
         focus_next: search_button

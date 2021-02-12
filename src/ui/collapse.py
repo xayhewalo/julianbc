@@ -61,7 +61,7 @@ class CollapseBar(PassiveFocusBehavior, FloatLayout):
     expand_image = StringProperty(join(media_directory, "arrow-204-512.png"))
 
     def on_touch_up(self, touch):
-        button = touch.button  # todo DRY with Abstract Focus
+        button = touch.button
         if (
             self.collide_point(*touch.pos)
             and not button.startswith("scroll")

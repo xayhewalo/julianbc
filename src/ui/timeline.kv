@@ -20,7 +20,7 @@
 <Timeline>:
     id: timeline
     size_hint: None, None
-    width: sp(1366)  # todo monitor resolution
+    width: sp(1366)
     collapsed_height: collapse_bar.height
     collapsed: True if collapse_bar.dependant_collapsed else False
     default_focus_next: collapse_bar if collapse_bar.dependant_collapsed else event_view
@@ -38,7 +38,7 @@
         focus_previous: timeline.previous_active_listener
         focus_next: timeline.next_active_listener if self.dependant_collapsed else mark_bar
         keyboard_listener: timeline
-        label_text: timeline.cdt.date.calendar.name if timeline.cdt else ""  # todo convenience method for calendar name
+        label_text: str(timeline.cdt) if timeline.cdt else ""
 
         CollapseLayout:
             id: collapse_layout

@@ -120,6 +120,7 @@ JulianBC will be a visual-timeline program in the near future
   - [ ] test expand event_height and all other events shift y positions
 - [X] keep timeline behind collapse bar when collapsed and resizing
 - [X] Don't allow `MarkBar` and `EventView` to gain focus while collapsed
+- [ ] Make `Timeline` equal to monitor width
 #### Mark
 - [X] don't do shift calculations in `Mark`
 - [ ] Test middle interval alignment

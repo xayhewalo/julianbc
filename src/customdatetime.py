@@ -40,6 +40,9 @@ class ConvertibleDateTime:
         self.datetime_units = list(DateUnit)
         self.datetime_units.extend(TimeUnit)  # largest to smallest
 
+    def __str__(self):
+        return f"{self.date.calendar.name} - {self.time.clock.name}"
+
     def change_interval(
         self,
         interval: DateTime_interval,

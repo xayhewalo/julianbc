@@ -17,6 +17,7 @@
 #:kivy 2.0.0
 #:import hex kivy.utils.get_color_from_hex
 <EventView>:
+    focused_highlight_color: hex("#263238")
     canvas:
         # background color
         Color:
@@ -27,7 +28,7 @@
 
         # focus highlight
         Color:
-            rgba: hex("#263238") if self.focus else (0, 0, 0, 0)
+            rgba: self.focused_highlight_color if self.focus else self.unfocused_highlight_color
         Rectangle:
             pos: self.pos
             size: self.size

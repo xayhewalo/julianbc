@@ -161,3 +161,8 @@ def test_collapse_bar_on_dependant_collapsed():
     mock_dep.collapsed = not collapse_bar.dependant_collapsed
     collapse_bar.on_dependant_collapsed()
     assert collapse_bar.dependant_collapsed is mock_dep.collapsed
+
+
+def test_collapse_bar_focused_highlight_color():
+    cb = CollapseBar(keyboard_listener=Mock())
+    assert cb.focused_highlight_color[3] != 0  # not transparent

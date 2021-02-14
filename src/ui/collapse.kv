@@ -17,8 +17,8 @@
 #:kivy 2.0.0
 #:import hex kivy.utils.get_color_from_hex
 <CollapseBehavior>:
-    y: self.collapsed_y if self.collapsed and self.collapsable else self.expanded_y
-    height: self.collapsed_height if self.collapsed and self.collapsable else self.expanded_height
+    y: self.collapsed_y if self.collapsed else self.expanded_y
+    height: self.collapsed_height if self.collapsed else self.expanded_height
 
 <CollapseLayout@CollapseBehavior+RelativeLayout>:
 
@@ -39,7 +39,7 @@
 
         # focus indicator
         Color:
-            rgb: hex("#39796b") if self.focus else (0, 0, 0, 0)
+            rgb: self.focused_highlight_color if self.focus else self.unfocused_highlight_color  #todo move to AbstractFocus
         Rectangle:
             pos: self.pos
             size: self.width, self.height * 0.2
@@ -48,12 +48,12 @@
         id: action_img
         size_hint: (None, 0.7) if collapse_bar.collapsable else (0, 0)
         width: self.height
-        x: self.parent.x
+        x: collapse_bar.x
         pos_hint: {"center_y": 0.5}
-        source: self.parent.expand_image if self.parent.dependant_collapsed else self.parent.collapse_image
+        source: collapse_bar.expand_image if collapse_bar.dependant_collapsed else collapse_bar.collapse_image
 
     TextBoundLabel:
         x: action_img.right
         pos_hint: {"center_y": 0.5}
-        font_size: self.parent.font_size
-        text: self.parent.label_text
+        font_size: collapse_bar.font_size
+        text: collapse_bar.label_text

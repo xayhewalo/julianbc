@@ -17,11 +17,13 @@
 from kivy.properties import (
     AliasProperty,
     BooleanProperty,
+    ListProperty,
     NumericProperty,
     ObjectProperty,
     StringProperty,
 )
 from kivy.uix.floatlayout import FloatLayout
+from kivy.utils import get_color_from_hex
 from os.path import join
 from src.ui.focusedkeylisten import PassiveFocusBehavior
 from src.utils import media_directory
@@ -30,11 +32,28 @@ from src.utils import media_directory
 class CollapseBehavior:
     """defines a widget's collapsed and expanded size"""
 
-    collapsed = BooleanProperty(False)
     collapsable = BooleanProperty(True)
-    expanded_height = NumericProperty()
+
+    def _get_collapsed(self):
+        return self._collapsed
+
+    def _set_collapsed(self, value: bool):
+        """don't let 'collapsed' change if the widget isn't collapsable"""
+        old_value = self._collapsed
+
+        if self.collapsable:
+            self._collapsed = value
+        else:
+            self._collapsed = not value
+
+        if old_value != self._collapsed:
+            return True
+
+    collapsed = AliasProperty(_get_collapsed, _set_collapsed, rebind=True)
+
+    expanded_height = NumericProperty(100)
     expanded_y = NumericProperty()
-    collapsed_height = NumericProperty()
+    collapsed_height = NumericProperty(50)
 
     def _get_collapsed_y(self):
         expanded_top = self.expanded_y + self.expanded_height
@@ -48,6 +67,10 @@ class CollapseBehavior:
         bind=["expanded_y", "expanded_height", "collapsed_height"],
     )
 
+    def __init__(self, **kwargs):
+        self._collapsed = False
+        super().__init__(**kwargs)
+
 
 class CollapseBar(PassiveFocusBehavior, FloatLayout):
     """collapses and expands it's dependant"""
@@ -55,10 +78,17 @@ class CollapseBar(PassiveFocusBehavior, FloatLayout):
     dependant = ObjectProperty()
     dependant_collapsed = BooleanProperty(False)
     collapsable = BooleanProperty(True)
+    focused_highlight_color = ListProperty(get_color_from_hex("#39796b"))
+    unfocused_highlight_color = ListProperty([0, 0, 0, 0])
+    highlight_color = ListProperty(focused_highlight_color.defaultvalue)
 
     font_size = NumericProperty("12sp")
     collapse_image = StringProperty(join(media_directory, "arrow-142-512.png"))
     expand_image = StringProperty(join(media_directory, "arrow-204-512.png"))
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.bind(focus=self.change_focus_highlight_color)
 
     def on_touch_up(self, touch):
         button = touch.button
@@ -88,3 +118,9 @@ class CollapseBar(PassiveFocusBehavior, FloatLayout):
 
     def on_dependant_collapsed(self, *_):
         self.dependant.collapsed = self.dependant_collapsed
+
+    def change_focus_highlight_color(self, *_):
+        if self.focus:
+            self.highlight_color = self.focused_highlight_color
+        else:
+            self.highlight_color = self.unfocused_highlight_color

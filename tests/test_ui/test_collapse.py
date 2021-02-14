@@ -161,15 +161,3 @@ def test_collapse_bar_on_dependant_collapsed():
     mock_dep.collapsed = not collapse_bar.dependant_collapsed
     collapse_bar.on_dependant_collapsed()
     assert collapse_bar.dependant_collapsed is mock_dep.collapsed
-
-
-@patch("src.ui.collapse.CollapseBar.bind")
-def test_collapse_bar_change_focus_highlight_color(patch_bind):
-    cb = CollapseBar(keyboard_listener=Mock())
-    patch_bind.assert_called_with(focus=cb.change_focus_highlight_color)
-    cb.change_focus_highlight_color()
-    assert cb.highlight_color == cb.unfocused_highlight_color
-
-    cb.focus = True
-    cb.change_focus_highlight_color()
-    assert cb.highlight_color == cb.focused_highlight_color

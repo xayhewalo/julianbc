@@ -17,13 +17,11 @@
 from kivy.properties import (
     AliasProperty,
     BooleanProperty,
-    ListProperty,
     NumericProperty,
     ObjectProperty,
     StringProperty,
 )
 from kivy.uix.floatlayout import FloatLayout
-from kivy.utils import get_color_from_hex
 from os.path import join
 from src.ui.focusedkeylisten import PassiveFocusBehavior
 from src.utils import media_directory
@@ -78,17 +76,10 @@ class CollapseBar(PassiveFocusBehavior, FloatLayout):
     dependant = ObjectProperty()
     dependant_collapsed = BooleanProperty(False)
     collapsable = BooleanProperty(True)
-    focused_highlight_color = ListProperty(get_color_from_hex("#39796b"))
-    unfocused_highlight_color = ListProperty([0, 0, 0, 0])
-    highlight_color = ListProperty(focused_highlight_color.defaultvalue)
 
     font_size = NumericProperty("12sp")
     collapse_image = StringProperty(join(media_directory, "arrow-142-512.png"))
     expand_image = StringProperty(join(media_directory, "arrow-204-512.png"))
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.bind(focus=self.change_focus_highlight_color)
 
     def on_touch_up(self, touch):
         button = touch.button
@@ -109,7 +100,6 @@ class CollapseBar(PassiveFocusBehavior, FloatLayout):
 
     def modify_dependant(self):
         """collapse or expand dependant"""
-
         if self.dependant_collapsed:
             self.add_widget(self.dependant)
         else:
@@ -118,9 +108,3 @@ class CollapseBar(PassiveFocusBehavior, FloatLayout):
 
     def on_dependant_collapsed(self, *_):
         self.dependant.collapsed = self.dependant_collapsed
-
-    def change_focus_highlight_color(self, *_):
-        if self.focus:
-            self.highlight_color = self.focused_highlight_color
-        else:
-            self.highlight_color = self.unfocused_highlight_color

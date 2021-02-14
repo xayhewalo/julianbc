@@ -14,7 +14,7 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
-from kivy.properties import BooleanProperty, ObjectProperty
+from kivy.properties import BooleanProperty, ListProperty, ObjectProperty
 
 
 class AbstractFocus:
@@ -27,10 +27,13 @@ class AbstractFocus:
     focus_next = ObjectProperty(allownone=True, rebind=True)
     focus_on_scroll = BooleanProperty(False)
 
+    focused_highlight_color = ListProperty()
+    unfocused_highlight_color = ListProperty([0, 0, 0, 0])
+    highlight_color = ListProperty(focused_highlight_color.defaultvalue)
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        # noinspection PyUnresolvedReferences
-        self.__class__._instances.append(self)
+        AbstractFocus._instances.append(self)
 
     def set_focus_next(self):
         self.lose_focus()
@@ -52,17 +55,16 @@ class AbstractFocus:
             AbstractFocus._current_focused_widget.lose_focus()
         except AttributeError:
             pass
-        else:
-            AbstractFocus._current_focused_widget = None
+        AbstractFocus._current_focused_widget = None
 
     def on_focus(self, *_):
         self.defocus_others()
+        self.change_focus_highlight_color()
 
     def defocus_others(self):
         if self.focus:
-            # noinspection PyUnresolvedReferences
             AbstractFocus._current_focused_widget = self
-            for instance in self.__class__._instances:
+            for instance in AbstractFocus._instances:
                 if self != instance and instance.focus is True:
                     instance.lose_focus()
 
@@ -72,6 +74,7 @@ class AbstractFocus:
         if self.collide_point(*touch.pos):
             if self.focus_on_scroll or not button.startswith("scroll"):
                 self.gain_focus()
+                # do not consume touch, just gain focus
         return super().on_touch_down(touch)
 
     def gain_focus(self, *_):
@@ -79,16 +82,19 @@ class AbstractFocus:
         Should be used instead of directly setting focus to allow a subclass to
         implement custom logic when gaining focus
         """
-
         self.focus = True
 
     def lose_focus(self, *_):
         """Similar to gain_focus(), useful for custom losing focus logic"""
-
         self.focus = False
 
     def give_focus(self, *_):
         """convenience method for widgets/layouts that pass along focus"""
-
         if self.focus:
             self.set_focus_next()
+
+    def change_focus_highlight_color(self, *_):
+        if self.focus:
+            self.highlight_color = self.focused_highlight_color
+        else:
+            self.highlight_color = self.unfocused_highlight_color

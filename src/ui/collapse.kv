@@ -28,6 +28,7 @@
     label_padding: sp(3)
     height: self.font_size + self.label_padding
     label_text: ""
+    focused_highlight_color: hex("#39796b")
 
     canvas:
         # background color
@@ -39,7 +40,7 @@
 
         # focus indicator
         Color:
-            rgb: self.focused_highlight_color if self.focus else self.unfocused_highlight_color  #todo move to AbstractFocus
+            rgb: self.focused_highlight_color if self.focus else self.unfocused_highlight_color
         Rectangle:
             pos: self.pos
             size: self.width, self.height * 0.2

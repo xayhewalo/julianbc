@@ -26,9 +26,10 @@
             radius: [corner_radius,]
 
 <HoverChangeBgColor>:
+    focused_highlight_color: [1, 1, 1, 0.9]
     canvas:
         Color:
-            rgba: (1, 1, 1, 0.9) if self.focus else (0, 0, 0, 0)
+            rgba: self.focused_highlight_color if self.focus else self.unfocused_highlight_color
         Line:
             rounded_rectangle: self.x, self.y, self.width, self.height, corner_radius, 60
             dashes: [4, 2]

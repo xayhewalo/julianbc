@@ -76,8 +76,7 @@ class HoverChangeBgColor(FocusKeyListenBehavior, MouseListenBehavior):
         if self.collide_point(*mouse_pos):
             self.hovered = True
             return True
-        else:
-            self.hovered = False
+        self.hovered = False
         return False
 
 

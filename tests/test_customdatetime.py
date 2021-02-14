@@ -62,8 +62,77 @@ class ConvertibleDateTimeTest(TimeTestCase):
     def test_change_unit(self):
         raise NotImplementedError
 
-    def test_extend_od(self):
-        raise NotImplementedError
+    @patch("src.customdatetime.ConvertibleDateTime.shift_od")
+    def test_extend_od_with_reverse(self, patch_shift_od):
+        non_day_units = [DateUnit.YEAR, DateUnit.MONTH]
+        non_day_units.extend(TimeUnit)
+        non_day_unit = FAKE.random_element(elements=non_day_units)
+        delta = FAKE.random_int(min=-9999)
+        non_day_interval = [delta, non_day_unit]
+        day_interval = [delta, DateUnit.DAY]
+
+        cd = ConvertibleDate(calendar=self.calendar_factory.build())
+        cdt = ConvertibleDateTime(date=cd, time=self.time_factory.build())
+        od = FAKE.pyfloat()
+        assert cdt.extend_od(od, day_interval, reverse=True) == od - delta
+        patch_shift_od.assert_not_called()
+
+        cdt.extend_od(od, non_day_interval, reverse=True)
+        patch_shift_od.assert_called_with(od, [[-delta, non_day_unit]])
+
+    @patch("src.customdatetime.ConvertibleDateTime.shift_od")
+    def test_extend_od_with_factor(self, patch_shift_od):
+        non_day_units = [DateUnit.YEAR, DateUnit.MONTH]
+        non_day_units.extend(TimeUnit)
+        non_day_unit = FAKE.random_element(elements=non_day_units)
+        delta = FAKE.random_int(min=-9999)
+        non_day_interval = [delta, non_day_unit]
+        day_interval = [delta, DateUnit.DAY]
+        factor = FAKE.random_int()
+
+        cd = ConvertibleDate(calendar=self.calendar_factory.build())
+        cdt = ConvertibleDateTime(date=cd, time=self.time_factory.build())
+        od = FAKE.pyfloat()
+        assert cdt.extend_od(od, day_interval, factor) == od + delta * factor
+        patch_shift_od.assert_not_called()
+
+        cdt.extend_od(od, non_day_interval, factor)
+        patch_shift_od.assert_called_with(od, [[delta * factor, non_day_unit]])
+
+    @patch("src.customdatetime.ConvertibleDateTime.shift_od")
+    def test_extend_od_for_day_interval(self, patch_shift_od):
+        delta = FAKE.random_int(min=-9999)
+        interval = [delta, DateUnit.DAY]
+
+        cd = ConvertibleDate(calendar=self.calendar_factory.build())
+        cdt = ConvertibleDateTime(date=cd, time=self.time_factory.build())
+        od = FAKE.pyfloat()
+        assert cdt.extend_od(od, interval) == od + delta
+        patch_shift_od.assert_not_called()
+
+    @patch("src.customdatetime.ConvertibleDateTime.shift_od")
+    def test_extend_od_for_non_day_interval(self, patch_shift_od):
+        units = [DateUnit.YEAR, DateUnit.MONTH]
+        units.extend(TimeUnit)
+        interval = [FAKE.random_int(), FAKE.random_element(elements=units)]
+
+        cd = ConvertibleDate(calendar=self.calendar_factory.build())
+        cdt = ConvertibleDateTime(date=cd, time=self.time_factory.build())
+        ordinal_decimal = FAKE.pyfloat()
+        cdt.extend_od(ordinal_decimal, interval)
+        patch_shift_od.assert_called_once_with(ordinal_decimal, [interval])
+
+    def test_extend_od_raises(self):
+        units = list(DateUnit)
+        units.extend(TimeUnit)
+        interval = [FAKE.random_int(), FAKE.random_element(elements=units)]
+
+        bad_factor = FAKE.random_int(min=-9999, max=0)
+        cd = ConvertibleDate(calendar=self.calendar_factory.build())
+        cdt = ConvertibleDateTime(date=cd, time=self.time_factory.build())
+        ordinal_decimal = FAKE.pyfloat()
+        with pytest.raises(ValueError):
+            cdt.extend_od(ordinal_decimal, interval, bad_factor)
 
     @patch("src.customdatetime.ConvertibleDateTime.od_to_ast_ymd")
     @patch("src.customdate.ConvertibleDate.shift_ast_ymd")
@@ -184,11 +253,72 @@ class ConvertibleDateTimeTest(TimeTestCase):
         with pytest.raises(ValueError):
             cdt.next_od(FAKE.pyfloat(), [FAKE.random_int(), DumEnum.DUM])
 
-    def test_get_frequencies(self):
-        raise NotImplementedError
+    @pytest.mark.db
+    @patch("sympy.proper_divisors")
+    def test_get_frequencies(self, patch_proper_divisors):
+        def all_ints(frequencies: list) -> bool:
+            return all([isinstance(freq, int) for freq in frequencies])
 
-    def test_od_to_hr_date(self):
-        raise NotImplementedError
+        cd = ConvertibleDate(calendar=self.calendar_factory.build())
+        ct = self.time_factory.build()
+        clk = ct.clock
+        cdt = ConvertibleDateTime(date=cd, time=ct)
+        with self.session:
+            self.session.add_all([clk, cd.calendar])
+            self.session.flush()
+            year_frequencies = cdt.get_frequencies(DateUnit.YEAR)
+            assert all_ints(year_frequencies)
+
+            cdt.get_frequencies(DateUnit.MONTH)
+            patch_proper_divisors.assert_called_once()
+            patch_proper_divisors.reset_mock()
+
+            day_frequencies = cdt.get_frequencies(DateUnit.DAY)
+            assert all_ints(day_frequencies)
+
+            cdt.get_frequencies(TimeUnit.HOUR)
+            patch_proper_divisors.assert_called_once_with(clk.hours_in_day)
+            patch_proper_divisors.reset_mock()
+
+            cdt.get_frequencies(TimeUnit.MINUTE)
+            patch_proper_divisors.assert_called_once_with(clk.minutes_in_hour)
+            patch_proper_divisors.reset_mock()
+
+            cdt.get_frequencies(TimeUnit.SECOND)
+            patch_proper_divisors.assert_called_once_with(
+                clk.seconds_in_minute
+            )
+            patch_proper_divisors.reset_mock()
+
+            with pytest.raises(ValueError):
+                # noinspection PyTypeChecker
+                cdt.get_frequencies(DumEnum.DUM)
+
+    @pytest.mark.db
+    @patch("src.customtime.ConvertibleTime.hms_to_hr_time")
+    @patch("src.customdatetime.ConvertibleDateTime.od_to_hms")
+    @patch("src.customdate.ConvertibleDate.format_hr_date")
+    @patch("src.customdatetime.ConvertibleDateTime.od_to_ast_ymd")
+    def test_od_to_hr_date(self, *patches):
+        patch_format_hr_date = patches[1]
+        patch_hms_to_hr_time = patches[3]
+
+        ordinal_decimal = FAKE.pyfloat()
+        dateunit = FAKE.random_element(elements=DateUnit)
+        timeunit = FAKE.random_element(elements=TimeUnit)
+        cd = ConvertibleDate(calendar=self.calendar_factory.build())
+        cdt = ConvertibleDateTime(date=cd, time=self.time_factory.build())
+        with self.session:
+            self.session.add_all([cd.calendar, cdt.time.clock])
+            self.session.flush()
+            cdt.od_to_hr_date(ordinal_decimal, dateunit)
+            patch_format_hr_date.assert_called_once()
+
+            cdt.od_to_hr_date(ordinal_decimal, timeunit)
+            patch_hms_to_hr_time.assert_called_once()
+        with pytest.raises(ValueError):
+            # noinspection PyTypeChecker
+            cdt.od_to_hr_date(ordinal_decimal, DumEnum.DUM)
 
     @patch("src.customdate.ConvertibleDate.ast_ymd_to_ordinal_date")
     @patch("src.customdate.ConvertibleDate.ordinal_date_to_ordinal")

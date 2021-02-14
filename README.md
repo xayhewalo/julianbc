@@ -84,6 +84,8 @@ JulianBC will be a visual-timeline program in the near future
 - [X] shift days and weeks(?) in `shift_od`
 - [X] Test `__init__` properties
 - [X] Optimize next_hms while loop
+- [ ] test that `od_to_hr_date` calls the right methods with the right arguments
+- [ ] refactor `change_unit` and `change_interval` so they don't rely on `Timeline`. Let `Timeline` call `increase_unit` or `decrease_unit` until an appropriate interval width is reached
 #### EventController
 - [ ] `fields` in `make` are based on `Event` columns
 - [ ] ensure negative `duraiton` raises error
@@ -97,6 +99,7 @@ JulianBC will be a visual-timeline program in the near future
 - [X] Decouple focus and keyboard
 - [X] Use `kivy.Factory` instead of importing widgets into .kv files
 - [ ] figure out why one finger scrolling is fast and two finger scrolling is slow
+- [ ] Don't crash when zooming in too much or zooming out too much
 #### Timeline
 - [ ] Sync timelines should set start and end ordinals of all timelines
 - [ ] add scroll

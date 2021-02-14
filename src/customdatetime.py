@@ -15,14 +15,15 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
-import math
+import sympy
 
 from src.customdate import ConvertibleDate, DateUnit, Ymd_tuple
 from src.customtime import ConvertibleTime, TimeUnit, Hms_tuple
 from src.ui.timeline import Timeline
 from typing import Union
 
-DateTime_interval = list[int, Union[DateUnit, TimeUnit]]
+DateTimeEnum = Union[DateUnit, TimeUnit]
+DateTime_interval = list[int, DateTimeEnum]
 
 
 class ConvertibleDateTime:
@@ -36,7 +37,7 @@ class ConvertibleDateTime:
     def __init__(self, date: ConvertibleDate, time: ConvertibleTime):
         self.date = date
         self.time = time
-        self.initial_interval = [25, DateUnit.DAY]
+        self.initial_interval = [1, DateUnit.YEAR]
         self.datetime_units = list(DateUnit)
         self.datetime_units.extend(TimeUnit)  # largest to smallest
 
@@ -135,7 +136,7 @@ class ConvertibleDateTime:
     ) -> float:
         """
         convenience method to extend start and end ordinals using shift_od
-        :raises ValueError: factor <= 0
+        :raises ValueError: factor is less than or equal to zero
         """
         if factor <= 0:
             raise ValueError(f"Can't widen span by factor of {factor}")
@@ -191,15 +192,8 @@ class ConvertibleDateTime:
             return ordinal_decimal
         raise ValueError(f"Can't shift ordinal decimal by {unit}")
 
-    def get_frequencies(self, unit: Union[DateUnit, TimeUnit]) -> list:
-        def exclusive_divisors(num: int) -> list:
-            """:returns: divisors of `num` excluding `num`"""
-            divs = {1}
-            for i in range(2, int(math.sqrt(num)) + 1):
-                if num % i == 0:
-                    divs.update((i, num // i))
-            return list(divs)
-
+    def get_frequencies(self, unit: DateTimeEnum) -> list:
+        """:raises ValueErorr: if unit is not a DateUnit or TimeUnit"""
         if unit == DateUnit.YEAR:
             # fmt: off
             return [
@@ -211,7 +205,7 @@ class ConvertibleDateTime:
             num_common_months = self.date.calendar.months_in_common_year
             num_leap_months = self.date.calendar.months_in_leap_year
             least_months_in_year = min(num_common_months, num_leap_months)
-            return exclusive_divisors(least_months_in_year)
+            return sympy.proper_divisors(least_months_in_year)
         elif unit == DateUnit.DAY:
             calendar = self.date.calendar
             min_common_month_len = min(calendar.days_in_common_year_months)
@@ -223,14 +217,15 @@ class ConvertibleDateTime:
             frequencies.extend(multiples_of_five)
             return frequencies
         elif unit == TimeUnit.HOUR:
-            return exclusive_divisors(self.time.clock.hours_in_day)
+            return sympy.proper_divisors(self.time.clock.hours_in_day)
         elif unit == TimeUnit.MINUTE:
-            return exclusive_divisors(self.time.clock.minutes_in_hour)
+            return sympy.proper_divisors(self.time.clock.minutes_in_hour)
         elif unit == TimeUnit.SECOND:
-            return exclusive_divisors(self.time.clock.seconds_in_minute)
+            return sympy.proper_divisors(self.time.clock.seconds_in_minute)
         raise ValueError(f"Cannot find valid frequencies for {unit}")
 
-    def od_to_hr_date(self, ordinal_decimal: float, unit) -> str:
+    def od_to_hr_date(self, ordinal_decimal: float, unit: DateTimeEnum) -> str:
+        """:raises ValueError: if unit is not a DateUnit or TimeUnit"""
         if unit in DateUnit:
             ast_ymd = self.od_to_ast_ymd(ordinal_decimal)
             return self.date.format_hr_date(ast_ymd)

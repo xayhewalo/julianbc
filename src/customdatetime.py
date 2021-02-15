@@ -44,6 +44,16 @@ class ConvertibleDateTime:
     def __str__(self):
         return f"{self.date.calendar.name} - {self.time.clock.name}"
 
+    # NOTE TO FUTURE ME/MAINTAINER
+    # This is one of the most complex if not **the** most complex method in
+    # this app.
+    #
+    # It attempts to ensure there aren't too many or too little
+    # marks on screen, because simply incrementing or decrementing intervals
+    # didn't always behave well given calendars can be defined by the end-user.
+    #
+    # That said, it's a "business logic" method that depends on an UI element,
+    # which may be a design flaw...alas it behaves well and is performant.
     def change_interval(
         self,
         interval: DateTime_interval,
@@ -61,7 +71,7 @@ class ConvertibleDateTime:
         sign = -1 if increase else 1
         new_frequency = frequency
         frequencies = self.get_frequencies(unit)
-        if not recursive:
+        if not recursive:  # change_unit() has already changed the frequency
             idx = frequencies.index(frequency)
             new_idx = idx + sign
             new_frequency = frequencies[new_idx]

@@ -170,7 +170,6 @@ class Timeline(
 
     def gain_focus(self, *_):
         """don't gain focus if any focusable descendants have focus"""
-
         if not self.descendant_focused():
             super().gain_focus()
 

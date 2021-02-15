@@ -22,7 +22,7 @@ from tests.factories import ConvertibleCalendarFactory, ConvertibleTimeFactory
 from tests.utils import FAKE, TimeTestCase
 from src.customdate import ConvertibleDate, DateUnit
 from src.customdatetime import ConvertibleDateTime, TimeUnit
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 
 class DumEnum(Enum):
@@ -34,6 +34,12 @@ class ConvertibleDateTimeTest(TimeTestCase):
         super(ConvertibleDateTimeTest, self).setUp()
         self.calendar_factory = ConvertibleCalendarFactory
         self.time_factory = ConvertibleTimeFactory
+        # fmt: off
+        self.datetime_units = [
+            DateUnit.YEAR, DateUnit.MONTH, DateUnit.DAY,
+            TimeUnit.HOUR, TimeUnit.MINUTE, TimeUnit.SECOND,
+        ]
+        # fmt: on
 
     def test__init__(self):
         cd = ConvertibleDate(calendar=self.calendar_factory.build())
@@ -56,11 +62,69 @@ class ConvertibleDateTimeTest(TimeTestCase):
         assert cd.calendar.name in cdt.__str__()
         assert ct.clock.name in cdt.__str__()
 
-    def test_change_interval(self):
-        raise NotImplementedError
+    # test ConvertibleDatetime.change_interval() in integration_tests
 
-    def test_change_unit(self):
-        raise NotImplementedError
+    @patch("src.customdatetime.ConvertibleDateTime.get_frequencies")
+    @patch("src.customdatetime.ConvertibleDateTime.change_interval")
+    def test_change_unit_when_increasing_unit(self, *mocks):
+        non_year_units = [DateUnit.MONTH, DateUnit.DAY]
+        non_year_units.extend(TimeUnit)
+        non_year_unit = FAKE.random_element(elements=non_year_units)
+        frequencies = [FAKE.random_int(min=1) for _ in range(5)]
+
+        mock_change_interval = mocks[0]
+        mock_get_frequencies = mocks[1]
+        mock_timeline = Mock()
+        mock_get_frequencies.return_value = frequencies
+
+        non_year_interval = [max(frequencies), non_year_unit]
+        non_year_unit_idx = non_year_units.index(non_year_unit)
+        next_unit = non_year_units[non_year_unit_idx - 1]
+        next_interval = [min(frequencies), next_unit]
+
+        cd = ConvertibleDate(calendar=self.calendar_factory.build())
+        cdt = ConvertibleDateTime(date=cd, time=self.time_factory.build())
+        cdt.datetime_units = self.datetime_units
+
+        cdt.change_unit(non_year_interval, mock_timeline, increase=False)
+        mock_change_interval.assert_called_once_with(
+            next_interval, mock_timeline, False, True
+        )
+
+        year_interval = [max(frequencies), DateUnit.YEAR]
+        with pytest.raises(ValueError):
+            cdt.change_unit(year_interval, mock_timeline, increase=False)
+
+    @patch("src.customdatetime.ConvertibleDateTime.get_frequencies")
+    @patch("src.customdatetime.ConvertibleDateTime.change_interval")
+    def test_change_unit_when_decreasing_unit(self, *mocks):
+        non_sec_units = [*DateUnit]
+        non_sec_units.extend([TimeUnit.HOUR, TimeUnit.MINUTE])
+        non_sec_unit = FAKE.random_element(elements=non_sec_units)
+        frequencies = [FAKE.random_int(min=1) for _ in range(5)]
+
+        mock_change_interval = mocks[0]
+        mock_get_frequencies = mocks[1]
+        mock_timeline = Mock()
+        mock_get_frequencies.return_value = frequencies
+
+        non_sec_interval = [min(frequencies), non_sec_unit]
+        non_year_unit_idx = non_sec_units.index(non_sec_unit)
+        next_unit = non_sec_units[non_year_unit_idx + 1]
+        next_interval = [max(frequencies), next_unit]
+
+        cd = ConvertibleDate(calendar=self.calendar_factory.build())
+        cdt = ConvertibleDateTime(date=cd, time=self.time_factory.build())
+        cdt.datetime_units = self.datetime_units
+
+        cdt.change_unit(non_sec_interval, mock_timeline, increase=True)
+        mock_change_interval.assert_called_once_with(
+            next_interval, mock_timeline, True, True
+        )
+
+        second_interval = [min(frequencies), TimeUnit.SECOND]
+        with pytest.raises(ValueError):
+            cdt.change_unit(second_interval, mock_timeline, increase=True)
 
     @patch("src.customdatetime.ConvertibleDateTime.shift_od")
     def test_extend_od_with_reverse(self, patch_shift_od):

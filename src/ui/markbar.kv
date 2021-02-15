@@ -17,6 +17,7 @@
 #:kivy 2.0.0
 #:import hex kivy.utils.get_color_from_hex
 <MarkBar>:
+    focused_highlight_color: hex("#39796b")
     canvas:
         Color:
             rgb: hex("#484848")
@@ -26,7 +27,7 @@
 
         # focus highlight
         Color:
-            rgba: hex("#39796b") if self.focus else (0, 0, 0, 0)
+            rgba: self.focused_highlight_color if self.focus else self.unfocused_highlight_color
         Rectangle:
             pos: self.pos
             size: self.size

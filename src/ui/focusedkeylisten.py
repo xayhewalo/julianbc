@@ -75,11 +75,10 @@ class PassiveFocusBehavior(AbstractFocus):
         self.bind(
             focus_next=self.set_focus_next_and_previous,
             focus_previous=self.set_focus_next_and_previous,
+            keyboard_listener=self.bind_keyboard_listener,
         )
 
-    def on_kv_post(self, base_widget):
-        # noinspection PyUnresolvedReferences
-        super().on_kv_post(base_widget)
+    def bind_keyboard_listener(self, *_):
         self.keyboard_listener.bind(keyboard=self.reset_listener)
 
     def reset_listener(self, *_):
@@ -98,13 +97,13 @@ class PassiveFocusBehavior(AbstractFocus):
         super().on_focus(*_)
 
     def set_focus_next_and_previous(self, *_):
-        if self.focus:
+        if self.keyboard_listener and self.focus:
             self.keyboard_listener.request_keyboard()
             self.keyboard_listener.focus_next = self.focus_next
             self.keyboard_listener.focus_previous = self.focus_previous
 
     def on_keyboard_down(self, keyboard, keycode, text, modifiers):
-        pass
+        pass  # pragma: no cover
 
     def on_keyboard_up(self, keyboard, keycode):
-        pass
+        pass  # pragma: no cover

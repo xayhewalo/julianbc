@@ -1,7 +1,7 @@
 from kivy.core.window import Keyboard
 from kivy.uix.widget import Widget
 from src.ui.keylisten import KeyListenBehavior
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 
 class KeyListenWidget(KeyListenBehavior, Widget):

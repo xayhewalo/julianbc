@@ -113,6 +113,16 @@ def test_focuskeylisten_on_keyboard_up(*mocks):
     mock_lose_focus.assert_not_called()
     passive_listener.on_keyboard_up.assert_called_with(mock_kb, fake_keycode)
     passive_listener.on_keyboard_up.reset_mock()
+    mock_kl_on_keyboard_up.reset_mock()
+
+    passive_listener.on_keyboard_up.return_value = False
+    fkl_widget.passive_listener = passive_listener
+    assert fkl_widget.on_keyboard_up(mock_kb, fake_keycode)
+    mock_kl_on_keyboard_up.assert_called_once_with(mock_kb, fake_keycode)
+    mock_lose_focus.assert_not_called()
+    passive_listener.on_keyboard_up.assert_called_with(mock_kb, fake_keycode)
+    passive_listener.on_keyboard_up.reset_mock()
+    mock_kl_on_keyboard_up.reset_mock()
 
     assert fkl_widget.on_keyboard_up(mock_kb, (27, "escape"))
     mock_kl_on_keyboard_up.assert_not_called()

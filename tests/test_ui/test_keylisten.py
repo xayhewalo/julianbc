@@ -28,21 +28,3 @@ def test_keyboard_closed(mock_keyboard_unbind):
     mock_keyboard_unbind.assert_called_with(
         on_key_down=key_listen_widget.on_keyboard_down
     )
-
-
-def test_on_keyboard_down():
-    key_listen_widget = KeyListenWidget()
-    # noinspection PyBroadException
-    try:
-        key_listen_widget.on_keyboard_down(Mock(), Mock(), Mock(), Mock())
-    except Exception:
-        assert False, "on_keyboard_down raised an unexpected error"
-
-
-def test_on_keyboard_up():
-    key_listen_widget = KeyListenWidget()
-    # noinspection PyBroadException
-    try:
-        key_listen_widget.on_keyboard_up(Mock(), Mock())
-    except Exception:
-        assert False, "on_keyboard_up raised an unexpected error"

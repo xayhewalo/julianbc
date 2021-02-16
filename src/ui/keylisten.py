@@ -36,7 +36,7 @@ class KeyListenBehavior:
         self.keyboard = None
 
     def on_keyboard_down(self, keyboard, keycode, text, modifiers):
-        pass
+        pass  # pragma: no cover
 
     def on_keyboard_up(self, keyboard, keycode):
-        pass
+        pass  # pragma: no cover

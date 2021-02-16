@@ -43,15 +43,14 @@ class HorScrollBehavior:
         if self.collide_point(*touch.pos):
             # Touched widget but children didn't use touch, must be scrolling
             button = touch.button
-            shift_scrollleft = button == "scrolldown" and self.shift_key
-            shift_scrollright = button == "scrollup" and self.shift_key
-            if touch.button == "scrollleft" or shift_scrollleft:
+            shift_key = self.shift_key
+            if button == "scrollleft" or button == "scrolldown" and shift_key:
                 # noinspection PyUnresolvedReferences
                 self.gain_focus()
                 self.scroll_by = -self._scroll_by
                 self.cleanup_scroll()
                 return True
-            elif touch.button == "scrollright" or shift_scrollright:
+            elif button == "scrollright" or button == "scrollup" and shift_key:
                 # noinspection PyUnresolvedReferences
                 self.gain_focus()
                 self.scroll_by = self._scroll_by
@@ -80,7 +79,7 @@ class HorScrollBehavior:
         return super().on_touch_move(touch)
 
     def on_touch_up(self, touch):
-        if touch.grab_current is self and self.drag_hor_scrolling:
+        if touch.grab_current == self and self.drag_hor_scrolling:
             touch.ungrab(self)
             # noinspection PyUnresolvedReferences
             self.get_root_window().set_system_cursor("arrow")
@@ -98,18 +97,20 @@ class HorScrollBehavior:
             self.left_key = True
             self.scroll_by = -self._scroll_by
             self.cleanup_scroll()
+            return True
         elif self.is_right_key(keycode, modifiers):
             # noinspection PyUnresolvedReferences
             self.gain_focus()
             self.right_key = True
             self.scroll_by = self._scroll_by
             self.cleanup_scroll()
+            return True
         # noinspection PyUnresolvedReferences
         return super().on_keyboard_down(keyboard, keycode, text, modifiers)
 
     def on_keyboard_up(self, keyboard, keycode):
         # i don't think we want to consume keys here?...
-        if keycode[1] in ("shift", "rshift"):
+        if keycode[1] in ("shift", "rshift") and self.shift_key:
             self.shift_key = False
         if self.left_key and self.is_left_key(keycode):
             self.left_key = False
@@ -120,16 +121,17 @@ class HorScrollBehavior:
 
     @staticmethod
     def is_left_key(keycode: list[int, str], modifiers: list = None) -> bool:
-        if modifiers:
-            return keycode[1] in ("left", "numpad4") and "numlock" in modifiers
-        return keycode[1] in ("left", "numpad4")
+        k = keycode[1]
+        if modifiers is not None:
+            return k == "left" or (k == "numpad4" and "numlock" in modifiers)
+        return k in ("left", "numpad4")
 
     @staticmethod
     def is_right_key(keycode: list[int, str], modifiers: list = None) -> bool:
-        key = keycode[1]
-        if modifiers:
-            return key in ("right", "numpad6") and "numlock" in modifiers
-        return key in ("right", "numpad6")
+        k = keycode[1]
+        if modifiers is not None:
+            return k == "right" or (k == "numpad6" and "numlock" in modifiers)
+        return k in ("right", "numpad6")
 
     def cleanup_scroll(self):
         self.drag_hor_scrolling = False

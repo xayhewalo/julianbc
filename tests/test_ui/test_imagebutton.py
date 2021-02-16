@@ -110,7 +110,7 @@ def test_hoverchange_change_color(mock_super_change_color):
 @patch("src.ui.focusedkeylisten.FocusKeyListenBehavior.on_keyboard_down")
 def test_hoverchange_on_keyboard_down(mock_on_keyboard_down, mock_on_press):
     kb = Mock()
-    fake_keycode = FAKE.pylist(nb_elements=2)
+    fake_keycode = FAKE.pylist(nb_elements=2, variable_nb_elements=False)
     text = Mock()
     mods = Mock()
 

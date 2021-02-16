@@ -20,7 +20,6 @@ def test__init__():
 def test_set_focus_next(patch__ensure_none_focused, patch_lose_focus):
     focus_widget = FocusWidget()
     mock_focus_next = Mock()
-    mock_focus_next.gain_focus = Mock()
 
     focus_widget.set_focus_next()
     patch_lose_focus.assert_called_once()
@@ -42,7 +41,6 @@ def test_set_focus_next(patch__ensure_none_focused, patch_lose_focus):
 def test_set_focus_previous(patch__ensure_none_focused, patch_lose_focus):
     focus_widget = FocusWidget()
     mock_focus_previous = Mock()
-    mock_focus_previous.gain_focus = Mock()
 
     focus_widget.set_focus_previous()
     patch_lose_focus.assert_called_once()

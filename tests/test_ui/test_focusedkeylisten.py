@@ -46,7 +46,6 @@ def test_focuskeylisten_on_keyboard_down(*mocks):
     mock_kl_on_keyboard_down.reset_mock()
 
     passive_listener = Mock()
-    passive_listener.on_keyboard_down = Mock()
     passive_listener.on_keyboard_down.return_value = False
     fkl_widget.passive_listener = passive_listener
     assert (
@@ -97,7 +96,6 @@ def test_focuskeylisten_on_keyboard_up(*mocks):
     mock_kb = Mock()
     fake_keycode = FAKE.pylist()
     passive_listener = Mock()
-    passive_listener.on_keyboard_up = Mock()
 
     fkl_widget = FocusKeyListenWidget()
     assert (
@@ -157,7 +155,6 @@ def test_passivefocuswidget_on_keyboard_listener(mock_bind_keyboard_listener):
 
 def test_passivefocuswidget_bind_keyboard_listener():
     kb_listener = Mock()
-    kb_listener.bind = Mock()
     pf_widget = PassiveFocusWidget(keyboard_listener=kb_listener)
     pf_widget.bind_keyboard_listener()
     kb_listener.bind.assert_called_once_with(keyboard=pf_widget.reset_listener)
@@ -169,11 +166,8 @@ def test_passivefocuswidget_reset_listener():
     kb_listener = Mock()
     kb_listener.focus_next = None
     kb_listener.focus_previous = None
-    kb_listener.default_focus_next = Mock()
-    kb_listener.default_focus_previous = Mock()
     passive_focus_widget = PassiveFocusWidget(keyboard_listener=kb_listener)
 
-    kb_listener.keyboard = Mock()
     passive_focus_widget.reset_listener()
     assert kb_listener.focus_next is None
     assert kb_listener.focus_previous is None
@@ -229,6 +223,3 @@ def test_passivefocuswidget_focus_next_and_previous():
     kb_listener.request_keyboard.assert_called()
 
     reset_focus_instances()
-
-
-# todo fix Mocks on mock objects

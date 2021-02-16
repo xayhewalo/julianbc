@@ -176,7 +176,6 @@ def test_hoverimagebutton_on_press(mock_get_running_app):
 @patch("kivy.app.App.get_running_app", return_value=Mock())
 def test_hoverimagetogglebutton_on_press(mock_get_running_app):
     app = mock_get_running_app()
-    app.popup.open = Mock()
 
     hover_image_toggle_button = HoverImageToggleButton()
     hover_image_toggle_button.on_press()

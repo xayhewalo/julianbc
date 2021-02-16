@@ -23,7 +23,6 @@ def test_mouse_pos():
 
     for _ in range(FAKE.random_int(min=1, max=10)):
         mock_child = Mock()
-        mock_child.dispatch = Mock()
         mock_child.dispatch.return_value = False
         mouse_listen.children.append(mock_child)
     assert mouse_listen.on_mouse_pos(mock_win, mouse_pos) is not True

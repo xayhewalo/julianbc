@@ -96,10 +96,8 @@ def test_on_touch_move(*mocks):
     mock_get_root_window = mocks[1]
     mock_window = Mock()
     mock_get_root_window.return_value = mock_window
-    mock_window.set_system_cursor = Mock()
     mock_collide_point = mocks[2]
     mock_touch = Mock()
-    mock_touch.grab = Mock()
     mock_touch.pos = FAKE.pyfloat(), FAKE.pyfloat()
 
     scroll_widget = HorScrollWidget()
@@ -171,10 +169,8 @@ def test_on_touch_move(*mocks):
 @patch("kivy.uix.widget.Widget.on_touch_up")
 def test_on_touch_up(mock_widget_on_touch_up, mock_get_root_window):
     mock_window = Mock()
-    mock_window.set_system_cursor = Mock()
     mock_get_root_window.return_value = mock_window
     mock_touch = Mock()
-    mock_touch.ungrab = Mock()
 
     scroll_widget = HorScrollWidget()
     scroll_widget.cleanup_scroll = Mock()

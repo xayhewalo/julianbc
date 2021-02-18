@@ -20,7 +20,6 @@ from kivy.clock import Clock
 from kivy.graphics import Color, Rectangle
 from kivy.metrics import sp
 from kivy.properties import (
-    BooleanProperty,
     BoundedNumericProperty,
     NumericProperty,
     ObjectProperty,
@@ -51,7 +50,6 @@ class Mark(Widget):
     mark_width = NumericProperty("2sp")
     mark_height = NumericProperty("100sp")
     mark_color = ObjectProperty(Color([250 / 255] * 3))
-    visible = BooleanProperty()
     interval_width = NumericProperty()
 
     def __init__(self, **kwargs):
@@ -61,20 +59,30 @@ class Mark(Widget):
 
     def draw_marks(self, *_, mark_ods: list = None) -> list:
         """:raises AssertionError: if less than two visible marks drawn"""
+
+        def make_mark_x() -> tuple[float, list, list]:
+            """:return: current mark x, all mark x's, all visible mark x's"""
+
+            x = self.timeline.od_to_x(mark_od)
+            mark_xs.append(x)
+            if 0 <= x <= self.timeline.width:
+                visible_mark_xs.append(x)
+            return x, mark_xs, visible_mark_xs
+
         self.canvas.clear()
         self.canvas.add(self.mark_color)
 
         mark_xs = []
         visible_mark_xs = []
         tl = self.timeline
-        if mark_ods is None:
+        if mark_ods:  # skip expensive ordinal calculations if we can
+            for mark_od in mark_ods:
+                mark_x, mark_xs, visible_mark_xs = make_mark_x()
+        else:
             mark_od = tl.extended_start_od
             mark_ods = [mark_od]
             while mark_od <= tl.extended_end_od:
-                mark_x = tl.od_to_x(mark_od)
-                mark_xs.append(mark_x)
-                if 0 <= mark_x <= tl.width:
-                    visible_mark_xs.append(mark_x)
+                mark_x, mark_xs, visible_mark_xs = make_mark_x()
 
                 mark_od = tl.cdt.next_od(mark_od, tl.mark_interval)
                 mark_ods.append(mark_od)
@@ -89,15 +97,14 @@ class Mark(Widget):
             label = self.make_label(mark_x, hr_date, self.label_align)
             pos = sp(mark_x), sp(self.mark_y)
             size = sp(self.mark_width), sp(self.mark_height)
-            if self.visible:
-                self.canvas.add(self.mark(pos=pos, size=size))
-                self.canvas.add(
-                    Rectangle(
-                        pos=label.pos,
-                        size=label.texture_size,
-                        texture=label.texture,
-                    )
+            self.canvas.add(self.mark(pos=pos, size=size))
+            self.canvas.add(
+                Rectangle(
+                    pos=label.pos,
+                    size=label.texture_size,
+                    texture=label.texture,
                 )
+            )
         return mark_ods
 
     def make_label(self, x: int, text: str, alignment: str) -> TextBoundLabel:
@@ -112,16 +119,15 @@ class Mark(Widget):
             self.max_label_width = label.width + (2 * self.label_padding_x)
 
         if alignment == self.LABEL_LEFT:
-            label_x = sp(x + self.label_padding_x)
+            label.x = sp(x + self.label_padding_x)
         elif alignment == self.LABEL_CENTER:
-            label_x = sp(x - int(label.width / 2) + self.label_padding_x)
+            label.center_x = sp(x)
         else:  # middle interval alignment
-            label.center_x = x + (self.interval_width / 2)
-            label_x = label.x
+            label.center_x = sp(x + (self.interval_width / 2))
 
-        label_y = self.label_y
         if self.label_y is None:
-            label_y = sp(self.top - self.font_size - self.label_padding_y)
+            label.top = self.top - self.label_padding_y
+        else:
+            label.y = self.label_y
 
-        label.pos = label_x, label_y
         return label

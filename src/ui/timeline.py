@@ -117,6 +117,7 @@ class Timeline(
             scroll_by=self.scroll_start_and_end,
             zoom_by=self.zoom_start_and_end,
             shift_key=self.disable_zoom,
+            touches=self.set_drag_hor_scroll,
             focus=self.give_focus,
         )
 
@@ -162,7 +163,7 @@ class Timeline(
     def disable_zoom(self, *_):
         self.disable_zoom_in = self.disable_zoom_out = self.shift_key
 
-    def on_touches(self, *_):
+    def set_drag_hor_scroll(self, *_):
         if len(self.touches) > 1:
             self.disable_drag_hor_scroll = True
         else:
@@ -200,7 +201,11 @@ class Timeline(
 class TimelineScrollView(ScrollView):
     """Viewport for all the timelines"""
 
-    def on_children(self, *_):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.bind(children=self.bind_child)
+
+    def bind_child(self, *_):
         child = self.children[0]
         child.bind(height=self.set_do_scroll_y, timelines=self.set_do_scroll_y)
         child.bind(timelines=self.bind_child_timelines)
@@ -248,7 +253,7 @@ class TimelineLayout(FloatLayout):
     timelines = ListProperty([])
 
     def add_widget(self, widget, index=0, canvas=None):
-        super().add_widget(widget, index=0, canvas=None)
+        super().add_widget(widget, index=index, canvas=canvas)
         if isinstance(widget, Timeline):
             self.timelines.insert(index, widget)
             widget.bind(height=self.resize_timelines)
@@ -276,6 +281,7 @@ class TimelineLayout(FloatLayout):
             return
 
         self.set_height()
+        self.set_timeline_listeners()
 
         top_tl.expanded_height = self.default_timeline_height
         top_tl.expanded_y = self.top - top_tl.expanded_height
@@ -287,8 +293,6 @@ class TimelineLayout(FloatLayout):
             above_tl = self.above_timeline(timeline)
             timeline.expanded_height = self.default_timeline_height
             timeline.expanded_y = above_tl.y - timeline.expanded_height
-
-        self.set_timeline_listeners()
 
     def set_height(self, *_):
         height = 0.0
@@ -309,7 +313,7 @@ class TimelineLayout(FloatLayout):
     def set_timeline_listeners(self):
         for tl in self.timelines:
             if tl != self.top_timeline:
-                # let kv file sets previous active listener for top timeline
+                # let kv file set previous active listener for top timeline
                 tl.previous_active_listener = self.above_timeline(tl)
             tl.next_active_listener = self.below_timeline(tl)
 
@@ -331,11 +335,8 @@ class TimelineLayout(FloatLayout):
         return self.timelines[-1]
 
     @property
-    def bottom_timeline(self) -> Timeline:
-        return self.timelines[0]
-
-    @property
     def default_timeline_height(self) -> float:
+        """the default height when there is more than 1 timeline"""
         return self.parent.height / 2
 
 

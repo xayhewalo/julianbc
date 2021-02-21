@@ -126,6 +126,20 @@ class ConvertibleDateTimeTest(TimeTestCase):
         with pytest.raises(ValueError):
             cdt.change_unit(second_interval, mock_timeline, increase=True)
 
+    @patch("src.customdatetime.ConvertibleDateTime.get_frequencies")
+    @patch("src.customdatetime.ConvertibleDateTime.change_interval")
+    def test_change_unit_can_do_nothing(self, *mocks):
+        mock_change_interval = mocks[0]
+        mock_get_frequencies = mocks[1]
+        frequencies = [FAKE.random_int(min=1) for _ in range(5)]
+        mock_get_frequencies.return_value = frequencies
+        frequency = FAKE.random_element(elements=frequencies[1:-1])
+        cd = ConvertibleDate(calendar=self.calendar_factory.build())
+        cdt = ConvertibleDateTime(date=cd, time=self.time_factory.build())
+        interval = [frequency, Mock()]
+        assert cdt.change_unit(interval, Mock(), FAKE.pybool()) is None
+        mock_change_interval.assert_not_called()
+
     @patch("src.customdatetime.ConvertibleDateTime.shift_od")
     def test_extend_od_with_reverse(self, patch_shift_od):
         non_day_units = [DateUnit.YEAR, DateUnit.MONTH]

@@ -14,28 +14,18 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
-import os
-
 from kivy.app import App
 from kivy.factory import Factory
 from kivy.lang import Builder
 from kivy.uix.label import Label
 from kivy.uix.modalview import ModalView
+from os.path import join
 from src.ui.collapse import CollapseBehavior
 from src.ui.eventview import EventView
 from src.ui.focus import AbstractFocus
 from src.ui.imagebutton import HoverImageButton, HoverImageToggleButton
 from src.ui.mark import Mark
 from src.ui.markbar import MarkBar
-
-ui_directory = "ui"
-Builder.load_file(os.path.join(ui_directory, "collapse.kv"))
-Builder.load_file(os.path.join(ui_directory, "eventview.kv"))
-Builder.load_file(os.path.join(ui_directory, "headerbar.kv"))
-Builder.load_file(os.path.join(ui_directory, "imagebutton.kv"))
-Builder.load_file(os.path.join(ui_directory, "markbar.kv"))
-Builder.load_file(os.path.join(ui_directory, "textboundlabel.kv"))
-Builder.load_file(os.path.join(ui_directory, "timeline.kv"))
 
 
 class JulianBC(App):
@@ -48,29 +38,37 @@ class JulianBC(App):
         )
         self.popup.add_widget(label)
 
-    # def on_start(self):
-    #     import cProfile
-    #     self.profile = cProfile.Profile()
-    #     self.profile.enable()
-
-    # def on_stop(self):
-    #     import pstats
-    #     self.profile.disable()
-    #     self.profile.dump_stats("myapp.profile")
-    #     s = pstats.Stats("myapp.profile")
-    #     s.strip_dirs().sort_stats("time").print_stats()
-
     def build(self):
-        return Builder.load_file("main.kv")
+        Factory.register("AbstractFocus", AbstractFocus)
+        Factory.register("CollapseBehavior", CollapseBehavior)
+        Factory.register("EventView", EventView)
+        Factory.register("Mark", Mark)
+        Factory.register("MarkBar", MarkBar)
+        Factory.register("HoverImageButton", HoverImageButton)
+        Factory.register("HoverImageToggleButton", HoverImageToggleButton)
+
+        ui_directory = "ui"  # todo os.walk
+        main_kv_path = "main.kv"
+        try:
+            Builder.load_file(join(ui_directory, "collapse.kv"))
+        except FileNotFoundError:
+            ui_directory = join("src", "ui")
+            main_kv_path = join("src", "main.kv")
+            Builder.load_file(join(ui_directory, "collapse.kv"))
+
+        Builder.load_file(join(ui_directory, "eventview.kv"))
+        Builder.load_file(join(ui_directory, "headerbar.kv"))
+        Builder.load_file(join(ui_directory, "imagebutton.kv"))
+        Builder.load_file(join(ui_directory, "markbar.kv"))
+        Builder.load_file(join(ui_directory, "textboundlabel.kv"))
+        Builder.load_file(join(ui_directory, "timeline.kv"))
+
+        return Builder.load_file(main_kv_path)
 
 
-if __name__ == "__main__":
-    Factory.register("AbstractFocus", AbstractFocus)
-    Factory.register("CollapseBehavior", CollapseBehavior)
-    Factory.register("EventView", EventView)
-    Factory.register("Mark", Mark)
-    Factory.register("MarkBar", MarkBar)
-    Factory.register("HoverImageButton", HoverImageButton)
-    Factory.register("HoverImageToggleButton", HoverImageToggleButton)
+def main():
+    if __name__ == "__main__":
+        JulianBC().run()
 
-    JulianBC().run()
+
+main()

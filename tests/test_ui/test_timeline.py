@@ -370,6 +370,7 @@ def test_timelinlayout_add_widget(mock_fl_add_widget):
     canvas = Mock()
     index = FAKE.random_int()
     widget = Mock()
+    mock_fl_add_widget.reset_mock()  # to remove any descendants calls
     tl_layout.add_widget(widget, index, canvas)
     mock_fl_add_widget.assert_called_once_with(
         widget, index=index, canvas=canvas

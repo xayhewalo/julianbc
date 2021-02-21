@@ -87,11 +87,6 @@ class ConvertibleDateTime:
         too_many_marks = mark.max_label_width > new_interval_width
         too_few_marks = new_interval_width * 3 > timeline.width
         while too_many_marks or too_few_marks:
-            intvl = self.change_unit([new_frequency, unit], timeline, increase)
-            if intvl is not None:
-                frequency, unit = intvl
-                return [frequency, unit]
-
             idx = frequencies.index(new_frequency)
             new_idx = idx + sign
             new_frequency = frequencies[new_idx]

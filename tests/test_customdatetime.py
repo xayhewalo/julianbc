@@ -22,6 +22,9 @@ from tests.factories import ConvertibleCalendarFactory, ConvertibleTimeFactory
 from tests.utils import FAKE, TimeTestCase
 from src.customdate import ConvertibleDate, DateUnit
 from src.customdatetime import ConvertibleDateTime, TimeUnit
+from src.dbsetup import gregorian_cdt
+from src.ui.mark import Mark
+from src.ui.timeline import Timeline
 from unittest.mock import Mock, patch
 
 
@@ -62,7 +65,29 @@ class ConvertibleDateTimeTest(TimeTestCase):
         assert cd.calendar.name in cdt.__str__()
         assert ct.clock.name in cdt.__str__()
 
-    # test ConvertibleDatetime.change_interval() in integration_tests
+    # noinspection PyMethodMayBeStatic
+    def test_change_interval(self):  # relies on the UI but let's keep it here
+        timeline = Timeline(mark=Mark(), cdt=gregorian_cdt)
+        old_frequency = 100_000
+        interval = [old_frequency, DateUnit.YEAR]
+        timeline.mark_interval = interval
+        timeline.end_od = timeline.start_od + old_frequency * 365.25
+        new_freq, new_unit = gregorian_cdt.change_interval(interval, timeline)
+        assert new_freq < old_frequency or new_unit != DateUnit.YEAR
+
+        old_frequency = 1
+        interval = [old_frequency, DateUnit.DAY]
+        new_freq, new_unit = gregorian_cdt.change_interval(interval, timeline)
+        assert new_freq < old_frequency or new_unit not in DateUnit
+
+        old_frequency = 1
+        interval = [old_frequency, TimeUnit.SECOND]
+        timeline.mark_interval = interval
+        timeline.end_od = timeline.start_od + 365.25
+        new_freq, new_unit = gregorian_cdt.change_interval(
+            interval, timeline, increase=False
+        )
+        assert new_freq < old_frequency or new_unit != DateUnit.YEAR
 
     @patch("src.customdatetime.ConvertibleDateTime.get_frequencies")
     @patch("src.customdatetime.ConvertibleDateTime.change_interval")
@@ -132,6 +157,7 @@ class ConvertibleDateTimeTest(TimeTestCase):
         mock_change_interval = mocks[0]
         mock_get_frequencies = mocks[1]
         frequencies = [FAKE.random_int(min=1) for _ in range(5)]
+        frequencies.sort()
         mock_get_frequencies.return_value = frequencies
         frequency = FAKE.random_element(elements=frequencies[1:-1])
         cd = ConvertibleDate(calendar=self.calendar_factory.build())

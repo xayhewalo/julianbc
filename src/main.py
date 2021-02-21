@@ -14,12 +14,14 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
+import pathlib
+
 from kivy.app import App
 from kivy.factory import Factory
 from kivy.lang import Builder
 from kivy.uix.label import Label
 from kivy.uix.modalview import ModalView
-from os.path import join
+from os.path import join, split
 from src.ui.collapse import CollapseBehavior
 from src.ui.eventview import EventView
 from src.ui.focus import AbstractFocus
@@ -47,23 +49,13 @@ class JulianBC(App):
         Factory.register("HoverImageButton", HoverImageButton)
         Factory.register("HoverImageToggleButton", HoverImageToggleButton)
 
-        ui_directory = "ui"  # todo os.walk
-        main_kv_path = "main.kv"
-        try:
-            Builder.load_file(join(ui_directory, "collapse.kv"))
-        except FileNotFoundError:
-            ui_directory = join("src", "ui")
-            main_kv_path = join("src", "main.kv")
-            Builder.load_file(join(ui_directory, "collapse.kv"))
-
-        Builder.load_file(join(ui_directory, "eventview.kv"))
-        Builder.load_file(join(ui_directory, "headerbar.kv"))
-        Builder.load_file(join(ui_directory, "imagebutton.kv"))
-        Builder.load_file(join(ui_directory, "markbar.kv"))
-        Builder.load_file(join(ui_directory, "textboundlabel.kv"))
-        Builder.load_file(join(ui_directory, "timeline.kv"))
-
-        return Builder.load_file(main_kv_path)
+        abs_src_path = split(__file__)[0]
+        [  # load all *.kv files that not are the main kv file
+            Builder.load_file(str(path))
+            for path in pathlib.Path(abs_src_path).glob(join("**", "*.kv"))
+            if "main.kv" not in str(path)
+        ]
+        return Builder.load_file(join(abs_src_path, "main.kv"))
 
 
 def main():

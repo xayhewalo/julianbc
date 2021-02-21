@@ -1,7 +1,7 @@
 import src.main
 
 from kivy.lang import Builder
-from os.path import join
+from os.path import join, split
 from src.main import JulianBC
 from unittest.mock import patch
 
@@ -12,20 +12,13 @@ def test_julianbc_popup():
     assert "not implemented" in julian_bc.popup.children[0].text.lower()
 
 
-def test_julianbc_build():  # todo os.walk
+def test_julianbc_build():
     julian_bc = JulianBC()
-    main_kv_path = join("..", "..", "src", "main.kv")
-    try:
-        assert (
-            julian_bc.build().__class__
-            == Builder.load_file(main_kv_path).__class__
-        )
-    except FileNotFoundError:
-        main_kv_path = join("src", "main.kv")
-        assert (
-            julian_bc.build().__class__
-            == Builder.load_file(main_kv_path).__class__
-        )
+    abs_src_path = split(src.main.__file__)[0]
+    assert (
+        julian_bc.build().__class__
+        == Builder.load_file(join(abs_src_path, "main.kv")).__class__
+    )
 
 
 @patch.object(src.main, "__name__", "")

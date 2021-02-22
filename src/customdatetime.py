@@ -199,9 +199,10 @@ class ConvertibleDateTime:
 
     def get_frequencies(self, unit: DateTimeEnum) -> list:
         """:raises ValueErorr: if unit is not a DateUnit or TimeUnit"""
+        values = None
         if unit == DateUnit.YEAR:
             # fmt: off
-            return [
+            values = [
                 1, 2, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000,
                 7500, 10_000, 25_000, 50_000, 75_000, 100_000,
             ]
@@ -210,7 +211,7 @@ class ConvertibleDateTime:
             num_common_months = self.date.calendar.months_in_common_year
             num_leap_months = self.date.calendar.months_in_leap_year
             least_months_in_year = min(num_common_months, num_leap_months)
-            return sympy.proper_divisors(least_months_in_year)
+            values = sympy.proper_divisors(least_months_in_year)
         elif unit == DateUnit.DAY:
             calendar = self.date.calendar
             min_common_month_len = min(calendar.days_in_common_year_months)
@@ -218,16 +219,18 @@ class ConvertibleDateTime:
             min_days_in_month = min(min_leap_month_len, min_common_month_len)
             multiples_of_five = list(range(0, min_days_in_month + 1, 5))
             multiples_of_five.remove(0)
-            frequencies = [1, 2]
-            frequencies.extend(multiples_of_five)
-            return frequencies
+            values = [1, 2]
+            values.extend(multiples_of_five)
         elif unit == TimeUnit.HOUR:
-            return sympy.proper_divisors(self.time.clock.hours_in_day)
+            values = sympy.proper_divisors(self.time.clock.hours_in_day)
         elif unit == TimeUnit.MINUTE:
-            return sympy.proper_divisors(self.time.clock.minutes_in_hour)
+            values = sympy.proper_divisors(self.time.clock.minutes_in_hour)
         elif unit == TimeUnit.SECOND:
-            return sympy.proper_divisors(self.time.clock.seconds_in_minute)
-        raise ValueError(f"Cannot find valid frequencies for {unit}")
+            values = sympy.proper_divisors(self.time.clock.seconds_in_minute)
+
+        if values is None:
+            raise ValueError(f"Cannot find valid frequencies for {unit}")
+        return values
 
     def od_to_hr_date(self, ordinal_decimal: float, unit: DateTimeEnum) -> str:
         """:raises ValueError: if unit is not a DateUnit or TimeUnit"""

@@ -71,10 +71,10 @@ class AbstractFocus:
     # noinspection PyUnresolvedReferences
     def on_touch_down(self, touch):
         button = touch.button
-        if self.collide_point(*touch.pos):
-            if self.focus_on_scroll or not button.startswith("scroll"):
-                self.gain_focus()
-                # do not consume touch, just gain focus
+        allow_focus = self.focus_on_scroll or not button.startswith("scroll")
+        if self.collide_point(*touch.pos) and allow_focus:
+            self.gain_focus()
+            # do not consume touch, just gain focus
         return super().on_touch_down(touch)
 
     def gain_focus(self, *_):

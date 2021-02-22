@@ -176,9 +176,8 @@ class Timeline(
 
     def descendant_focused(self) -> bool:
         for focusable_widget in self.focusable_descendants:
-            if focusable_widget:  # is None during initialization
-                if focusable_widget.focus:
-                    return True
+            if focusable_widget and focusable_widget.focus:
+                return True
         return False
 
     #
@@ -219,9 +218,11 @@ class TimelineScrollView(ScrollView):
             timeline.bind(focus=self.scroll_to_focused_widget)
 
             for focusable_widget in timeline.focusable_descendants:
-                if focusable_widget:  # is None during initialization
+                try:
                     focusable_widget.bind(focus=self.set_do_scroll_y)
                     focusable_widget.bind(focus=self.scroll_to_focused_widget)
+                except AttributeError:
+                    pass
 
     def set_do_scroll_y(self, *_):
         """disable scroll when a Timeline or its child has focus"""

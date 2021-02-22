@@ -39,6 +39,7 @@ class ZoomBehavior:
         if super().on_touch_down(touch):
             return True
 
+        consumed_touch = False
         # noinspection PyUnresolvedReferences
         if self.collide_point(*touch.pos):
             button = touch.button
@@ -47,18 +48,18 @@ class ZoomBehavior:
                 # noinspection PyUnresolvedReferences
                 self.gain_focus()
                 self.zoom_by = self._zoom_by
-                return True
+                consumed_touch = True
             elif button == "scrolldown" and not self.disable_zoom_out:
                 # noinspection PyUnresolvedReferences
                 self.gain_focus()
                 self.zoom_by = -self._zoom_by
-                return True
+                consumed_touch = True
             elif len(self.touches) == 2 and not button.startswith("scroll"):
                 # AbstractFocus should handle focusing in this case
                 touch.grab(self)
                 self.pinch_zooming = True
-                return True
-        return False
+                consumed_touch = True
+        return consumed_touch
 
     def on_touch_move(self, touch):
         """based on kivy.uix.scatter"""

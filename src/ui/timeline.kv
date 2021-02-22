@@ -15,6 +15,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
 #:kivy 2.0.0
+#:import Ellipse kivy.graphics.Ellipse
 #:import hex kivy.utils.get_color_from_hex
 #:import gregorian_cdt src.dbsetup.gregorian_cdt
 <Timeline>:
@@ -26,7 +27,7 @@
     default_focus_next: collapse_bar if collapse_bar.dependant_collapsed else event_view
     focus_next: self.default_focus_next
     collapse_bar: collapse_bar
-    mark: mark
+    mark: secondary_mark
     mark_bar: mark_bar
     event_view: event_view
 
@@ -59,16 +60,23 @@
                 id: mark_bar
                 size_hint: 1, None
                 pos_hint: {"top": 1}
-                height: mark.font_size * 2
+                height: secondary_mark.font_size * 3
                 focus_next: event_view
                 focus_previous: collapse_bar
                 keyboard_listener: timeline
 
             Mark:
-                id: mark
+                id: secondary_mark
+                size_hint: None, None
+                size: mark_bar.size
+                pos: mark_bar.pos
+                mark: Ellipse
+                mark_y: self.y
                 timeline: timeline
-                mark_height: self.height
-                label_align: self.LABEL_MID_INTERVAL
+                mark_width: sp(5)
+                mark_height: sp(5)
+                label_y: self.y + self.mark_height
+                label_align: self.LABEL_CENTER
 
 <TimelineScrollView>:
     bar_inactive_color: self.bar_color

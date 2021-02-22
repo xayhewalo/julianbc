@@ -20,6 +20,7 @@ from kivy.clock import Clock
 from kivy.graphics import Color, Rectangle
 from kivy.metrics import sp
 from kivy.properties import (
+    BooleanProperty,
     BoundedNumericProperty,
     NumericProperty,
     ObjectProperty,
@@ -43,6 +44,7 @@ class Mark(Widget):
     label_padding_y = NumericProperty("2sp")
     label_y = NumericProperty(None, allownone=True)
     font_size = BoundedNumericProperty(sp(12), min=sp(12))
+    has_label = BooleanProperty(True)
     max_label_width = NumericProperty()
 
     mark = ObjectProperty(Rectangle)
@@ -93,11 +95,14 @@ class Mark(Widget):
             unit = tl.mark_interval[1]
             mark_od = mark_ods[idx]
 
-            hr_date = tl.cdt.od_to_hr_date(mark_od, unit)
-            label = self.make_label(mark_x, hr_date, self.label_align)
             pos = sp(mark_x), sp(self.mark_y)
             size = sp(self.mark_width), sp(self.mark_height)
             self.canvas.add(self.mark(pos=pos, size=size))
+
+            if not self.has_label:
+                continue
+            hr_date = tl.cdt.od_to_hr_date(mark_od, unit)
+            label = self.make_label(mark_x, hr_date, self.label_align)
             self.canvas.add(
                 Rectangle(
                     pos=label.pos,

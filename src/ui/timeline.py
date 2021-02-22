@@ -71,6 +71,7 @@ class Timeline(
 
     mark = ObjectProperty()
     mark_interval = ListProperty()
+    event_view_mark = ObjectProperty()
 
     extend_time_span_by = NumericProperty(1)
 
@@ -139,23 +140,25 @@ class Timeline(
         self.start_od += dod
         self.end_od -= dod
 
-    def change_mark_interval(self, *_):
+    def change_mark_interval(self, mark, *_):
         """
         Ensure label width doesn't overlap on zoom out.
         Ensure there are at least 2 visible marks when zooming in.
         """
         if self.mark.interval_width * 3 > self.width:
             # increase number of marks
-            mark_interval = self.cdt.change_interval(self.mark_interval, self)
-            self.mark_interval = mark_interval
+            self.mark_interval = self.cdt.change_interval(
+                self.mark_interval, self, mark
+            )
         elif self.mark.max_label_width > self.mark.interval_width:
             # decrease number of marks
             self.mark_interval = self.cdt.change_interval(
-                self.mark_interval, self, False
+                self.mark_interval, self, mark, increase=False
             )
 
     def draw_mark(self, _):
-        self.mark.draw_marks()
+        secondary_mark_ods = self.mark.draw_marks()
+        self.event_view_mark.draw_marks(mark_ods=secondary_mark_ods)
 
     def update_mark_interval(self, *_):
         self.mark.interval = self.mark_interval

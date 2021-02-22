@@ -19,6 +19,7 @@ import sympy
 
 from src.customdate import ConvertibleDate, DateUnit, Ymd_tuple
 from src.customtime import ConvertibleTime, TimeUnit, Hms_tuple
+from src.ui.mark import Mark
 from src.ui.timeline import Timeline
 from typing import Union
 
@@ -52,18 +53,19 @@ class ConvertibleDateTime:
     # marks on screen, because simply incrementing or decrementing intervals
     # didn't always behave well given calendars can be defined by the end-user.
     #
-    # That said, it's a "business logic" method that depends on an UI element,
+    # That said, it's a "business logic" method that depends on UI elements,
     # which may be a design flaw...alas it behaves well and is performant.
     def change_interval(
         self,
         interval: DateTime_interval,
         timeline: Timeline,
+        mark: Mark,
         increase=True,
         recursive=False,
     ) -> list:
 
         frequency, unit = interval
-        changed_interval = self.change_unit(interval, timeline, increase)
+        changed_interval = self.change_unit(interval, timeline, mark, increase)
         if changed_interval is not None:
             return changed_interval
 
@@ -82,11 +84,15 @@ class ConvertibleDateTime:
 
         new_od = self.extend_od(start_od, [new_frequency, unit])
         new_interval_width = timeline.od_to_x(new_od)  # an approximation
-        mark = timeline.mark
 
         too_many_marks = mark.max_label_width > new_interval_width
         too_few_marks = new_interval_width * 3 > timeline.width
         while too_many_marks or too_few_marks:
+            interval = [new_frequency, unit]
+            interval = self.change_unit(interval, timeline, mark, increase)
+            if interval is not None:
+                return interval
+
             idx = frequencies.index(new_frequency)
             new_idx = idx + sign
             new_frequency = frequencies[new_idx]
@@ -99,7 +105,11 @@ class ConvertibleDateTime:
         return [new_frequency, unit]
 
     def change_unit(
-        self, interval: DateTime_interval, timeline: Timeline, increase=True
+        self,
+        interval: DateTime_interval,
+        timeline: Timeline,
+        mark: Mark,
+        increase=True,
     ) -> Union[DateTime_interval, None]:
         """
         Change the unit of an interval. Assumes self.datetime_units is sorted
@@ -121,7 +131,9 @@ class ConvertibleDateTime:
             bigger_unit = self.datetime_units[unit_idx - 1]
             frequency = min(self.get_frequencies(bigger_unit))
             interval = [frequency, bigger_unit]
-            return self.change_interval(interval, timeline, increase, True)
+            return self.change_interval(
+                interval, timeline, mark, increase, True
+            )
         elif decrease_unit:
             if unit == TimeUnit.SECOND:
                 raise ValueError("Interval unit can't be less than a second")
@@ -130,7 +142,9 @@ class ConvertibleDateTime:
             smaller_unit = self.datetime_units[unit_idx + 1]
             frequency = max(self.get_frequencies(smaller_unit))
             interval = [frequency, smaller_unit]
-            return self.change_interval(interval, timeline, increase, True)
+            return self.change_interval(
+                interval, timeline, mark, increase, True
+            )
 
     def extend_od(
         self,

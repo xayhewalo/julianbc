@@ -38,7 +38,7 @@ class ConvertibleDateTime:
     def __init__(self, date: ConvertibleDate, time: ConvertibleTime):
         self.date = date
         self.time = time
-        self.initial_interval = [1, DateUnit.YEAR]
+        self.initial_interval = [12, TimeUnit.HOUR]
         self.datetime_units = list(DateUnit)
         self.datetime_units.extend(TimeUnit)  # largest to smallest
 

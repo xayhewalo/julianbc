@@ -60,19 +60,19 @@ def test_timeline_draw_mark_trigger(mock_bind, mock_create_trigger):
     tl = Timeline(mark=Mock())
     tl.size = 200, 200
     # extended_start_od/end_od cant' be set so test that they're bound
-    assert tl.draw_mark_trigger == mock_create_trigger.return_value
+    assert tl.draw_marks_trigger == mock_create_trigger.return_value
     assert any(
         True
         for call in itertools.chain(mock_bind.call_args_list)
-        if ("extended_start_od", tl.draw_mark_trigger) in call.kwargs.items()
+        if ("extended_start_od", tl.draw_marks_trigger) in call.kwargs.items()
     )
     assert any(
         True
         for call in itertools.chain(mock_bind.call_args_list)
-        if ("extended_end_od", tl.draw_mark_trigger) in call.kwargs.items()
+        if ("extended_end_od", tl.draw_marks_trigger) in call.kwargs.items()
     )
-    mock_create_trigger.assert_any_call(tl.draw_mark)
-    tl.draw_mark_trigger.assert_called()
+    mock_create_trigger.assert_any_call(tl.draw_marks)
+    tl.draw_marks_trigger.assert_called()
 
 
 @patch("src.ui.timeline.Timeline.bind")
@@ -173,7 +173,7 @@ def test_timeline_change_mark_interval():
 
 def test_timeline_draw_mark():
     timeline = Timeline(mark=Mock())
-    timeline.draw_mark(Mock())
+    timeline.draw_marks(Mock())
     timeline.mark.draw_marks.assert_called_once()
 
 

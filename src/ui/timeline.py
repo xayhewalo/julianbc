@@ -57,8 +57,8 @@ class Timeline(
     __midnight_today = __now.replace(hour=0, minute=0, second=0, microsecond=0)
     __seconds_into_day = (__now - __midnight_today).seconds
     __now_ordinal_decimal = __now.toordinal() + (__seconds_into_day / 86400)
-    start_od = NumericProperty(__now_ordinal_decimal - 730.5)  # od @ x = 0
-    end_od = NumericProperty(__now_ordinal_decimal + 730.5)  # od @ x = width
+    start_od = NumericProperty(__now_ordinal_decimal - 1.5)  # od @ x = 0
+    end_od = NumericProperty(__now_ordinal_decimal + 1.5)  # od @ x = width
 
     def _get_time_span(self):
         return self.end_od - self.start_od
@@ -69,9 +69,10 @@ class Timeline(
         bind=["start_od", "end_od"],
     )
 
+    primary_mark = ObjectProperty()
     mark = ObjectProperty()
-    mark_interval = ListProperty()
     event_view_mark = ObjectProperty()
+    mark_interval = ListProperty()
 
     extend_time_span_by = NumericProperty(1)
 
@@ -108,12 +109,12 @@ class Timeline(
     )
 
     def __init__(self, **kwargs):
-        self.draw_mark_trigger = Clock.create_trigger(self.draw_mark)
+        self.draw_marks_trigger = Clock.create_trigger(self.draw_marks)
         super().__init__(**kwargs)
         self.bind(
-            size=self.draw_mark_trigger,
-            extended_start_od=self.draw_mark_trigger,
-            extended_end_od=self.draw_mark_trigger,
+            size=self.draw_marks_trigger,
+            extended_start_od=self.draw_marks_trigger,
+            extended_end_od=self.draw_marks_trigger,
             mark_interval=self.update_mark_interval,
             scroll_by=self.scroll_start_and_end,
             zoom_by=self.zoom_start_and_end,
@@ -156,12 +157,19 @@ class Timeline(
                 self.mark_interval, self, mark, increase=False
             )
 
-    def draw_mark(self, _):
+    def draw_marks(self, _):
+        self.primary_mark.draw_marks()
         secondary_mark_ods = self.mark.draw_marks()
         self.event_view_mark.draw_marks(mark_ods=secondary_mark_ods)
 
     def update_mark_interval(self, *_):
-        self.mark.interval = self.mark_interval
+        self.mark.interval = self.event_view_mark.interval = self.mark_interval
+
+        unit = self.mark_interval[1]
+        idx = self.cdt.datetime_units.index(unit) - 1
+        bigger_unit_idx = 0 if idx <= 0 else idx  # todo era; proper logic
+        bigger_unit = self.cdt.datetime_units[bigger_unit_idx]
+        self.primary_mark.interval = [1, bigger_unit]
 
     def disable_zoom(self, *_):
         self.disable_zoom_in = self.disable_zoom_out = self.shift_key

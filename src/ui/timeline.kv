@@ -28,6 +28,7 @@
     default_focus_next: collapse_bar if collapse_bar.dependant_collapsed else event_view
     focus_next: self.default_focus_next
     collapse_bar: collapse_bar
+    primary_mark: primary_mark
     mark: secondary_mark
     event_view_mark: event_view_mark
     mark_bar: mark_bar
@@ -66,6 +67,17 @@
                 focus_next: event_view
                 focus_previous: collapse_bar
                 keyboard_listener: timeline
+
+            Mark:
+                id: primary_mark
+                size_hint: None, None
+                size: mark_bar.size
+                pos: mark_bar.pos
+                mark_height: self.font_size
+                mark_y: self.top - self.mark_height
+                label_padding_y: 0
+                timeline: timeline
+                calculate_interval_width: False
 
             Mark:
                 id: secondary_mark

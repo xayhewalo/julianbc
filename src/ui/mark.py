@@ -22,6 +22,7 @@ from kivy.metrics import sp
 from kivy.properties import (
     BooleanProperty,
     BoundedNumericProperty,
+    ListProperty,
     NumericProperty,
     ObjectProperty,
     OptionProperty,
@@ -52,7 +53,11 @@ class Mark(Widget):
     mark_width = NumericProperty("2sp")
     mark_height = NumericProperty("100sp")
     mark_color = ObjectProperty(Color([250 / 255] * 3))
+
+    interval = ListProperty()
     interval_width = NumericProperty()
+    extend_draw = BooleanProperty(True)
+    calculate_interval_width = BooleanProperty(True)
 
     def __init__(self, **kwargs):
         self.draw_marks_trigger = Clock.create_trigger(self.draw_marks)
@@ -62,37 +67,44 @@ class Mark(Widget):
     def draw_marks(self, *_, mark_ods: list = None) -> list:
         """:raises AssertionError: if less than two visible marks drawn"""
 
-        def make_mark_x() -> tuple[float, list, list]:
+        def make_mark_x() -> tuple[float, list]:
             """:return: current mark x, all mark x's, all visible mark x's"""
 
             x = self.timeline.od_to_x(mark_od)
             mark_xs.append(x)
-            if 0 <= x <= self.timeline.width:
-                visible_mark_xs.append(x)
-            return x, mark_xs, visible_mark_xs
+            return x, mark_xs
 
         self.canvas.clear()
         self.canvas.add(self.mark_color)
 
         mark_xs = []
-        visible_mark_xs = []
         tl = self.timeline
         if mark_ods:  # skip expensive ordinal calculations if we can
             for mark_od in mark_ods:
-                mark_x, mark_xs, visible_mark_xs = make_mark_x()
+                mark_x, mark_xs = make_mark_x()
         else:
-            mark_od = tl.extended_start_od
-            mark_ods = [mark_od]
-            while mark_od <= tl.extended_end_od:
-                mark_x, mark_xs, visible_mark_xs = make_mark_x()
+            start_od = tl.start_od
+            end_od = tl.end_od
+            if self.extend_draw:
+                start_od = tl.extended_start_od
+                end_od = tl.extended_end_od
 
-                mark_od = tl.cdt.next_od(mark_od, tl.mark_interval)
+            mark_od = start_od
+            mark_ods = [mark_od]
+            while mark_od <= end_od:
+                mark_x, mark_xs = make_mark_x()
+
+                mark_od = tl.cdt.next_od(mark_od, self.interval)
                 mark_ods.append(mark_od)
 
-        assert len(visible_mark_xs) >= 2, "must be at least 2 visible marks"
-        self.interval_width = float(numpy.diff(visible_mark_xs).mean())
+        if self.calculate_interval_width:
+            # don't use first and last mark for interval_width
+            usable_mark_xs = mark_xs[1:-1]
+            assert len(usable_mark_xs) >= 2, "must be at least 2 usable marks"
+            self.interval_width = float(numpy.diff(usable_mark_xs).mean())
+
         for idx, mark_x in enumerate(mark_xs):
-            unit = tl.mark_interval[1]
+            unit = self.interval[1]
             mark_od = mark_ods[idx]
 
             pos = sp(mark_x), sp(self.mark_y)
@@ -112,7 +124,7 @@ class Mark(Widget):
             )
         return mark_ods
 
-    def make_label(self, x: int, text: str, alignment: str) -> TextBoundLabel:
+    def make_label(self, x: int, text: str, alignment: str, force_visible=False) -> TextBoundLabel:
         """:raises: ValueError if alignment is isn't a valid option"""
 
         if alignment not in self._label_alignments:
@@ -123,12 +135,10 @@ class Mark(Widget):
         if label.width > self.max_label_width:
             self.max_label_width = label.width + (2 * self.label_padding_x)
 
-        if alignment == self.LABEL_LEFT:
-            label.x = sp(x + self.label_padding_x)
-        elif alignment == self.LABEL_CENTER:
-            label.center_x = sp(x)
-        else:  # middle interval alignment
-            label.center_x = sp(x + (self.interval_width / 2))
+        if force_visible:
+            self.set_visible_label_x(x, label)
+        else:
+            self.set_label_x(x, alignment, label)
 
         if self.label_y is None:
             label.top = self.top - self.label_padding_y
@@ -136,3 +146,14 @@ class Mark(Widget):
             label.y = self.label_y
 
         return label
+
+    def set_label_x(self, x: float, alignment: str, label: TextBoundLabel):
+        if alignment == self.LABEL_LEFT:
+            label.x = sp(x + self.label_padding_x)
+        elif alignment == self.LABEL_CENTER:
+            label.center_x = sp(x)
+        else:  # middle interval alignment
+            label.center_x = sp(x + (self.interval_width / 2))
+
+    def set_visible_label_x(self, x: float, label: TextBoundLabel):
+        raise NotImplementedError

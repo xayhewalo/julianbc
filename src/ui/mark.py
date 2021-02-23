@@ -56,7 +56,6 @@ class Mark(Widget):
 
     interval = ListProperty()
     interval_width = NumericProperty()
-    extend_draw = BooleanProperty(True)
     calculate_interval_width = BooleanProperty(True)
 
     def __init__(self, **kwargs):
@@ -83,15 +82,9 @@ class Mark(Widget):
             for mark_od in mark_ods:
                 mark_x, mark_xs = make_mark_x()
         else:
-            start_od = tl.start_od
-            end_od = tl.end_od
-            if self.extend_draw:
-                start_od = tl.extended_start_od
-                end_od = tl.extended_end_od
-
-            mark_od = start_od
+            mark_od = tl.extended_start_od
             mark_ods = [mark_od]
-            while mark_od <= end_od:
+            while mark_od <= tl.extended_end_od:
                 mark_x, mark_xs = make_mark_x()
 
                 mark_od = tl.cdt.next_od(mark_od, self.interval)

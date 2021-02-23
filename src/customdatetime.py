@@ -146,6 +146,22 @@ class ConvertibleDateTime:
                 interval, timeline, mark, increase, True
             )
 
+    def get_primary_interval(self, unit: DateTimeEnum) -> DateTime_interval:
+        """
+        interval of Timeline.primary_mark
+        :returns: an interval with a DateTimeUnit larger than the unit given
+        :raises: ValueError if
+        """
+        if unit == DateUnit.YEAR:
+            raise NotImplementedError("Implement Era DateUnit")
+        elif unit in (DateUnit.MONTH, DateUnit.DAY):
+            primary_unit = DateUnit.YEAR
+        elif unit in TimeUnit:
+            primary_unit = DateUnit.DAY
+        else:
+            raise ValueError(f"Can't find primary interval for unit {unit}")
+        return [1, primary_unit]
+
     def extend_od(
         self,
         ordinal_decimal: float,

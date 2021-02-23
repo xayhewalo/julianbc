@@ -166,10 +166,7 @@ class Timeline(
         self.mark.interval = self.event_view_mark.interval = self.mark_interval
 
         unit = self.mark_interval[1]
-        idx = self.cdt.datetime_units.index(unit) - 1
-        bigger_unit_idx = 0 if idx <= 0 else idx  # todo era; proper logic
-        bigger_unit = self.cdt.datetime_units[bigger_unit_idx]
-        self.primary_mark.interval = [1, bigger_unit]
+        self.primary_mark.interval = self.cdt.get_primary_interval(unit)
 
     def disable_zoom(self, *_):
         self.disable_zoom_in = self.disable_zoom_out = self.shift_key

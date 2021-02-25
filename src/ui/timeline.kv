@@ -21,8 +21,7 @@
 #:import gregorian_cdt src.dbsetup.gregorian_cdt
 <Timeline>:
     id: timeline
-    size_hint: None, None
-    width: sp(1366)
+    size_hint: 1, None
     collapsed_height: collapse_bar.height
     collapsed: True if collapse_bar.dependant_collapsed else False
     default_focus_next: collapse_bar if collapse_bar.dependant_collapsed else event_view
@@ -76,6 +75,7 @@
                 mark_height: self.font_size
                 mark_y: self.top - self.mark_height
                 label_padding_y: 0
+                force_visible: True
                 timeline: timeline
                 calculate_interval_width: False
 

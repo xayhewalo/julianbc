@@ -211,18 +211,18 @@ class ConvertibleDateTime:
         return ordinal_decimal
 
     def next_od(
-        self, ordinal_decimal: float, interval: DateTime_interval
+        self, ordinal_decimal: float, interval: DateTime_interval, forward=True
     ) -> float:
         """Ordinal decimal variation of next_ast_ymd and next_hms"""
         _, unit = interval
 
         if unit in DateUnit:
             ast_ymd = self.od_to_ast_ymd(ordinal_decimal)
-            ast_ymd = self.date.next_ast_ymd(ast_ymd, interval)
+            ast_ymd = self.date.next_ast_ymd(ast_ymd, interval, forward)
             return self.ast_ymd_to_od(ast_ymd)
         elif unit in TimeUnit:
             hms = self.od_to_hms(ordinal_decimal)
-            hms, day_delta = self.time.next_hms(hms, interval)
+            hms, day_delta = self.time.next_hms(hms, interval, forward)
             ordinal_decimal = self.set_hms(ordinal_decimal, hms, day_delta)
             return ordinal_decimal
         raise ValueError(f"Can't shift ordinal decimal by {unit}")

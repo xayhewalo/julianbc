@@ -596,9 +596,10 @@ class ConvertibleDate:
 
         delta = self._get_delta(forward)
         month += delta
-        year, month = self._overflow_month(year, month)
+        year, month = self._overflow_month(year, month, forward)  # todo test this change
         while month % frequency != 0:
             month += delta
+            year, month = self._overflow_month(year, month, forward)    # todo test this change
 
         error_msg = f"Month number {month} not valid for {self.calendar}"
         assert self.is_valid_month(year, month), error_msg

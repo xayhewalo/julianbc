@@ -66,7 +66,7 @@ class Mark(Widget):
         super().__init__(**kwargs)
         self.bind(pos=self.draw_marks_trigger, size=self.draw_marks_trigger)
 
-    def draw_marks(self, *_, mark_ods: list = None) -> list:  # todo DRY
+    def draw_marks(self, *_, mark_ods: list = None) -> list:
         """:raises AssertionError: when 2 marks should be visible but aren't"""
 
         def make_mark_x() -> tuple[float, list, list]:
@@ -77,6 +77,29 @@ class Mark(Widget):
             if self.timeline.x <= x <= self.timeline.right:
                 visible_mark_xs.append(x)
             return x, mark_xs, visible_mark_xs
+
+        def add_mark_to_canvas():
+            pos = sp(mark_x), sp(self.mark_y)
+            size = sp(self.mark_width), sp(self.mark_height)
+            self.canvas.add(self.mark(pos=pos, size=size))
+
+        def add_label_to_canvas(alignment=None, location: str = None):
+            alignment = alignment or self.label_align
+            hr_date = tl.cdt.od_to_hr_date(mark_od, unit)
+            label = self.make_label(mark_x, hr_date, alignment)
+
+            if location == "left" and label.right >= mid_mark_x - self.label_padding_x:
+                label.right = mid_mark_x - self.label_padding_x
+            elif location == "right" and label.x <= mid_mark_x + self.mark_width + self.label_padding_x:
+                label.x = mid_mark_x + self.mark_width + self.label_padding_x
+
+            self.canvas.add(
+                Rectangle(
+                    pos=label.pos,
+                    size=label.texture_size,
+                    texture=label.texture,
+                )
+            )
 
         self.canvas.clear()
         self.canvas.add(self.mark_color)
@@ -107,9 +130,8 @@ class Mark(Widget):
         else:
             self.interval_width = interval_width
 
-        # todo draw label method? mark_xs and label_xs are different but probs can still be DRY
         if self.force_visible and self.interval_width is None and self.has_label:
-            unit = self.interval[1]
+            # force labels to be visible if there are less than 2 visible marks
             left_mark_od = tl.cdt.next_od(tl.start_od, self.interval, forward=False)
             left_mark_x = tl.od_to_x(left_mark_od)
             mid_mark_od = tl.cdt.next_od(tl.start_od, self.interval)
@@ -120,60 +142,37 @@ class Mark(Widget):
             mark_ods = [left_mark_od, mid_mark_od, right_mark_od]
             mark_xs = [left_mark_x, mid_mark_x, right_mark_x]
 
-            left_hr_date = tl.cdt.od_to_hr_date(tl.start_od, unit)
-            left_label = self.make_label(tl.x, left_hr_date, self.LABEL_LEFT)
-            left_label.x = tl.od_to_x(tl.start_od)
-            if left_label.right >= mid_mark_x - self.label_padding_x:
-                left_label.right = mid_mark_x - self.label_padding_x
+            for idx, mark_x in enumerate(mark_xs):  # the marks without labels
+                mark_od = mark_ods[idx]
+                add_mark_to_canvas()
 
-            right_hr_date = tl.cdt.od_to_hr_date(tl.end_od, unit)
-            right_label = self.make_label(tl.right, right_hr_date, self.LABEL_RIGHT)
-            right_label.right = tl.od_to_x(tl.end_od)
-            if right_label.x <= mid_mark_x + self.mark_width + self.label_padding_x:
-                right_label.x = mid_mark_x + self.mark_width + self.label_padding_x
-
-            pos_start = sp(left_mark_x), sp(self.mark_y)
-            pos_mid = sp(mid_mark_x), sp(self.mark_y)
-            pos_end = sp(right_mark_x), sp(self.mark_y)
-            size = sp(self.mark_width), sp(self.mark_height)
-            self.canvas.add(self.mark(pos=pos_start, size=size))
-            self.canvas.add(self.mark(pos=pos_mid, size=size))
-            self.canvas.add(self.mark(pos=pos_end, size=size))
-            self.canvas.add(
-                Rectangle(
-                    pos=left_label.pos,
-                    size=left_label.texture_size,
-                    texture=left_label.texture,
-                )
-            )
-            self.canvas.add(
-                Rectangle(
-                    pos=right_label.pos,
-                    size=right_label.texture_size,
-                    texture=right_label.texture,
-                )
-            )
-            return mark_ods
+            marks_drawn = True
+            mark_ods = [tl.start_od, tl.end_od]
+            mark_xs = [tl.x, tl.right]  # really should be called label pos
+            alignments = [self.LABEL_LEFT, self.LABEL_RIGHT]
+            pin_locations = "left", "right"
+        else:
+            marks_drawn = False
+            alignments = None
+            pin_locations = None
 
         for idx, mark_x in enumerate(mark_xs):
             unit = self.interval[1]
             mark_od = mark_ods[idx]
 
-            pos = sp(mark_x), sp(self.mark_y)
-            size = sp(self.mark_width), sp(self.mark_height)
-            self.canvas.add(self.mark(pos=pos, size=size))
+            if not marks_drawn:
+                add_mark_to_canvas()
 
             if not self.has_label:
                 continue
-            hr_date = tl.cdt.od_to_hr_date(mark_od, unit)
-            label = self.make_label(mark_x, hr_date, self.label_align)
-            self.canvas.add(
-                Rectangle(
-                    pos=label.pos,
-                    size=label.texture_size,
-                    texture=label.texture,
-                )
-            )
+
+            try:
+                label_align = alignments[idx]
+                pin_location = pin_locations[idx]
+            except TypeError:
+                add_label_to_canvas()
+            else:
+                add_label_to_canvas(label_align, pin_location)
         return mark_ods
 
     def make_label(self, x: int, text: str, alignment: str) -> TextBoundLabel:

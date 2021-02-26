@@ -57,8 +57,8 @@ class Timeline(
     __midnight_today = __now.replace(hour=0, minute=0, second=0, microsecond=0)
     __seconds_into_day = (__now - __midnight_today).seconds
     __now_ordinal_decimal = __now.toordinal() + (__seconds_into_day / 86400)
-    start_od = NumericProperty(__now_ordinal_decimal - 1.5)  # od @ x = 0
-    end_od = NumericProperty(__now_ordinal_decimal + 1.5)  # od @ x = width
+    start_od = NumericProperty(__now_ordinal_decimal - 365.25)  # od @ x = 0
+    end_od = NumericProperty(__now_ordinal_decimal + 365.25)  # od @ x = width
 
     def _get_time_span(self):
         return self.end_od - self.start_od

@@ -38,9 +38,21 @@ class ConvertibleDateTime:
     def __init__(self, date: ConvertibleDate, time: ConvertibleTime):
         self.date = date
         self.time = time
-        self.initial_interval = [12, TimeUnit.HOUR]
+        self.initial_interval = [6, DateUnit.MONTH]
         self.datetime_units = list(DateUnit)
         self.datetime_units.extend(TimeUnit)  # largest to smallest
+
+        # There is a one day gap between the end of the proleptic era and start
+        # of the first non-proleptic era. All other eras have at least a one
+        # year difference between them
+        self.era_start_ordinals = [0]  # proleptic era always ends at 0 ordinal
+        for idx, era_range in enumerate(self.date.calendar.era_ranges):
+            if idx == 0:  # skip proleptic era
+                continue
+
+            start_hr_year = era_range[0]
+            start_ast_year = self.date.hr_to_ast(start_hr_year, idx)
+            self.era_start_ordinals.append(start_ast_year)  # todo test me
 
     def __str__(self):
         return f"{self.date.calendar.name} - {self.time.clock.name}"
@@ -146,14 +158,15 @@ class ConvertibleDateTime:
                 interval, timeline, mark, increase, True
             )
 
-    def get_primary_interval(self, unit: DateTimeEnum) -> DateTime_interval:
+    @staticmethod
+    def get_primary_interval(unit: DateTimeEnum) -> DateTime_interval:
         """
         interval of Timeline.primary_mark
         :returns: an interval with a DateTimeUnit larger than the unit given
-        :raises: ValueError if
+        :raises: ValueError for invalid primary interval unit
         """
         if unit == DateUnit.YEAR:
-            raise NotImplementedError("Implement Era DateUnit")
+            primary_unit = DateUnit.ERA
         elif unit in (DateUnit.MONTH, DateUnit.DAY):
             primary_unit = DateUnit.YEAR
         elif unit in TimeUnit:

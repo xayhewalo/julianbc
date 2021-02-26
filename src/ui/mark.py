@@ -107,9 +107,13 @@ class Mark(Widget):
         mark_xs = []
         visible_mark_xs = []
         tl = self.timeline
+
+        unit = self.interval[1]
         if mark_ods:  # skip expensive ordinal calculations if we can
             for mark_od in mark_ods:
                 mark_x, mark_xs, visible_mark_xs = make_mark_x()
+        elif tl.cdt.datetime_units.index(unit) == 0:  # unit is DateTime.ERA
+            mark_ods = tl.cdt.era_start_ordinals
         else:
             # extend_od() widens time span without considering the interval
             # so the first mark_od needs to be set with next_od()

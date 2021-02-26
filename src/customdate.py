@@ -26,6 +26,7 @@ from typing import Union
 
 @unique
 class DateUnit(Enum):
+    ERA = 3
     YEAR = 2
     MONTH = 1
     DAY = 0
@@ -223,10 +224,10 @@ class ConvertibleDate:
             net_special_leaps = net_special_years[0]
             net_special_commons = net_special_years[1]
 
-            days_in_leap_year = self.calendar.days_in_leap_year
-            days_in_common_year = self.calendar.days_in_common_year
-            net_special_leap_days = net_special_leaps * days_in_leap_year
-            net_special_common_days = net_special_commons * days_in_common_year
+            dily = self.calendar.days_in_leap_year
+            dicy = self.calendar.days_in_common_year
+            net_special_leap_days = net_special_leaps * dily
+            net_special_common_days = net_special_commons * dicy
             net_special_days = net_special_leap_days + net_special_common_days
             return self.days_in_normal_cycle + net_special_days
 
@@ -493,36 +494,36 @@ class ConvertibleDate:
             msg = f"{ast_ymd} is not a valid ymd for {self.calendar}"
             raise ValueError(msg)
 
-        year, month, day = ast_ymd
+        ast_year, month, day = ast_ymd
         for interval in intervals:
             delta, dateunit = interval
             if delta == 0:
                 continue
 
             if dateunit == DateUnit.YEAR:
-                year = self.shift_ast_year(year, delta)
+                ast_year = self.shift_ast_year(ast_year, delta)
             elif dateunit == DateUnit.MONTH:
                 if not month:
                     raise ValueError("Can't shift montheless year, month, day")
 
-                year, month = self.shift_month(year, month, delta)
+                ast_year, month = self.shift_month(ast_year, month, delta)
             else:
                 raise ValueError(f"Don't shift ymd by {dateunit}")
 
-            if not self.is_valid_ast_ymd((year, month, day)):
+            if not self.is_valid_ast_ymd((ast_year, month, day)):
                 # i.e going from January 30th -> February 30th, set day to 28th
-                if self.is_valid_month(year, month):
-                    day = self.days_in_month(year, month)
+                if self.is_valid_month(ast_year, month):
+                    day = self.days_in_month(ast_year, month)
                 else:
                     # i.e if the month/day isn't present in new year
-                    month = self.months_in_year(year)
-                    if not self.is_valid_ast_ymd((year, month, day)):
-                        day = self.days_in_month(year, month)
-                    return year, month, day
-        assert self.is_valid_ast_ymd(
-            (year, month, day)
-        ), f"Intervals, {intervals}, produced invalid ymd: {year, month, day}"
-        return year, month, day
+                    month = self.months_in_year(ast_year)
+                    if not self.is_valid_ast_ymd((ast_year, month, day)):
+                        day = self.days_in_month(ast_year, month)
+                    return ast_year, month, day
+
+        msg = f"Intervals, {intervals}, produced ymd: {ast_year, month, day}"
+        assert self.is_valid_ast_ymd((ast_year, month, day)), msg
+        return ast_year, month, day
 
     @staticmethod
     def shift_ast_year(ast_year: int, delta: int) -> int:
@@ -559,19 +560,49 @@ class ConvertibleDate:
             msg = f"{ast_ymd} is not a valid ymd for {self.calendar}"
             raise ValueError(msg)
 
-        year, month, day = ast_ymd
+        ast_year, month, day = ast_ymd
         frequency, dateunit = interval
-        if dateunit == DateUnit.YEAR:
-            return self.next_ast_year(year, frequency, forward)
+        if dateunit == DateUnit.ERA:
+            return self.next_era(ast_year, frequency, forward)
+        elif dateunit == DateUnit.YEAR:
+            return self.next_ast_year(ast_year, frequency, forward)
         elif dateunit == DateUnit.MONTH:
-            return self.next_month(year, month, frequency, forward)
+            return self.next_month(ast_year, month, frequency, forward)
         elif dateunit == DateUnit.DAY:
             return self.next_day(ast_ymd, frequency, forward)
         else:
             raise ValueError(f"Cannot find next {dateunit}")
 
+    def next_era(self, ast_year: int, frequency: int, forward=True):
+        """
+        :returns: First day of the next era. If the current era is the last one
+            return it's first day
+        """
+        num_eras = len(self.calendar.eras)
+        if frequency > num_eras:
+            msg = f"Can't find every {frequency} era(s) for {self.calendar}"
+            raise ValueError(msg)
+
+        sign = 1 if forward else -1
+        current_era = self.era(ast_year)
+        current_idx = self.calendar.eras.index(current_era)
+        next_era_idx = current_idx + sign
+        if next_era_idx <= 0:
+            next_era_idx = 0
+            hr_year = self.calendar.era_ranges[next_era_idx][1]
+            ast_year = self.hr_to_ast(hr_year, next_era_idx)
+            month = self.months_in_year(ast_year)
+            day = self.days_in_month(ast_year, month)
+            return ast_year, month, day
+        elif next_era_idx + 1 > num_eras:
+            next_era_idx = -1
+
+        hr_year = self.calendar.era_ranges[next_era_idx][0]
+        ast_year = self.hr_to_ast(hr_year, next_era_idx)
+        return ast_year, 1, 1
+
     def next_ast_year(
-        self, year: int, frequency: int, forward=True
+        self, ast_year: int, frequency: int, forward=True
     ) -> Ymd_tuple:
         """:returns: first day of the first month of the next year"""
         if frequency <= 0:
@@ -579,13 +610,13 @@ class ConvertibleDate:
             raise ValueError(msg)
 
         delta = self._get_delta(forward)
-        year += delta
-        while year % frequency != 0:
-            year += delta
-        return year, 1, 1
+        ast_year += delta
+        while ast_year % frequency != 0:
+            ast_year += delta
+        return ast_year, 1, 1
 
     def next_month(
-        self, year: int, month: int, frequency: int, forward=True
+        self, ast_year: int, month: int, frequency: int, forward=True
     ) -> Ymd_tuple:
         """:returns: the first day of the next month"""
         days_in_common_year = self.calendar.days_in_common_year
@@ -596,14 +627,14 @@ class ConvertibleDate:
 
         delta = self._get_delta(forward)
         month += delta
-        year, month = self._overflow_month(year, month, forward)  # todo test this change
+        ast_year, month = self._overflow_month(ast_year, month, forward)  # todo test this change
         while month % frequency != 0:
             month += delta
-            year, month = self._overflow_month(year, month, forward)    # todo test this change
+            ast_year, month = self._overflow_month(ast_year, month, forward)    # todo test this change
 
         error_msg = f"Month number {month} not valid for {self.calendar}"
-        assert self.is_valid_month(year, month), error_msg
-        return year, month, 1
+        assert self.is_valid_month(ast_year, month), error_msg
+        return ast_year, month, 1
 
     def next_day(
         self, ast_ymd: Ymd_tuple, frequency: int, forward=True
@@ -672,7 +703,8 @@ class ConvertibleDate:
 
         years_before_era = 0
         for era_info in self.gen_years_before_era(start=1):
-            if era_info["index"] == era_idx:  # don't add this era's length
+            years_in_era = era_info["years_in"]  # todo test change
+            if era_info["index"] == era_idx or years_in_era == float("inf"):
                 break
             years_before_era += era_info["years_in"]
 

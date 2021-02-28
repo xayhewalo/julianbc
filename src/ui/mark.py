@@ -16,7 +16,6 @@
 #  along with JulianBC.  If not, see <https://www.gnu.org/licenses/>.
 import numpy
 
-from kivy.clock import Clock
 from kivy.graphics import Color, Rectangle
 from kivy.metrics import sp
 from kivy.properties import (
@@ -60,11 +59,6 @@ class Mark(Widget):
     interval = ListProperty()
     interval_width = NumericProperty(allownone=True)
     force_visible = BooleanProperty(False)
-
-    def __init__(self, **kwargs):
-        self.draw_marks_trigger = Clock.create_trigger(self.draw_marks)
-        super().__init__(**kwargs)
-        self.bind(pos=self.draw_marks_trigger, size=self.draw_marks_trigger)
 
     def draw_marks(self, *_, mark_ods: list = None) -> list:
         """:raises AssertionError: when 2 marks should be visible but aren't"""
@@ -112,12 +106,12 @@ class Mark(Widget):
         if mark_ods:  # skip expensive ordinal calculations if we can
             for mark_od in mark_ods:
                 mark_x, mark_xs, visible_mark_xs = make_mark_x()
-        elif tl.cdt.datetime_units.index(unit) == 0:  # unit is DateTime.ERA
+        elif tl.cdt.date.is_era_unit(unit):
             mark_ods = tl.cdt.era_start_ordinals
         else:
             # extend_od() widens time span without considering the interval
             # so the first mark_od needs to be set with next_od()
-            mark_od = tl.cdt.next_od(tl.extended_start_od, self.interval, forward=False)  # todo test this change
+            mark_od = tl.cdt.next_od(tl.extended_start_od, self.interval, forward=False)
             mark_ods = [mark_od]
             while mark_od <= tl.extended_end_od:
                 mark_x, mark_xs, visible_mark_xs = make_mark_x()
@@ -136,15 +130,13 @@ class Mark(Widget):
 
         if self.force_visible and self.interval_width is None and self.has_label:
             # force labels to be visible if there are less than 2 visible marks
-            left_mark_od = tl.cdt.next_od(tl.start_od, self.interval, forward=False)
-            left_mark_x = tl.od_to_x(left_mark_od)
+            off_screen_mark_od = tl.cdt.next_od(tl.start_od, self.interval, forward=False)
+            off_screen_mark_x = tl.od_to_x(off_screen_mark_od)
             mid_mark_od = tl.cdt.next_od(tl.start_od, self.interval)
-            mid_mark_x = tl.od_to_x(mid_mark_od)
-            right_mark_od = tl.cdt.next_od(mid_mark_od, self.interval)
-            right_mark_x = tl.od_to_x(right_mark_od)
+            mid_mark_x = tl.od_to_x(mid_mark_od)  # may still be off screen
 
-            mark_ods = [left_mark_od, mid_mark_od, right_mark_od]
-            mark_xs = [left_mark_x, mid_mark_x, right_mark_x]
+            mark_ods = [off_screen_mark_od, mid_mark_od]
+            mark_xs = [off_screen_mark_x, mid_mark_x]
 
             for idx, mark_x in enumerate(mark_xs):  # the marks without labels
                 mark_od = mark_ods[idx]
@@ -161,7 +153,6 @@ class Mark(Widget):
             pin_locations = None
 
         for idx, mark_x in enumerate(mark_xs):
-            unit = self.interval[1]
             mark_od = mark_ods[idx]
 
             if not marks_drawn:

@@ -70,33 +70,33 @@ class Timeline(
     )
 
     primary_mark = ObjectProperty()
-    mark = ObjectProperty()
+    secondary_mark = ObjectProperty()
     event_view_mark = ObjectProperty()
-    mark_interval = ListProperty()
+    secondary_mark_interval = ListProperty()
 
     extend_time_span_by = NumericProperty(1)
 
     def _get_extended_start_od(self):
         factor = self.extend_time_span_by
         return self.cdt.extend_od(
-            self.start_od, self.mark_interval, factor, reverse=True
+            self.start_od, self.secondary_mark_interval, factor, reverse=True
         )
 
     extended_start_od = AliasProperty(
         _get_extended_start_od,
         None,
-        bind=["start_od", "extend_time_span_by", "mark_interval"],
+        bind=["start_od", "extend_time_span_by", "secondary_mark_interval"],
     )
 
     def _get_extended_end_od(self):
         return self.cdt.extend_od(
-            self.end_od, self.mark_interval, self.extend_time_span_by
+            self.end_od, self.secondary_mark_interval, self.extend_time_span_by
         )
 
     extended_end_od = AliasProperty(
         _get_extended_end_od,
         None,
-        bind=["end_od", "extend_time_span_by", "mark_interval"],
+        bind=["end_od", "extend_time_span_by", "secondary_mark_interval"],
     )
 
     def _get_extended_time_span(self):
@@ -115,7 +115,7 @@ class Timeline(
             size=self.draw_marks_trigger,
             extended_start_od=self.draw_marks_trigger,
             extended_end_od=self.draw_marks_trigger,
-            mark_interval=self.update_mark_interval,
+            secondary_mark_interval=self.update_mark_interval,
             scroll_by=self.scroll_start_and_end,
             zoom_by=self.zoom_start_and_end,
             shift_key=self.disable_zoom,
@@ -124,7 +124,7 @@ class Timeline(
         )
 
     def on_kv_post(self, base_widget):
-        self.mark.bind(interval_width=self.change_mark_interval)
+        self.secondary_mark.bind(interval_width=self.change_mark_interval)
         return super().on_kv_post(base_widget)
 
     def scroll_start_and_end(self, *_):
@@ -141,31 +141,31 @@ class Timeline(
         self.start_od += dod
         self.end_od -= dod
 
-    def change_mark_interval(self, mark, *_):
+    def change_mark_interval(self, *_):
         """
         Ensure label width doesn't overlap on zoom out.
         Ensure there are at least 2 visible marks when zooming in.
         """
-        if self.mark.interval_width * 3 > self.width:
+        if self.secondary_mark.interval_width * 3 > self.width:
             # increase number of marks
-            self.mark_interval = self.cdt.change_interval(
-                self.mark_interval, self, mark
+            self.secondary_mark_interval = self.cdt.change_interval(
+                self.secondary_mark_interval, self,
             )
-        elif self.mark.max_label_width > self.mark.interval_width:
+        elif self.secondary_mark.max_label_width > self.secondary_mark.interval_width:
             # decrease number of marks
-            self.mark_interval = self.cdt.change_interval(
-                self.mark_interval, self, mark, increase=False
+            self.secondary_mark_interval = self.cdt.change_interval(
+                self.secondary_mark_interval, self, increase=False
             )
 
     def draw_marks(self, _):
         self.primary_mark.draw_marks()
-        secondary_mark_ods = self.mark.draw_marks()
+        secondary_mark_ods = self.secondary_mark.draw_marks()
         self.event_view_mark.draw_marks(mark_ods=secondary_mark_ods)
 
     def update_mark_interval(self, *_):
-        self.mark.interval = self.event_view_mark.interval = self.mark_interval
+        self.secondary_mark.interval = self.event_view_mark.interval = self.secondary_mark_interval
 
-        unit = self.mark_interval[1]
+        unit = self.secondary_mark_interval[1]
         self.primary_mark.interval = self.cdt.get_primary_interval(unit)
 
     def disable_zoom(self, *_):

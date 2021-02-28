@@ -587,6 +587,9 @@ class ConvertibleDate:
         current_era = self.era(ast_year)
         current_idx = self.calendar.eras.index(current_era)
         next_era_idx = current_idx + sign
+        while (next_era_idx + sign) % frequency != 0:
+            next_era_idx += sign
+
         if next_era_idx <= 0:
             next_era_idx = 0
             hr_year = self.calendar.era_ranges[next_era_idx][1]
@@ -595,7 +598,7 @@ class ConvertibleDate:
             day = self.days_in_month(ast_year, month)
             return ast_year, month, day
         elif next_era_idx + 1 > num_eras:
-            next_era_idx = -1
+            next_era_idx = len(self.calendar.eras) - 1
 
         hr_year = self.calendar.era_ranges[next_era_idx][0]
         ast_year = self.hr_to_ast(hr_year, next_era_idx)
@@ -619,18 +622,16 @@ class ConvertibleDate:
         self, ast_year: int, month: int, frequency: int, forward=True
     ) -> Ymd_tuple:
         """:returns: the first day of the next month"""
-        days_in_common_year = self.calendar.days_in_common_year
-        days_in_leap_year = self.calendar.days_in_leap_year
-        if frequency > min(days_in_common_year, days_in_leap_year):
+        if frequency > self.calendar.days_in_common_year:
             msg = f"Can't find every {frequency} month(s) for {self.calendar}"
             raise ValueError(msg)
 
         delta = self._get_delta(forward)
         month += delta
-        ast_year, month = self._overflow_month(ast_year, month, forward)  # todo test this change
+        ast_year, month = self._overflow_month(ast_year, month, forward)
         while month % frequency != 0:
             month += delta
-            ast_year, month = self._overflow_month(ast_year, month, forward)    # todo test this change
+            ast_year, month = self._overflow_month(ast_year, month, forward)
 
         error_msg = f"Month number {month} not valid for {self.calendar}"
         assert self.is_valid_month(ast_year, month), error_msg
@@ -703,8 +704,7 @@ class ConvertibleDate:
 
         years_before_era = 0
         for era_info in self.gen_years_before_era(start=1):
-            years_in_era = era_info["years_in"]  # todo test change
-            if era_info["index"] == era_idx or years_in_era == float("inf"):
+            if era_info["index"] == era_idx:
                 break
             years_before_era += era_info["years_in"]
 
@@ -846,6 +846,11 @@ class ConvertibleDate:
         """assumes astronomical year numbering"""
         ast_year, day_of_year = ordinal_date
         return 1 <= day_of_year <= self.days_in_year(ast_year)
+
+    @staticmethod
+    def is_era_unit(unit: DateUnit) -> bool:
+        """convenience method for Mark()"""
+        return unit == DateUnit.ERA
 
     def gen_years_before_era(self, start: int = 0) -> dict:
         """

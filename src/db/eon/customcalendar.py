@@ -209,6 +209,8 @@ class ConvertibleCalendar(utils.Base):
     @hybrid_property
     def days_in_leap_year(self) -> int:
         """:raises AssertionError: if leap year is longer than a common year"""
+        if not self.has_leap_year:  # todo test
+            return 0
 
         days_in_leap_year = sum(self.days_in_leap_year_months)
         err_msg = "Leap year must be longer than common year"

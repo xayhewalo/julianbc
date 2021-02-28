@@ -647,6 +647,8 @@ class LunarHijriTest(RealCalendarTestCase):
     # Next DateUnit
     #
 
+    # ConvertibleDate.next_ast_ymd tested in test_customdate
+    # ConvertibleDate.next_era tested in test_customdate
     # ConvertibleDate.next_ast_year tested in test_customdate
 
     @patch("src.customdate.ConvertibleDate._get_delta", return_value=1)
@@ -878,6 +880,7 @@ class LunarHijriTest(RealCalendarTestCase):
         assert not l_hijri_cdt.is_valid_ordinal_date((year, bad_day_of_year))
 
     # skip ConvertibleDate.gen_years_before_era, not applicable
+    # skip ConvertibleDate.is_era_unit, not applicable
 
     #
     # ConvertibleDate.days_in_months

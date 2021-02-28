@@ -19,7 +19,6 @@ import sympy
 
 from src.customdate import ConvertibleDate, DateUnit, Ymd_tuple
 from src.customtime import ConvertibleTime, TimeUnit, Hms_tuple
-from src.ui.mark import Mark
 from src.ui.timeline import Timeline
 from typing import Union
 
@@ -52,7 +51,7 @@ class ConvertibleDateTime:
 
             start_hr_year = era_range[0]
             start_ast_year = self.date.hr_to_ast(start_hr_year, idx)
-            self.era_start_ordinals.append(start_ast_year)  # todo test me
+            self.era_start_ordinals.append(start_ast_year)
 
     def __str__(self):
         return f"{self.date.calendar.name} - {self.time.clock.name}"
@@ -71,13 +70,12 @@ class ConvertibleDateTime:
         self,
         interval: DateTime_interval,
         timeline: Timeline,
-        mark: Mark,
         increase=True,
         recursive=False,
     ) -> list:
 
         frequency, unit = interval
-        changed_interval = self.change_unit(interval, timeline, mark, increase)
+        changed_interval = self.change_unit(interval, timeline, increase)
         if changed_interval is not None:
             return changed_interval
 
@@ -97,11 +95,12 @@ class ConvertibleDateTime:
         new_od = self.extend_od(start_od, [new_frequency, unit])
         new_interval_width = timeline.od_to_x(new_od)  # an approximation
 
-        too_many_marks = mark.max_label_width > new_interval_width
+        secondary_mark = timeline.secondary_mark
+        too_many_marks = secondary_mark.max_label_width > new_interval_width
         too_few_marks = new_interval_width * 3 > timeline.width
         while too_many_marks or too_few_marks:
             interval = [new_frequency, unit]
-            interval = self.change_unit(interval, timeline, mark, increase)
+            interval = self.change_unit(interval, timeline, increase)
             if interval is not None:
                 return interval
 
@@ -111,7 +110,7 @@ class ConvertibleDateTime:
             new_od = self.extend_od(start_od, [new_frequency, unit])
             new_interval_width = timeline.od_to_x(new_od)
 
-            too_many_marks = mark.max_label_width > new_interval_width
+            too_many_marks = secondary_mark.max_label_width > new_interval_width
             too_few_marks = new_interval_width * 3 > timeline.width
             increase = True if too_few_marks else False
         return [new_frequency, unit]
@@ -120,7 +119,6 @@ class ConvertibleDateTime:
         self,
         interval: DateTime_interval,
         timeline: Timeline,
-        mark: Mark,
         increase=True,
     ) -> Union[DateTime_interval, None]:
         """
@@ -144,7 +142,7 @@ class ConvertibleDateTime:
             frequency = min(self.get_frequencies(bigger_unit))
             interval = [frequency, bigger_unit]
             return self.change_interval(
-                interval, timeline, mark, increase, True
+                interval, timeline, increase, True
             )
         elif decrease_unit:
             if unit == TimeUnit.SECOND:
@@ -155,7 +153,7 @@ class ConvertibleDateTime:
             frequency = max(self.get_frequencies(smaller_unit))
             interval = [frequency, smaller_unit]
             return self.change_interval(
-                interval, timeline, mark, increase, True
+                interval, timeline, increase, True
             )
 
     @staticmethod

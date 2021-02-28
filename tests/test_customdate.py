@@ -4,7 +4,7 @@ from src.customdate import ConvertibleDate, DateUnit
 from src.db import ConvertibleCalendar
 from tests.factories import ConvertibleCalendarFactory
 from tests.utils import CalendarTestCase, FAKE
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 
 class ConvertibleDateTest(CalendarTestCase):
@@ -436,28 +436,126 @@ class ConvertibleDateTest(CalendarTestCase):
         "src.customdate.ConvertibleDate.is_valid_ast_ymd",
         return_value=True,
     )
+    @patch("src.customdate.ConvertibleDate.next_era")
     @patch("src.customdate.ConvertibleDate.next_ast_year")
     @patch("src.customdate.ConvertibleDate.next_month")
     @patch("src.customdate.ConvertibleDate.next_day")
-    def test_next_ast_ymd(self, *patches):
-        patch_next_day, patch_next_month, patch_next_ast_year, _ = patches
+    def test_next_ast_ymd(self, *mocks):
+        mock_next_day, mock_next_month, mock_next_ast_year, mock_next_era, _ = mocks
+
         calendar = self.calendar_factory.build()
-        fake_ymd = FAKE.random_int(), FAKE.random_int(), FAKE.random_int()
+        year = month = day = FAKE.random_int()
+        ymd = year, month, day
         positive_frequency = FAKE.random_int()
         negative_frequency = FAKE.random_int(min=-20, max=-1)
+        forward = FAKE.pybool()
         cd = ConvertibleDate(calendar=calendar)
-        cd.next_ast_ymd(fake_ymd, [positive_frequency, DateUnit.YEAR])
-        cd.next_ast_ymd(fake_ymd, [positive_frequency, DateUnit.MONTH])
-        cd.next_ast_ymd(fake_ymd, [positive_frequency, DateUnit.DAY])
-        cd.next_ast_ymd(fake_ymd, [negative_frequency, DateUnit.YEAR])
-        cd.next_ast_ymd(fake_ymd, [negative_frequency, DateUnit.MONTH])
-        cd.next_ast_ymd(fake_ymd, [negative_frequency, DateUnit.DAY])
 
-        assert patch_next_ast_year.call_count == 2
-        assert patch_next_month.call_count == 2
-        assert patch_next_day.call_count == 2
+        cd.next_ast_ymd(ymd, [positive_frequency, DateUnit.ERA], forward)
+        mock_next_era.assert_called_with(year, positive_frequency, forward)
+
+        cd.next_ast_ymd(ymd, [negative_frequency, DateUnit.ERA], forward)
+        mock_next_era.assert_called_with(year, negative_frequency, forward)
+
+        cd.next_ast_ymd(ymd, [positive_frequency, DateUnit.YEAR], forward)
+        mock_next_ast_year.assert_called_with(
+            year, positive_frequency, forward
+        )
+
+        cd.next_ast_ymd(ymd, [negative_frequency, DateUnit.YEAR], forward)
+        mock_next_ast_year.assert_called_with(
+            year, negative_frequency, forward
+        )
+
+        cd.next_ast_ymd(ymd, [positive_frequency, DateUnit.MONTH], forward)
+        mock_next_month.assert_called_with(
+            year, month, positive_frequency, forward
+        )
+
+        cd.next_ast_ymd(ymd, [negative_frequency, DateUnit.MONTH], forward)
+        mock_next_month.assert_called_with(
+            year, month, negative_frequency, forward
+        )
+
+        cd.next_ast_ymd(ymd, [positive_frequency, DateUnit.DAY], forward)
+        mock_next_day.assert_called_with(ymd, positive_frequency, forward)
+
+        cd.next_ast_ymd(ymd, [negative_frequency, DateUnit.DAY], forward)
+        mock_next_day.assert_called_with(ymd, negative_frequency, forward)
+
         with pytest.raises(ValueError):
-            cd.next_ast_ymd(fake_ymd, FAKE.words(nb=2))
+            cd.next_ast_ymd(ymd, FAKE.words(nb=2))
+
+    @pytest.mark.db
+    def test_next_era(self):
+        num_eras = 5
+        era_ranges = [("-inf", FAKE.random_int())]
+        for _ in range(num_eras - 2):
+            era_ranges.append((FAKE.random_int(), FAKE.random_int()))
+        era_ranges.append((FAKE.random_int(), "inf"))
+        calendar = self.random_leapless_calendar()
+        calendar.eras = FAKE.words(nb=num_eras)
+        calendar.era_ranges = era_ranges
+
+        frequency = 2
+        past_era_idx = 1
+        past_era = calendar.eras[past_era_idx]
+        next_era_idx = 3
+        expected_hr_year = calendar.era_ranges[next_era_idx][0]
+        expected_ast_year = FAKE.random_int(min=-9999)
+        cd = ConvertibleDate(calendar=calendar)
+        cd.hr_to_ast = Mock()
+        cd.hr_to_ast.return_value = expected_ast_year
+        cd.era = Mock()
+        cd.era.return_value = past_era
+        assert cd.next_era(FAKE.random_int(), frequency) == (expected_ast_year, 1, 1)
+        cd.hr_to_ast.assert_called_with(expected_hr_year, next_era_idx)
+
+        past_era_idx = num_eras - 1
+        past_era = calendar.eras[past_era_idx]
+        next_era_idx = 3
+        expected_hr_year = calendar.era_ranges[next_era_idx][0]
+        expected_ast_year = FAKE.random_int(min=-9999)
+        cd.hr_to_ast.return_value = expected_ast_year
+        cd.era.return_value = past_era
+        assert cd.next_era(FAKE.random_int(), frequency, forward=False) == (expected_ast_year, 1, 1)
+        cd.hr_to_ast.assert_called_with(expected_hr_year, next_era_idx)
+
+        # next_era() when current era is the last era
+        past_era_idx = num_eras - 1
+        past_era = calendar.eras[past_era_idx]
+        next_era_idx = past_era_idx
+        expected_hr_year = calendar.era_ranges[next_era_idx][0]
+        expected_ast_year = FAKE.random_int(min=-9999)
+        cd.hr_to_ast.return_value = expected_ast_year
+        cd.era.return_value = past_era
+        assert cd.next_era(FAKE.random_int(), frequency) == (expected_ast_year, 1, 1)
+        cd.hr_to_ast.assert_called_with(expected_hr_year, next_era_idx)
+
+        # next_era() when at proleptic era and moving backwards
+        with self.session:
+            self.session.add(calendar)
+            self.session.flush()
+
+            past_era_idx = 0
+            past_era = calendar.eras[past_era_idx]
+            next_era_idx = past_era_idx
+            expected_hr_year = calendar.era_ranges[next_era_idx][1]
+            expected_ast_year = FAKE.random_int(min=-9999)
+            expected_month = len(calendar.common_year_month_names)
+            expected_day = calendar.days_in_common_year_months[-1]
+            expected_ymd = expected_ast_year, expected_month, expected_day
+            cd.hr_to_ast.return_value = expected_ast_year
+            cd.era.return_value = past_era
+            assert cd.next_era(FAKE.random_int(), frequency, forward=False) == expected_ymd
+            cd.hr_to_ast.assert_called_with(expected_hr_year, next_era_idx)
+
+    def test_next_era_raises(self):
+        calendar = self.calendar_factory.build()
+        frequency = len(calendar.eras) + 1
+        cd = ConvertibleDate(calendar=calendar)
+        with pytest.raises(ValueError):
+            cd.next_era(FAKE.random_int(), frequency)
 
     @patch(
         "src.customdate.ConvertibleDate.is_valid_ast_ymd",
@@ -504,6 +602,28 @@ class ConvertibleDateTest(CalendarTestCase):
         bad_frequency = FAKE.random_int(min=10000, max=19999)
         with pytest.raises(ValueError):
             cd.next_month(FAKE.pyint(), FAKE.pyint(), bad_frequency)
+
+    @patch("src.customdate.ConvertibleDate.is_valid_month", return_value=True)
+    def test_next_month_properly_overflows(self, _):
+        calendar = self.random_leapless_calendar()
+        num_months = len(calendar.common_year_month_names)
+        cd = ConvertibleDate(calendar=calendar)
+        frequency = 2
+        ast_year = FAKE.random_int(min=-9999)
+        month = num_months
+        cd._overflow_month = Mock()
+        cd._overflow_month.side_effect = [(ast_year, 1), (ast_year + 1, 2)]
+        day = cd.next_month(ast_year, month, frequency)[2]
+        assert day == 1
+        assert cd._overflow_month.call_count >= 2
+        cd._overflow_month.reset_mock()
+
+        month = 1
+        forward = False
+        cd._overflow_month.side_effect = [(ast_year, 3), (ast_year - 1, 2)]
+        day = cd.next_month(ast_year, month, frequency, forward)[2]
+        assert day == 1
+        assert cd._overflow_month.call_count >= 2
 
     def test_next_day_for_invalid_frequency(self):
         calendar = self.calendar_factory.build(
@@ -942,8 +1062,15 @@ class ConvertibleDateTest(CalendarTestCase):
         assert cdt.is_valid_ordinal_date(too_big_ordinal_date) is False
 
     #
-    # ConvertibleDate.gen_years_in_eras
+    # Eras
     #
+    def test_is_era_unit(self):
+        cd = ConvertibleDate(calendar=self.calendar_factory())
+        non_era_units = list(DateUnit)
+        non_era_units.remove(DateUnit.ERA)
+        assert cd.is_era_unit(DateUnit.ERA)
+        assert not cd.is_era_unit(FAKE.random_element(elements=non_era_units))
+
     def test_gen_years_in_eras(self):
         calendar = self.calendar_factory.build()
         cdt = ConvertibleDate(calendar=calendar)

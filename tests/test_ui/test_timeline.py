@@ -11,53 +11,61 @@ from tests.utils import FAKE
 from unittest.mock import Mock, patch
 
 
+def mocked_timeline():
+    return Timeline(
+        primary_mark=Mock(),
+        secondary_mark=Mock(),
+        event_view_mark=Mock(),
+    )
+
+
 #
 # Timeline
 #
 def test_timeline__get_time_span():
-    timeline = Timeline(mark=Mock())
-    assert timeline._get_time_span() == timeline.end_od - timeline.start_od
+    tl = mocked_timeline()
+    assert tl._get_time_span() == tl.end_od - tl.start_od
 
 
 def test_timeline__get_extended_start_od():
-    timeline = Timeline(mark=Mock())
+    tl = mocked_timeline()
     cdt = Mock()
-    timeline.cdt = cdt
-    assert timeline._get_extended_start_od() == cdt.extend_od.return_value
+    tl.cdt = cdt
+    assert tl._get_extended_start_od() == cdt.extend_od.return_value
     cdt.extend_od.assert_called_once_with(
-        timeline.start_od,
-        timeline.mark_interval,
-        timeline.extend_time_span_by,
+        tl.start_od,
+        tl.secondary_mark_interval,
+        tl.extend_time_span_by,
         reverse=True,
     )
 
 
 def test_timeline__get_extended_end_od():
-    timeline = Timeline(mark=Mock())
+    tl = mocked_timeline()
     cdt = Mock()
-    timeline.cdt = cdt
-    assert timeline._get_extended_end_od() == cdt.extend_od.return_value
+    tl.cdt = cdt
+    assert tl._get_extended_end_od() == cdt.extend_od.return_value
     cdt.extend_od.assert_called_once_with(
-        timeline.end_od,
-        timeline.mark_interval,
-        timeline.extend_time_span_by,
+        tl.end_od,
+        tl.secondary_mark_interval,
+        tl.extend_time_span_by,
     )
 
 
 def test_timeline__get_extended_time_span():
+    tl = mocked_timeline()
     extended_start_od, extended_end_od = FAKE.pyfloat(), FAKE.pyfloat()
     cdt = Mock()
     cdt.extend_od.side_effect = [extended_end_od, extended_start_od]
-    timeline = Timeline(mark=Mock())
-    timeline.cdt = cdt
+    tl.cdt = cdt
     expected_time_span = extended_end_od - extended_start_od
-    assert timeline._get_extended_time_span() == expected_time_span
+    assert tl._get_extended_time_span() == expected_time_span
 
 
 @patch("kivy.clock.Clock.create_trigger")
 @patch("src.ui.timeline.Timeline.bind")
 def test_timeline_draw_mark_trigger(mock_bind, mock_create_trigger):
-    tl = Timeline(mark=Mock())
+    tl = mocked_timeline()
     tl.size = 200, 200
     # extended_start_od/end_od cant' be set so test that they're bound
     assert tl.draw_marks_trigger == mock_create_trigger.return_value
@@ -77,17 +85,17 @@ def test_timeline_draw_mark_trigger(mock_bind, mock_create_trigger):
 
 @patch("src.ui.timeline.Timeline.bind")
 def test_timeline_give_focus(mock_bind):
-    timeline = Timeline(mark=Mock())
-    timeline.focus = FAKE.pybool()
+    tl = mocked_timeline()
+    tl.focus = FAKE.pybool()
     assert any(
         True
         for call in itertools.chain(mock_bind.call_args_list)
-        if ("focus", timeline.give_focus) in call.kwargs.items()
+        if ("focus", tl.give_focus) in call.kwargs.items()
     )
 
 
 def test_timeline_scroll_start_and_end():
-    timeline = Timeline(mark=Mock())
+    timeline = mocked_timeline()
     old_start_od, old_end_od = timeline.start_od, timeline.end_od
     cdt = Mock()
     cdt.extend_od.return_value = FAKE.pyfloat()
@@ -111,7 +119,7 @@ def test_timeline_scroll_start_and_end():
 
 
 def test_timeline_zoom_start_and_end():
-    timeline = Timeline(mark=Mock())
+    timeline = mocked_timeline()
     old_start_od, old_end_od = timeline.start_od, timeline.end_od
     cdt = Mock()
     cdt.extend_od.return_value = FAKE.pyfloat()
@@ -135,58 +143,63 @@ def test_timeline_zoom_start_and_end():
 
 
 def test_timeline_change_mark_interval():
-    mark = Mock()
     cdt = Mock()
     cdt.change_interval.return_value = FAKE.pylist()
     cdt.extend_od.return_value = FAKE.pyfloat()
-    tl = Timeline(mark=mark)
+    tl = mocked_timeline()
     tl.cdt = cdt
     old_mark_interval = FAKE.pylist()
-    tl.mark_interval = copy.deepcopy(old_mark_interval)
-    tl.mark.interval_width = tl.width * 4
+    tl.secondary_mark_interval = copy.deepcopy(old_mark_interval)
+    tl.secondary_mark.interval_width = tl.width * 4
 
     tl.on_kv_post(tl)
     assert any(  # change_mark_interval bound to mark_interval property
         True
-        for call in itertools.chain(mark.bind.call_args_list)
+        for call in itertools.chain(tl.secondary_mark.bind.call_args_list)
         if ("interval_width", tl.change_mark_interval) in call.kwargs.items()
     )
 
     tl.change_mark_interval()
-    assert tl.mark_interval == cdt.change_interval.return_value
+    assert tl.secondary_mark_interval == cdt.change_interval.return_value
     tl.cdt.change_interval.assert_called_with(old_mark_interval, tl)
     tl.cdt.change_interval.reset_mock()
 
-    old_mark_interval = tl.mark_interval
-    tl.mark.interval_width = tl.width / 4
-    tl.mark.max_label_width = tl.mark.interval_width * 2
+    old_mark_interval = tl.secondary_mark_interval
+    tl.secondary_mark.interval_width = tl.width / 4
+    tl.secondary_mark.max_label_width = tl.secondary_mark.interval_width * 2
     tl.change_mark_interval()
-    assert tl.mark_interval == cdt.change_interval.return_value
-    tl.cdt.change_interval.assert_called_with(old_mark_interval, tl, False)
+    assert tl.secondary_mark_interval == cdt.change_interval.return_value
+    tl.cdt.change_interval.assert_called_with(
+        old_mark_interval, tl, increase=False
+    )
     tl.cdt.change_interval.reset_mock()
 
-    tl.mark.interval_width = tl.width / 4
-    tl.mark.max_label_width = tl.mark.interval_width
+    tl.secondary_mark.interval_width = tl.width / 4
+    tl.secondary_mark.max_label_width = tl.secondary_mark.interval_width
     tl.change_mark_interval()
     tl.cdt.change_interval.assert_not_called()
 
 
-def test_timeline_draw_mark():
-    timeline = Timeline(mark=Mock())
+def test_timeline_draw_marks():
+    timeline = mocked_timeline()
     timeline.draw_marks(Mock())
-    timeline.mark.draw_marks.assert_called_once()
+    timeline.secondary_mark.draw_marks.assert_called_once()
+    timeline.event_view_mark.draw_marks.assert_called_once_with(
+        mark_ods=timeline.secondary_mark.draw_marks.return_value
+    )
 
 
 def test_timeline_update_mark_interval():
-    timeline = Timeline(mark=Mock())
-    timeline.cdt = Mock()
-    timeline.cdt.extend_od.return_value = FAKE.pyfloat()
-    timeline.mark_interval = FAKE.pylist()
-    assert timeline.mark.interval == timeline.mark_interval
+    tl = mocked_timeline()
+    tl.cdt = Mock()
+    tl.cdt.extend_od.return_value = FAKE.pyfloat()
+    tl.secondary_mark_interval = FAKE.pylist()
+    assert tl.secondary_mark.interval == tl.secondary_mark_interval
+    assert tl.primary_mark.interval == tl.cdt.get_primary_interval.return_value
 
 
 def test_timeline_disable_zoom():
-    timeline = Timeline(mark=Mock())
+    timeline = mocked_timeline()
     timeline.shift_key = True
     assert timeline.disable_zoom_in is timeline.shift_key
     assert timeline.disable_zoom_out is timeline.shift_key
@@ -197,7 +210,7 @@ def test_timeline_disable_zoom():
 
 
 def test_timeline_set_drag_hor_scroll():
-    timeline = Timeline(mark=Mock())
+    timeline = mocked_timeline()
     timeline.touches = FAKE.pylist(nb_elements=2, variable_nb_elements=False)
     assert timeline.disable_drag_hor_scroll
 
@@ -207,7 +220,7 @@ def test_timeline_set_drag_hor_scroll():
 
 @patch("src.ui.focusedkeylisten.FocusKeyListenBehavior.gain_focus")
 def test_timeline_gain_focus(mock_fkl_gain_focus):
-    timeline = Timeline(mark=Mock())
+    timeline = mocked_timeline()
     timeline.descendant_focused = Mock()
     timeline.descendant_focused.return_value = True
     timeline.gain_focus()
@@ -219,8 +232,7 @@ def test_timeline_gain_focus(mock_fkl_gain_focus):
 
 
 def test_timeline_descendant_focused():
-    mark = Mock()
-    timeline = Timeline(mark=mark)
+    timeline = mocked_timeline()
     assert not timeline.descendant_focused()
 
     collapse_bar = Mock()
@@ -248,7 +260,7 @@ def test_timeline_descendant_focused():
 
 
 def test_timeline_od_to_x():
-    timeline = Timeline(mark=Mock())
+    timeline = mocked_timeline()
     timeline.dod_to_dx = Mock()
     dx = FAKE.pyfloat()
     timeline.dod_to_dx.return_value = dx
@@ -259,15 +271,15 @@ def test_timeline_od_to_x():
 
 
 def test_timeline_dod_to_dx():
+    timeline = mocked_timeline()
     percent = FAKE.random.uniform(0, 1)
-    timeline = Timeline(mark=Mock())
     dod = percent * timeline.time_span
     assert timeline.dod_to_dx(dod) == timeline.width * percent
 
 
 def test_timeline_dx_to_dod():
+    timeline = mocked_timeline()
     percent = FAKE.random.uniform(0, 1)
-    timeline = Timeline(mark=Mock())
     dx = percent * timeline.width
     expected_dx = round(timeline.time_span * percent, 5)
     assert round(timeline.dx_to_dod(dx), 5) == expected_dx
@@ -365,7 +377,7 @@ def test_timelinescrollview_scroll_to_focused_widget():
 def test_timelinlayout_add_widget(mock_fl_add_widget):
     tl_layout = TimelineLayout(parent=Mock())
     tl_layout.timelines.insert = Mock()
-    timeline = Timeline(mark=Mock())
+    timeline = mocked_timeline()
     timeline.bind = Mock()
     canvas = Mock()
     index = FAKE.random_int()

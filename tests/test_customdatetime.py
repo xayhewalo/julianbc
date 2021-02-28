@@ -39,12 +39,19 @@ class ConvertibleDateTimeTest(TimeTestCase):
         self.time_factory = ConvertibleTimeFactory
         # fmt: off
         self.datetime_units = [
-            DateUnit.YEAR, DateUnit.MONTH, DateUnit.DAY,
+            DateUnit.ERA, DateUnit.YEAR, DateUnit.MONTH, DateUnit.DAY,
             TimeUnit.HOUR, TimeUnit.MINUTE, TimeUnit.SECOND,
         ]
         # fmt: on
+        self.timeline = Timeline(
+            primary_mark=Mark(),
+            secondary_mark=Mark(),
+            event_view_mark=Mark(),
+            cdt=gregorian_cdt,
+        )
 
-    def test__init__(self):
+    @patch("src.customdate.ConvertibleDate.hr_to_ast")
+    def test__init__(self, mock_hr_to_ast):
         cd = ConvertibleDate(calendar=self.calendar_factory.build())
         cdt = ConvertibleDateTime(date=cd, time=self.time_factory.build())
         assert isinstance(cdt.initial_interval[0], int)
@@ -53,10 +60,13 @@ class ConvertibleDateTimeTest(TimeTestCase):
         )
         # fmt: off
         assert cdt.datetime_units == [
-            DateUnit.YEAR, DateUnit.MONTH, DateUnit.DAY,
+            DateUnit.ERA, DateUnit.YEAR, DateUnit.MONTH, DateUnit.DAY,
             TimeUnit.HOUR, TimeUnit.MINUTE, TimeUnit.SECOND,
         ]
         # fmt: on
+        assert 0 in cdt.era_start_ordinals
+        assert mock_hr_to_ast.return_value in cdt.era_start_ordinals
+        mock_hr_to_ast.assert_called()
 
     def test__str__(self):
         cd = ConvertibleDate(calendar=self.calendar_factory.build())
@@ -65,12 +75,11 @@ class ConvertibleDateTimeTest(TimeTestCase):
         assert cd.calendar.name in cdt.__str__()
         assert ct.clock.name in cdt.__str__()
 
-    # noinspection PyMethodMayBeStatic
     def test_change_interval(self):  # relies on the UI but let's keep it here
-        timeline = Timeline(mark=Mark(), cdt=gregorian_cdt)
+        timeline = self.timeline
         old_frequency = 100_000
         interval = [old_frequency, DateUnit.YEAR]
-        timeline.mark_interval = interval
+        timeline.secondary_mark_interval = interval
         timeline.end_od = timeline.start_od + old_frequency * 365.25
         new_freq, new_unit = gregorian_cdt.change_interval(interval, timeline)
         assert new_freq < old_frequency or new_unit != DateUnit.YEAR
@@ -82,19 +91,39 @@ class ConvertibleDateTimeTest(TimeTestCase):
 
         old_frequency = 1
         interval = [old_frequency, TimeUnit.SECOND]
-        timeline.mark_interval = interval
+        timeline.secondary_mark_interval = interval
         timeline.end_od = timeline.start_od + 365.25
         new_freq, new_unit = gregorian_cdt.change_interval(
             interval, timeline, increase=False
         )
         assert new_freq < old_frequency or new_unit != DateUnit.YEAR
 
+    @patch("src.customdatetime.ConvertibleDateTime.change_unit")
+    @patch("src.customdatetime.ConvertibleDateTime.get_frequencies")
+    @patch("src.customdatetime.ConvertibleDateTime.extend_od")
+    def test_change_interval_recursively_changing_unit(self, *mocks):
+        mock_change_unit = mocks[2]
+
+        expected_interval = [FAKE.random_int(min=1), FAKE.random_element(elements=self.datetime_units)]
+        mock_change_unit.side_effect = [None, expected_interval]
+
+        tl = self.timeline
+        tl.od_to_x = Mock()
+        # mock too few marks on screen
+        tl.od_to_x.side_effect = [0, tl.width + FAKE.random_int(min=1)]
+
+        old_frequency = FAKE.random_int(min=1)
+        interval = [FAKE.random_int(min=1), FAKE.random_element(elements=self.datetime_units)]
+        tl.secondary_mark_interval = interval
+        tl.end_od = tl.start_od + old_frequency * 365.25
+        assert gregorian_cdt.change_interval(interval, tl) == expected_interval
+
     @patch("src.customdatetime.ConvertibleDateTime.get_frequencies")
     @patch("src.customdatetime.ConvertibleDateTime.change_interval")
     def test_change_unit_when_increasing_unit(self, *mocks):
-        non_year_units = [DateUnit.MONTH, DateUnit.DAY]
-        non_year_units.extend(TimeUnit)
-        non_year_unit = FAKE.random_element(elements=non_year_units)
+        non_year_or_era_units = [DateUnit.MONTH, DateUnit.DAY]
+        non_year_or_era_units.extend(TimeUnit)
+        non_year_unit = FAKE.random_element(elements=non_year_or_era_units)
         frequencies = [FAKE.random_int(min=1) for _ in range(5)]
 
         mock_change_interval = mocks[0]
@@ -103,8 +132,8 @@ class ConvertibleDateTimeTest(TimeTestCase):
         mock_get_frequencies.return_value = frequencies
 
         non_year_interval = [max(frequencies), non_year_unit]
-        non_year_unit_idx = non_year_units.index(non_year_unit)
-        next_unit = non_year_units[non_year_unit_idx - 1]
+        non_year_unit_idx = non_year_or_era_units.index(non_year_unit)
+        next_unit = non_year_or_era_units[non_year_unit_idx - 1]
         next_interval = [min(frequencies), next_unit]
 
         cd = ConvertibleDate(calendar=self.calendar_factory.build())
@@ -135,7 +164,7 @@ class ConvertibleDateTimeTest(TimeTestCase):
 
         non_sec_interval = [min(frequencies), non_sec_unit]
         non_year_unit_idx = non_sec_units.index(non_sec_unit)
-        next_unit = non_sec_units[non_year_unit_idx + 1]
+        next_unit = self.datetime_units[non_year_unit_idx + 1]
         next_interval = [max(frequencies), next_unit]
 
         cd = ConvertibleDate(calendar=self.calendar_factory.build())
@@ -165,6 +194,31 @@ class ConvertibleDateTimeTest(TimeTestCase):
         interval = [frequency, Mock()]
         assert cdt.change_unit(interval, Mock(), FAKE.pybool()) is None
         mock_change_interval.assert_not_called()
+
+    def test_get_primary_interval(self):
+        cd = ConvertibleDate(calendar=self.calendar_factory.build())
+        cdt = ConvertibleDateTime(date=cd, time=self.time_factory.build())
+        cdt.datetime_units = self.datetime_units
+
+        with pytest.raises(ValueError):
+            cdt.get_primary_interval(DateUnit.ERA)
+
+        frequency, unit = cdt.get_primary_interval(DateUnit.YEAR)
+        assert frequency == 1
+        assert unit == DateUnit.ERA
+
+        frequency, unit = cdt.get_primary_interval(DateUnit.MONTH)
+        assert frequency == 1
+        assert unit == DateUnit.YEAR
+
+        frequency, unit = cdt.get_primary_interval(DateUnit.DAY)
+        assert frequency == 1
+        assert unit == DateUnit.YEAR
+
+        for unit in TimeUnit:
+            frequency, unit = cdt.get_primary_interval(unit)
+            assert frequency == 1
+            assert unit == DateUnit.DAY
 
     @patch("src.customdatetime.ConvertibleDateTime.shift_od")
     def test_extend_od_with_reverse(self, patch_shift_od):
@@ -309,22 +363,23 @@ class ConvertibleDateTimeTest(TimeTestCase):
         patch_next_ast_ymd = patches[1]
         patch_od_to_ast_ymd = patches[2]
 
-        ordinal_decimal1 = FAKE.pyfloat()
-        ordinal_decimal2 = FAKE.pyfloat()
-        fake_ast_ymd1 = FAKE.random_int(), FAKE.random_int(), FAKE.random_int()
-        fake_ast_ymd2 = FAKE.random_int(), FAKE.random_int(), FAKE.random_int()
+        od1 = FAKE.pyfloat()
+        od2 = FAKE.pyfloat()
+        ast_ymd1 = FAKE.random_int(), FAKE.random_int(), FAKE.random_int()
+        ast_ymd2 = FAKE.random_int(), FAKE.random_int(), FAKE.random_int()
         interval = [FAKE.random_int(), FAKE.random_element(elements=DateUnit)]
+        forward = FAKE.pybool()
 
-        patch_od_to_ast_ymd.return_value = fake_ast_ymd1
-        patch_next_ast_ymd.return_value = fake_ast_ymd2
-        patch_ast_ymd_to_od.return_value = ordinal_decimal2
+        patch_od_to_ast_ymd.return_value = ast_ymd1
+        patch_next_ast_ymd.return_value = ast_ymd2
+        patch_ast_ymd_to_od.return_value = od2
 
         cd = ConvertibleDate(calendar=self.calendar_factory.build())
         cdt = ConvertibleDateTime(date=cd, time=self.time_factory.build())
-        assert cdt.next_od(ordinal_decimal1, interval) == ordinal_decimal2
-        patch_od_to_ast_ymd.assert_called_once_with(ordinal_decimal1)
-        patch_next_ast_ymd.assert_called_once_with(fake_ast_ymd1, interval)
-        patch_ast_ymd_to_od.assert_called_once_with(fake_ast_ymd2)
+        assert cdt.next_od(od1, interval, forward) == od2
+        patch_od_to_ast_ymd.assert_called_once_with(od1)
+        patch_next_ast_ymd.assert_called_once_with(ast_ymd1, interval, forward)
+        patch_ast_ymd_to_od.assert_called_once_with(ast_ymd2)
 
     @patch("src.customdatetime.ConvertibleDateTime.od_to_hms")
     @patch("src.customtime.ConvertibleTime.next_hms")
@@ -339,6 +394,7 @@ class ConvertibleDateTimeTest(TimeTestCase):
         fake_od = FAKE.random_int()
         day_delta = FAKE.random_int()
         interval = [FAKE.random_int(), FAKE.random_element(elements=TimeUnit)]
+        forward = FAKE.pybool()
 
         patch_od_to_hms.return_value = fake_hms1
         patch_next_hms.return_value = fake_hms2, day_delta
@@ -346,9 +402,9 @@ class ConvertibleDateTimeTest(TimeTestCase):
 
         cd = ConvertibleDate(calendar=self.calendar_factory.build())
         cdt = ConvertibleDateTime(date=cd, time=self.time_factory.build())
-        assert cdt.next_od(fake_od, interval) == fake_od
+        assert cdt.next_od(fake_od, interval, forward) == fake_od
         patch_od_to_hms.assert_called_once_with(fake_od)
-        patch_next_hms.assert_called_once_with(fake_hms1, interval)
+        patch_next_hms.assert_called_once_with(fake_hms1, interval, forward)
         patch_set_hms.assert_called_once_with(fake_od, fake_hms2, day_delta)
 
     def test_next_od_raises(self):

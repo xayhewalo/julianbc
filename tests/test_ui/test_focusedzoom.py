@@ -148,7 +148,8 @@ def test_on_touch_move(mock_widget_on_touch_move):
     mock_widget_on_touch_move.assert_called_once_with(mock_touch)
     mock_widget_on_touch_move.reset_mock()
 
-    dpixels = FAKE.random_int(min=1, max=max(*mock_touch.ppos))
+    mock_touch.ppos = FAKE.pyfloat(min_value=1), FAKE.pyfloat(min_value=1)
+    dpixels = FAKE.pyfloat(min_value=1, max_value=int(max(*mock_touch.ppos)))
     mock_touch.pos = mock_touch.ppos[0] + dpixels, mock_touch.ppos[1] + dpixels
     assert zoom_widget.on_touch_move(mock_touch) is True
     assert zoom_widget.zoom_by == -zoom_widget._zoom_by

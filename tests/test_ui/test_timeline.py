@@ -195,6 +195,7 @@ def test_timeline_update_mark_interval():
     tl.cdt.extend_od.return_value = FAKE.pyfloat()
     tl.secondary_mark_interval = FAKE.pylist()
     assert tl.secondary_mark.interval == tl.secondary_mark_interval
+    assert tl.event_view_mark.interval == tl.secondary_mark.interval
     assert tl.primary_mark.interval == tl.cdt.get_primary_interval.return_value
 
 

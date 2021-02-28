@@ -165,7 +165,7 @@ class Timeline(
 
     def update_mark_interval(self, *_):
         self.secondary_mark.interval = self.secondary_mark_interval
-        self.event_view_mark = self.secondary_mark_interval
+        self.event_view_mark.interval = self.secondary_mark_interval
 
         unit = self.secondary_mark_interval[1]
         self.primary_mark.interval = self.cdt.get_primary_interval(unit)

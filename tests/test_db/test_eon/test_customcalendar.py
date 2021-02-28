@@ -296,6 +296,9 @@ class ConvertibleCalendarTest(CalendarTestCase, FactoriesMixin):
         expected_days_in_leap_year = sum(calendar.days_in_leap_year_months)
         assert calendar.days_in_leap_year == expected_days_in_leap_year
 
+        calendar.has_leap_year = False
+        assert calendar.days_in_leap_year == 0
+
     def test_days_in_leap_year_raises(self):
         num_common_months = FAKE.random_int(min=11, max=20)
         num_leap_months = FAKE.random_int(min=1, max=10)

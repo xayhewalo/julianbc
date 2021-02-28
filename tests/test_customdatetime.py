@@ -104,7 +104,9 @@ class ConvertibleDateTimeTest(TimeTestCase):
     def test_change_interval_recursively_changing_unit(self, *mocks):
         mock_change_unit = mocks[2]
 
-        expected_interval = [FAKE.random_int(min=1), FAKE.random_element(elements=self.datetime_units)]
+        frequency = FAKE.random_int(min=1)
+        unit = FAKE.random_element(elements=self.datetime_units)
+        expected_interval = [frequency, unit]
         mock_change_unit.side_effect = [None, expected_interval]
 
         tl = self.timeline
@@ -113,7 +115,9 @@ class ConvertibleDateTimeTest(TimeTestCase):
         tl.od_to_x.side_effect = [0, tl.width + FAKE.random_int(min=1)]
 
         old_frequency = FAKE.random_int(min=1)
-        interval = [FAKE.random_int(min=1), FAKE.random_element(elements=self.datetime_units)]
+        frequency = FAKE.random_int(min=1)
+        unit = FAKE.random_element(elements=self.datetime_units)
+        interval = [frequency, unit]
         tl.secondary_mark_interval = interval
         tl.end_od = tl.start_od + old_frequency * 365.25
         assert gregorian_cdt.change_interval(interval, tl) == expected_interval

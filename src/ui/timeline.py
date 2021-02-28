@@ -146,12 +146,13 @@ class Timeline(
         Ensure label width doesn't overlap on zoom out.
         Ensure there are at least 2 visible marks when zooming in.
         """
-        if self.secondary_mark.interval_width * 3 > self.width:
+        secondary_mark = self.secondary_mark
+        if secondary_mark.interval_width * 3 > self.width:
             # increase number of marks
             self.secondary_mark_interval = self.cdt.change_interval(
-                self.secondary_mark_interval, self,
+                self.secondary_mark_interval, self
             )
-        elif self.secondary_mark.max_label_width > self.secondary_mark.interval_width:
+        elif secondary_mark.max_label_width > secondary_mark.interval_width:
             # decrease number of marks
             self.secondary_mark_interval = self.cdt.change_interval(
                 self.secondary_mark_interval, self, increase=False
@@ -163,7 +164,8 @@ class Timeline(
         self.event_view_mark.draw_marks(mark_ods=secondary_mark_ods)
 
     def update_mark_interval(self, *_):
-        self.secondary_mark.interval = self.event_view_mark.interval = self.secondary_mark_interval
+        self.secondary_mark.interval = self.secondary_mark_interval
+        self.event_view_mark = self.secondary_mark_interval
 
         unit = self.secondary_mark_interval[1]
         self.primary_mark.interval = self.cdt.get_primary_interval(unit)

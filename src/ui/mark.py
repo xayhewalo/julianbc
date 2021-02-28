@@ -39,9 +39,11 @@ class Mark(Widget):
     LABEL_CENTER = "center"
     LABEL_MID_INTERVAL = "mid_interval"
     LABEL_RIGHT = "right"
+    # fmt: off
     _label_alignments = [
         LABEL_LEFT, LABEL_CENTER, LABEL_MID_INTERVAL, LABEL_RIGHT
     ]
+    # fmt: on
     label_align = OptionProperty(LABEL_LEFT, options=_label_alignments)
     label_padding_x = NumericProperty("2sp")
     label_padding_y = NumericProperty("2sp")
@@ -82,9 +84,16 @@ class Mark(Widget):
             hr_date = tl.cdt.od_to_hr_date(mark_od, unit)
             label = self.make_label(mark_x, hr_date, alignment)
 
-            if location == "left" and label.right >= mid_mark_x - self.label_padding_x:
+            if (
+                location == "left"
+                and label.right >= mid_mark_x - self.label_padding_x
+            ):
                 label.right = mid_mark_x - self.label_padding_x
-            elif location == "right" and label.x <= mid_mark_x + self.mark_width + self.label_padding_x:
+            elif (
+                location == "right"
+                and label.x
+                <= mid_mark_x + self.mark_width + self.label_padding_x
+            ):
                 label.x = mid_mark_x + self.mark_width + self.label_padding_x
 
             self.canvas.add(
@@ -111,7 +120,9 @@ class Mark(Widget):
         else:
             # extend_od() widens time span without considering the interval
             # so the first mark_od needs to be set with next_od()
-            mark_od = tl.cdt.next_od(tl.extended_start_od, self.interval, forward=False)
+            mark_od = tl.cdt.next_od(
+                tl.extended_start_od, self.interval, forward=False
+            )
             mark_ods = [mark_od]
             while mark_od <= tl.extended_end_od:
                 mark_x, mark_xs, visible_mark_xs = make_mark_x()
@@ -120,17 +131,20 @@ class Mark(Widget):
                 mark_ods.append(mark_od)
 
         # interval_width is only valid if there are at least two visible marks
+        force_visible = self.force_visible
         interval_width = float(numpy.diff(visible_mark_xs).mean())
         if numpy.isnan(interval_width):
-            if not self.force_visible:
+            if not force_visible:
                 raise RuntimeError("Must be at least 2 visible marks")
             self.interval_width = None
         else:
             self.interval_width = interval_width
 
-        if self.force_visible and self.interval_width is None and self.has_label:
+        if force_visible and self.interval_width is None and self.has_label:
             # force labels to be visible if there are less than 2 visible marks
-            off_screen_mark_od = tl.cdt.next_od(tl.start_od, self.interval, forward=False)
+            off_screen_mark_od = tl.cdt.next_od(
+                tl.start_od, self.interval, forward=False
+            )
             off_screen_mark_x = tl.od_to_x(off_screen_mark_od)
             mid_mark_od = tl.cdt.next_od(tl.start_od, self.interval)
             mid_mark_x = tl.od_to_x(mid_mark_od)  # may still be off screen

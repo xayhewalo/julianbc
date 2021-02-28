@@ -441,7 +441,10 @@ class ConvertibleDateTest(CalendarTestCase):
     @patch("src.customdate.ConvertibleDate.next_month")
     @patch("src.customdate.ConvertibleDate.next_day")
     def test_next_ast_ymd(self, *mocks):
-        mock_next_day, mock_next_month, mock_next_ast_year, mock_next_era, _ = mocks
+        mock_next_day = mocks[0]
+        mock_next_month = mocks[1]
+        mock_next_ast_year = mocks[2]
+        mock_next_era = mocks[3]
 
         calendar = self.calendar_factory.build()
         year = month = day = FAKE.random_int()
@@ -508,7 +511,11 @@ class ConvertibleDateTest(CalendarTestCase):
         cd.hr_to_ast.return_value = expected_ast_year
         cd.era = Mock()
         cd.era.return_value = past_era
-        assert cd.next_era(FAKE.random_int(), frequency) == (expected_ast_year, 1, 1)
+        # fmt: off
+        assert cd.next_era(FAKE.random_int(), frequency) == (
+            expected_ast_year, 1, 1
+        )
+        # fmt: on
         cd.hr_to_ast.assert_called_with(expected_hr_year, next_era_idx)
 
         past_era_idx = num_eras - 1
@@ -518,7 +525,11 @@ class ConvertibleDateTest(CalendarTestCase):
         expected_ast_year = FAKE.random_int(min=-9999)
         cd.hr_to_ast.return_value = expected_ast_year
         cd.era.return_value = past_era
-        assert cd.next_era(FAKE.random_int(), frequency, forward=False) == (expected_ast_year, 1, 1)
+        # fmt: off
+        assert cd.next_era(FAKE.random_int(), frequency, forward=False) == (
+            expected_ast_year, 1, 1
+        )
+        # fmt: on
         cd.hr_to_ast.assert_called_with(expected_hr_year, next_era_idx)
 
         # next_era() when current era is the last era
@@ -529,7 +540,11 @@ class ConvertibleDateTest(CalendarTestCase):
         expected_ast_year = FAKE.random_int(min=-9999)
         cd.hr_to_ast.return_value = expected_ast_year
         cd.era.return_value = past_era
-        assert cd.next_era(FAKE.random_int(), frequency) == (expected_ast_year, 1, 1)
+        # fmt: off
+        assert cd.next_era(FAKE.random_int(), frequency) == (
+            expected_ast_year, 1, 1
+        )
+        # fmt: on
         cd.hr_to_ast.assert_called_with(expected_hr_year, next_era_idx)
 
         # next_era() when at proleptic era and moving backwards
@@ -547,7 +562,10 @@ class ConvertibleDateTest(CalendarTestCase):
             expected_ymd = expected_ast_year, expected_month, expected_day
             cd.hr_to_ast.return_value = expected_ast_year
             cd.era.return_value = past_era
-            assert cd.next_era(FAKE.random_int(), frequency, forward=False) == expected_ymd
+            assert (
+                cd.next_era(FAKE.random_int(), frequency, forward=False)
+                == expected_ymd
+            )
             cd.hr_to_ast.assert_called_with(expected_hr_year, next_era_idx)
 
     def test_next_era_raises(self):

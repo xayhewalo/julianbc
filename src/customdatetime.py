@@ -93,11 +93,11 @@ class ConvertibleDateTime:
         assert start_x == 0, f"start_od should be at x = 0, it's {start_x}"
 
         new_od = self.extend_od(start_od, [new_frequency, unit])
-        new_interval_width = timeline.od_to_x(new_od)  # an approximation
+        new_intvl_width = timeline.od_to_x(new_od)  # an approximation
 
         secondary_mark = timeline.secondary_mark
-        too_many_marks = secondary_mark.max_label_width > new_interval_width
-        too_few_marks = new_interval_width * 3 > timeline.width
+        too_many_marks = secondary_mark.max_label_width > new_intvl_width
+        too_few_marks = new_intvl_width * 3 > timeline.width
         while too_many_marks or too_few_marks:
             interval = [new_frequency, unit]
             interval = self.change_unit(interval, timeline, increase)
@@ -108,10 +108,10 @@ class ConvertibleDateTime:
             new_idx = idx + sign
             new_frequency = frequencies[new_idx]
             new_od = self.extend_od(start_od, [new_frequency, unit])
-            new_interval_width = timeline.od_to_x(new_od)
+            new_intvl_width = timeline.od_to_x(new_od)
 
-            too_many_marks = secondary_mark.max_label_width > new_interval_width
-            too_few_marks = new_interval_width * 3 > timeline.width
+            too_many_marks = secondary_mark.max_label_width > new_intvl_width
+            too_few_marks = new_intvl_width * 3 > timeline.width
             increase = True if too_few_marks else False
         return [new_frequency, unit]
 
@@ -141,9 +141,7 @@ class ConvertibleDateTime:
             bigger_unit = self.datetime_units[unit_idx - 1]
             frequency = min(self.get_frequencies(bigger_unit))
             interval = [frequency, bigger_unit]
-            return self.change_interval(
-                interval, timeline, increase, True
-            )
+            return self.change_interval(interval, timeline, increase, True)
         elif decrease_unit:
             if unit == TimeUnit.SECOND:
                 raise ValueError("Interval unit can't be less than a second")
@@ -152,9 +150,7 @@ class ConvertibleDateTime:
             smaller_unit = self.datetime_units[unit_idx + 1]
             frequency = max(self.get_frequencies(smaller_unit))
             interval = [frequency, smaller_unit]
-            return self.change_interval(
-                interval, timeline, increase, True
-            )
+            return self.change_interval(interval, timeline, increase, True)
 
     @staticmethod
     def get_primary_interval(unit: DateTimeEnum) -> DateTime_interval:

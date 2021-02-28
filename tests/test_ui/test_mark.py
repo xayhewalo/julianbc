@@ -21,7 +21,9 @@ def test_draw_marks_without_mark_ods(mock_make_label, mock_canvas):
     timeline.width = timeline.extended_end_od + abs(FAKE.pyfloat())
     timeline.x, timeline.right = 0, timeline.width
     timeline.od_to_x = lambda od: od
-    timeline.cdt.next_od.side_effect = lambda od, _, **kwargs: od + extended_time_span / 10
+    timeline.cdt.next_od.side_effect = (
+        lambda od, _, **kwargs: od + extended_time_span / 10
+    )
     timeline.mark_interval = FAKE.pylist(
         nb_elements=2, variable_nb_elements=False
     )

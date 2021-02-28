@@ -127,8 +127,8 @@ class ConvertibleTime:
 
         return self.seconds_to_hms(seconds), day_delta
 
-    def next_hms(
-        self, hms: Hms_tuple, interval: Time_interval, forward=True  # todo test forward
+    def next_hms(  # todo test forward
+        self, hms: Hms_tuple, interval: Time_interval, forward=True
     ) -> tuple[Hms_tuple, int]:
         """
         :returns: desired hms and if result is in a different day

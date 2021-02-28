@@ -1082,13 +1082,6 @@ class ConvertibleDateTest(CalendarTestCase):
     #
     # Eras
     #
-    def test_is_era_unit(self):
-        cd = ConvertibleDate(calendar=self.calendar_factory())
-        non_era_units = list(DateUnit)
-        non_era_units.remove(DateUnit.ERA)
-        assert cd.is_era_unit(DateUnit.ERA)
-        assert not cd.is_era_unit(FAKE.random_element(elements=non_era_units))
-
     def test_gen_years_in_eras(self):
         calendar = self.calendar_factory.build()
         cdt = ConvertibleDate(calendar=calendar)

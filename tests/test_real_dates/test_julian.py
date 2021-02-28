@@ -881,7 +881,6 @@ class JulianTest(RealCalendarTestCase):
         assert not julian_cdt.is_valid_ordinal_date((year, bad_day_of_year))
 
     # skip ConvertibleDate.gen_years_before_era, not applicable
-    # skip ConvertibleDate.is_era_unit, not applicable
 
     #
     # ConvertibleDate.days_in_months

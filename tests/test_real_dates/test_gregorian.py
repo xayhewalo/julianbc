@@ -926,7 +926,6 @@ class GregorianTest(RealCalendarTestCase):
         )
 
     # skip ConvertibleDate.gen_years_before_era, not applicable
-    # skip ConvertibleDate.is_era_unit, not applicable
 
     #
     # ConvertibleDate.days_in_months

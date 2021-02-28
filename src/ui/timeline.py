@@ -129,21 +129,7 @@ class Timeline(
         self.secondary_mark.bind(interval_width=self.check_mark_spacing)
         return super().on_kv_post(base_widget)
 
-    def scroll_start_and_end(self, *_):
-        if self.scroll_by == 0:  # for performance
-            return
-        dod = self.dx_to_dod(self.scroll_by)
-        self.start_od -= dod
-        self.end_od -= dod
-
-    def zoom_start_and_end(self, *_):
-        if self.zoom_by == 0:  # for performance
-            return
-        dod = self.dx_to_dod(self.zoom_by)
-        self.start_od += dod
-        self.end_od -= dod
-
-    def check_mark_spacing(self, *_):  # todo test bind
+    def check_mark_spacing(self, *_):
         interval_width = self.secondary_mark.interval_width
         max_label_width = self.secondary_mark.max_label_width
         if self.bad_mark_spacing(interval_width, self.width):
@@ -152,7 +138,7 @@ class Timeline(
                 self.secondary_mark_interval, self
             )
         elif self.bad_mark_spacing(
-            max_label_width, interval_width, spacing="too_many",
+            max_label_width, interval_width, spacing="too_many"
         ):
             # decrease number of marks
             self.secondary_mark_interval = self.change_interval(
@@ -160,11 +146,11 @@ class Timeline(
             )
 
     def change_interval(
-        self, interval: list, increase=True, recursive=False,
+        self, interval: list, increase=True, recursive=False
     ) -> list:
         """change mark_interval so labels don't overlap and/or are visible"""
         frequency, unit = interval
-        changed_interval = self.change_unit(interval, increase)
+        changed_interval = self.change_interval_unit(interval, increase)
         if changed_interval is not None:
             return changed_interval
 
@@ -172,40 +158,35 @@ class Timeline(
         sign = -1 if increase else 1
         new_frequency = frequency
         frequencies = self.cdt.get_frequencies(unit)
-        if not recursive:  # change_unit() has already changed the frequency
+        if not recursive:  # change_interval_unit() already changed frequency
             idx = frequencies.index(frequency)
             new_idx = idx + sign
             new_frequency = frequencies[new_idx]
 
-        start_od = self.start_od
-        start_x = self.od_to_x(start_od)
-        assert start_x == 0, f"start_od should be at x = 0, it's {start_x}"
-
-        new_od = self.cdt.extend_od(start_od, [new_frequency, unit])
+        new_od = self.cdt.extend_od(self.start_od, [new_frequency, unit])
         new_interval_width = self.od_to_x(new_od)  # an approximation
 
         max_label_width = self.secondary_mark.max_label_width
-        while (
-            self.bad_mark_spacing(
-                max_label_width, new_interval_width, spacing="too_many"
-            )
-            or self.bad_mark_spacing(new_interval_width, self.width)
-        ):
+        while self.bad_mark_spacing(
+            max_label_width, new_interval_width, spacing="too_many"
+        ) or self.bad_mark_spacing(new_interval_width, self.width):
             interval = [new_frequency, unit]
-            interval = self.change_unit(interval, increase)
+            interval = self.change_interval_unit(interval, increase)
             if interval is not None:
                 return interval
 
             idx = frequencies.index(new_frequency)
             new_idx = idx + sign
             new_frequency = frequencies[new_idx]
-            new_od = self.cdt.extend_od(start_od, [new_frequency, unit])
+            new_od = self.cdt.extend_od(self.start_od, [new_frequency, unit])
             new_interval_width = self.od_to_x(new_od)
 
             increase = self.bad_mark_spacing(new_interval_width, self.width)
         return [new_frequency, unit]
 
-    def change_unit(self, interval: list, increase=True) -> Union[list, None]:
+    def change_interval_unit(
+        self, interval: list, increase=True
+    ) -> Union[list, None]:
         """
         Change the unit of an interval. Assumes self.cdt.datetime_units is
         sorted largest to smallest
@@ -219,7 +200,7 @@ class Timeline(
         increase_unit = not increase and frequency == max(frequencies)
 
         if increase_unit:
-            if self.cdt.is_datetime_unit(unit, "era"):
+            if self.cdt.is_datetime_unit(unit, "year"):
                 raise ValueError("Interval unit can't be more than a year")
 
             unit_idx = self.cdt.datetime_units.index(unit)
@@ -248,11 +229,6 @@ class Timeline(
             factor = self.too_many_marks_factor
         return max_width * factor > current_width
 
-    def draw_marks(self, _):
-        self.primary_mark.draw_marks()
-        secondary_mark_ods = self.secondary_mark.draw_marks()
-        self.event_view_mark.draw_marks(mark_ods=secondary_mark_ods)
-
     def update_mark_interval(self, *_):
         self.secondary_mark.interval = self.secondary_mark_interval
         self.event_view_mark.interval = self.secondary_mark_interval
@@ -260,8 +236,27 @@ class Timeline(
         unit = self.secondary_mark_interval[1]
         self.primary_mark.interval = self.cdt.get_primary_interval(unit)
 
+    def draw_marks(self, _):
+        self.primary_mark.draw_marks()
+        secondary_mark_ods = self.secondary_mark.draw_marks()
+        self.event_view_mark.draw_marks(mark_ods=secondary_mark_ods)
+
     def disable_zoom(self, *_):
         self.disable_zoom_in = self.disable_zoom_out = self.shift_key
+
+    def scroll_start_and_end(self, *_):
+        if self.scroll_by == 0:  # for performance
+            return
+        dod = self.dx_to_dod(self.scroll_by)
+        self.start_od -= dod
+        self.end_od -= dod
+
+    def zoom_start_and_end(self, *_):
+        if self.zoom_by == 0:  # for performance
+            return
+        dod = self.dx_to_dod(self.zoom_by)
+        self.start_od += dod
+        self.end_od -= dod
 
     def set_drag_hor_scroll(self, *_):
         if len(self.touches) > 1:

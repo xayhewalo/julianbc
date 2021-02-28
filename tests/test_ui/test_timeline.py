@@ -1,6 +1,10 @@
 import copy
 import itertools
+import pytest
 
+from src.customdatetime import DateUnit, TimeUnit
+from src.dbsetup import gregorian_cdt
+from src.ui.mark import Mark
 from src.ui.timeline import (
     Timeline,
     TimelineLayout,
@@ -17,6 +21,15 @@ def mocked_timeline():
         secondary_mark=Mock(),
         event_view_mark=Mock(),
     )
+
+
+def datetime_units():
+    # fmt: off
+    return [
+        DateUnit.ERA, DateUnit.YEAR, DateUnit.MONTH, DateUnit.DAY,
+        TimeUnit.HOUR, TimeUnit.MINUTE, TimeUnit.SECOND,
+    ]
+    # fmt: on
 
 
 #
@@ -142,15 +155,18 @@ def test_timeline_zoom_start_and_end():
     timeline.dx_to_dod.assert_not_called()
 
 
-def test_timeline_change_mark_interval():
-    cdt = Mock()
-    cdt.change_interval.return_value = FAKE.pylist()
-    cdt.extend_od.return_value = FAKE.pyfloat()
+def test_timeline_check_mark_spacing():
     tl = mocked_timeline()
-    tl.cdt = cdt
-    old_mark_interval = FAKE.pylist()
+    tl.cdt = Mock()
+    tl.cdt.extend_od.return_value = FAKE.pyfloat()
+    tl.change_interval = Mock()
+    tl.change_interval.return_value = FAKE.pylist()
+    tl.change_interval_unit = Mock()
+    tl.bad_mark_spacing = Mock()
+
+    dateunit = FAKE.random_element(elements=DateUnit)
+    old_mark_interval = [FAKE.random_int(min=1), dateunit]
     tl.secondary_mark_interval = copy.deepcopy(old_mark_interval)
-    tl.secondary_mark.interval_width = tl.width * 4
 
     tl.on_kv_post(tl)
     assert any(  # check_mark_spacing bound to mark_interval property
@@ -159,25 +175,181 @@ def test_timeline_change_mark_interval():
         if ("interval_width", tl.check_mark_spacing) in call.kwargs.items()
     )
 
+    tl.bad_mark_spacing.return_value = True
     tl.check_mark_spacing()
-    assert tl.secondary_mark_interval == cdt.change_interval.return_value
-    tl.cdt.change_interval.assert_called_with(old_mark_interval, tl)
-    tl.cdt.change_interval.reset_mock()
-
-    old_mark_interval = tl.secondary_mark_interval
-    tl.secondary_mark.interval_width = tl.width / 4
-    tl.secondary_mark.max_label_width = tl.secondary_mark.interval_width * 2
-    tl.check_mark_spacing()
-    assert tl.secondary_mark_interval == cdt.change_interval.return_value
-    tl.cdt.change_interval.assert_called_with(
-        old_mark_interval, tl, increase=False
+    assert tl.secondary_mark_interval == tl.change_interval.return_value
+    tl.bad_mark_spacing.assert_called_with(
+        tl.secondary_mark.interval_width, tl.width
     )
-    tl.cdt.change_interval.reset_mock()
+    tl.change_interval.assert_called_with(old_mark_interval, tl)
+    tl.change_interval.reset_mock(), tl.bad_mark_spacing.reset_mock()
 
-    tl.secondary_mark.interval_width = tl.width / 4
+    tl.bad_mark_spacing.side_effect = [False, True]
+    old_mark_interval = tl.secondary_mark_interval
+    tl.check_mark_spacing()
+    assert tl.secondary_mark_interval == tl.change_interval.return_value
+    tl.bad_mark_spacing.assert_any_call(
+        tl.secondary_mark.max_label_width,
+        tl.secondary_mark.interval_width,
+        spacing="too_many",
+    )
+    tl.change_interval.assert_called_with(old_mark_interval, increase=False)
+    tl.change_interval.reset_mock(), tl.bad_mark_spacing.reset_mock()
+
+    tl.bad_mark_spacing.side_effect = [False, False]
     tl.secondary_mark.max_label_width = tl.secondary_mark.interval_width
     tl.check_mark_spacing()
-    tl.cdt.change_interval.assert_not_called()
+    tl.bad_mark_spacing.assert_any_call(
+        tl.secondary_mark.max_label_width,
+        tl.secondary_mark.interval_width,
+        spacing="too_many",
+    )
+    tl.bad_mark_spacing.assert_any_call(
+        tl.secondary_mark.interval_width, tl.width
+    )
+    tl.change_interval.assert_not_called()
+
+
+def test_timeline_change_interval():
+    timeline = Timeline(
+        primary_mark=Mark(),
+        secondary_mark=Mark(),
+        event_view_mark=Mark(),
+        cdt=gregorian_cdt,
+    )
+    old_frequency = 100_000
+    interval = [old_frequency, DateUnit.YEAR]
+    timeline.secondary_mark_interval = interval
+    timeline.end_od = timeline.start_od + old_frequency * 365.25
+    new_freq, new_unit = timeline.change_interval(interval)
+    assert new_freq < old_frequency or new_unit != DateUnit.YEAR
+
+    old_frequency = 1
+    interval = [old_frequency, DateUnit.DAY]
+    new_freq, new_unit = timeline.change_interval(interval)
+    assert new_freq < old_frequency or new_unit not in DateUnit
+
+    interval = [old_frequency, TimeUnit.SECOND]
+    timeline.secondary_mark_interval = interval
+    timeline.end_od = timeline.start_od + 365.25
+    new_freq, new_unit = timeline.change_interval(interval, increase=False)
+    assert new_freq < old_frequency or new_unit != DateUnit.YEAR
+
+
+def test_timeline_change_interval_recursively_changing_unit():
+    timeline = mocked_timeline()
+    timeline.cdt = gregorian_cdt
+    timeline.cdt.get_frequencies = Mock()
+    frequencies = [FAKE.random_int(min=1) for _ in range(10)]
+    timeline.cdt.get_frequencies.return_value = frequencies
+    timeline.change_interval_unit = Mock()
+    timeline.od_to_x = Mock()  # mock too few marks on screen
+    timeline.od_to_x.side_effect = [0, timeline.width + FAKE.random_int(min=1)]
+    timeline.bad_mark_spacing = Mock()
+    timeline.bad_mark_spacing.return_value = True
+
+    frequency = FAKE.random_element(elements=frequencies)
+    unit = FAKE.random_element(elements=datetime_units())
+    expected_interval = [frequency, unit]
+    timeline.change_interval_unit.side_effect = [None, expected_interval]
+
+    old_frequency = FAKE.random_int(min=1)
+    frequency = FAKE.random_element(elements=frequencies)
+    unit = FAKE.random_element(elements=datetime_units())
+    interval = [frequency, unit]
+    timeline.secondary_mark_interval = interval
+    timeline.end_od = timeline.start_od + old_frequency * 365.25
+    assert timeline.change_interval(interval, timeline) == expected_interval
+
+
+@patch("src.customdatetime.ConvertibleDateTime.get_frequencies")
+def test_timeline_change_interval_unit_when_increasing_unit(mock):
+    mock_get_frequencies = mock
+
+    non_year_or_era_units = [DateUnit.MONTH, DateUnit.DAY]
+    non_year_or_era_units.extend(TimeUnit)
+    non_year_or_era_unit = FAKE.random_element(elements=non_year_or_era_units)
+    frequencies = [FAKE.random_int(min=1) for _ in range(5)]
+    mock_get_frequencies.return_value = frequencies
+
+    timeline = mocked_timeline()
+    timeline.cdt = Mock()
+    timeline.cdt.get_frequencies = mock_get_frequencies
+    timeline.cdt.datetime_units = datetime_units()
+    timeline.cdt.is_datetime_unit.return_value = False
+    timeline.change_interval = Mock()
+
+    non_year_interval = [max(frequencies), non_year_or_era_unit]
+    assert (
+        timeline.change_interval_unit(non_year_interval, increase=False)
+        == timeline.change_interval.return_value
+    )
+
+    timeline.cdt.is_datetime_unit.return_value = True
+    year_interval = [max(frequencies), DateUnit.YEAR]
+    with pytest.raises(ValueError):
+        timeline.change_interval_unit(year_interval, increase=False)
+
+
+@patch("src.customdatetime.ConvertibleDateTime.get_frequencies")
+def test_timeline_change_interval_unit_when_decreasing_unit(mock):
+    mock_get_frequencies = mock
+
+    non_sec_units = [*DateUnit]
+    non_sec_units.extend([TimeUnit.HOUR, TimeUnit.MINUTE])
+    non_sec_unit = FAKE.random_element(elements=non_sec_units)
+    frequencies = [FAKE.random_int(min=1) for _ in range(5)]
+    mock_get_frequencies.return_value = frequencies
+
+    timeline = mocked_timeline()
+    timeline.cdt = Mock()
+    timeline.cdt.get_frequencies = mock_get_frequencies
+    timeline.cdt.datetime_units = datetime_units()
+    timeline.cdt.is_datetime_unit.return_value = False
+    timeline.change_interval = Mock()
+
+    non_sec_interval = [min(frequencies), non_sec_unit]
+    assert (
+        timeline.change_interval_unit(non_sec_interval, increase=True)
+        == timeline.change_interval.return_value
+    )
+
+    timeline.cdt.is_datetime_unit.return_value = True
+    second_interval = [min(frequencies), TimeUnit.SECOND]
+    with pytest.raises(ValueError):
+        timeline.change_interval_unit(second_interval, increase=True)
+
+
+def test_timeline_change_unit_can_do_nothing():
+    timeline = mocked_timeline()
+    timeline.cdt = Mock()
+    timeline.change_interval = Mock()
+
+    frequencies = [FAKE.random_int(min=1) for _ in range(5)]
+    frequencies.sort()
+    timeline.cdt.get_frequencies.return_value = frequencies
+    frequency = FAKE.random_element(elements=frequencies[1:-1])
+    interval = [frequency, Mock()]
+    assert timeline.change_interval_unit(interval, FAKE.pybool()) is None
+    timeline.change_interval.assert_not_called()
+
+
+def test_timeline_bad_mark_spacing():
+    timeline = mocked_timeline()
+    width = timeline.width
+    interval_width = width
+    assert timeline.bad_mark_spacing(width, interval_width)
+
+    interval_width = (width * timeline.too_few_marks_factor) + 1
+    assert not timeline.bad_mark_spacing(width, interval_width)
+
+    interval_width = (width * timeline.too_many_marks_factor) - 1
+    assert timeline.bad_mark_spacing(width, interval_width, spacing="too_many")
+
+    interval_width = (width * timeline.too_many_marks_factor) + 1
+    assert not timeline.bad_mark_spacing(
+        width, interval_width, spacing="too_many"
+    )
 
 
 def test_timeline_draw_marks():

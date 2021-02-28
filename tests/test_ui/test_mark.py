@@ -27,7 +27,7 @@ def test_draw_marks_without_mark_ods(mock_make_label, mock_canvas):
     timeline.mark_interval = FAKE.pylist(
         nb_elements=2, variable_nb_elements=False
     )
-    timeline.cdt.date.is_era_unit.return_value = False
+    timeline.cdt.is_datetime_unit.return_value = False
 
     mock_mark_graphic = Mock()
     mock_make_label.return_value = Label(text=FAKE.word())
@@ -135,7 +135,7 @@ def test_draw_marks_with_era_interval(mock_make_label, mock_canvas):
     mock_make_label.return_value = Label(text=FAKE.word())
 
     timeline = Mock()
-    timeline.cdt.date.is_era_unit.return_value = True
+    timeline.cdt.is_datetime_unit.return_value = True
     era_start_ordinals = [FAKE.random_int() for _ in range(5)]
     era_start_ordinals.insert(0, 0)
     timeline.cdt.era_start_ordinals = era_start_ordinals

@@ -575,3 +575,6 @@ class ConvertibleDateTimeTest(TimeTestCase):
         assert cdt.hms_to_day_decimal((1, 1, 1)) == 3661 / 86400
         assert cdt.hms_to_day_decimal((12, 0, 0)) == 0.5
         assert cdt.hms_to_day_decimal(hms) == total_seconds / 86400
+
+    def test_is_datetime_unit(self):
+        raise NotImplementedError

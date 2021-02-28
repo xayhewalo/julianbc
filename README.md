@@ -65,6 +65,7 @@ JulianBC will be a visual-timeline program in the near future
 - [X] `common_year_cycle_ordinals` generator is slowing the UI, refactor it so it's not generated everytime and change factories so tests to don't forever
 - [X] Test `__init__` properties
 - [ ] Test `completed_cycles` with special years
+- [ ] raise error when `calendar` is changed
 #### ConvertibleTime
 - [X] remove `convertible_clocks`
 - [X] test error raised for `convert_hms`
@@ -123,10 +124,9 @@ JulianBC will be a visual-timeline program in the near future
   - [ ] test expand event_height and all other events shift y positions
 - [X] keep timeline behind collapse bar when collapsed and resizing
 - [X] Don't allow `MarkBar` and `EventView` to gain focus while collapsed
-- [ ] Make `Timeline` equal to monitor width
 #### Mark
 - [X] don't do shift calculations in `Mark`
-- [ ] Test middle interval alignment
+- [X] Test middle interval alignment
 - [X] Fix Mark labels when zoomed in at 2 or 1 second intervals, they don't move
 - [X] Fix Mark labels and stripes for BCE years
 #### EventEditor

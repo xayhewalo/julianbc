@@ -28,6 +28,7 @@ from src.ui.focus import AbstractFocus
 from src.ui.imagebutton import HoverImageButton, HoverImageToggleButton
 from src.ui.mark import Mark
 from src.ui.markbar import MarkBar
+from src.ui.timeline import TimelineScreen
 
 
 class JulianBC(App):
@@ -44,10 +45,11 @@ class JulianBC(App):
         Factory.register("AbstractFocus", AbstractFocus)
         Factory.register("CollapseBehavior", CollapseBehavior)
         Factory.register("EventView", EventView)
-        Factory.register("Mark", Mark)
-        Factory.register("MarkBar", MarkBar)
         Factory.register("HoverImageButton", HoverImageButton)
         Factory.register("HoverImageToggleButton", HoverImageToggleButton)
+        Factory.register("Mark", Mark)
+        Factory.register("MarkBar", MarkBar)
+        Factory.register("TimelineScreen", TimelineScreen)  # todo test
 
         abs_src_path = split(__file__)[0]
         [  # load all *.kv files that not are the main kv file

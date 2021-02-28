@@ -153,13 +153,13 @@ def test_timeline_change_mark_interval():
     tl.secondary_mark.interval_width = tl.width * 4
 
     tl.on_kv_post(tl)
-    assert any(  # change_mark_interval bound to mark_interval property
+    assert any(  # check_mark_spacing bound to mark_interval property
         True
         for call in itertools.chain(tl.secondary_mark.bind.call_args_list)
-        if ("interval_width", tl.change_mark_interval) in call.kwargs.items()
+        if ("interval_width", tl.check_mark_spacing) in call.kwargs.items()
     )
 
-    tl.change_mark_interval()
+    tl.check_mark_spacing()
     assert tl.secondary_mark_interval == cdt.change_interval.return_value
     tl.cdt.change_interval.assert_called_with(old_mark_interval, tl)
     tl.cdt.change_interval.reset_mock()
@@ -167,7 +167,7 @@ def test_timeline_change_mark_interval():
     old_mark_interval = tl.secondary_mark_interval
     tl.secondary_mark.interval_width = tl.width / 4
     tl.secondary_mark.max_label_width = tl.secondary_mark.interval_width * 2
-    tl.change_mark_interval()
+    tl.check_mark_spacing()
     assert tl.secondary_mark_interval == cdt.change_interval.return_value
     tl.cdt.change_interval.assert_called_with(
         old_mark_interval, tl, increase=False
@@ -176,7 +176,7 @@ def test_timeline_change_mark_interval():
 
     tl.secondary_mark.interval_width = tl.width / 4
     tl.secondary_mark.max_label_width = tl.secondary_mark.interval_width
-    tl.change_mark_interval()
+    tl.check_mark_spacing()
     tl.cdt.change_interval.assert_not_called()
 
 

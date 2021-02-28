@@ -847,11 +847,6 @@ class ConvertibleDate:
         ast_year, day_of_year = ordinal_date
         return 1 <= day_of_year <= self.days_in_year(ast_year)
 
-    @staticmethod
-    def is_era_unit(unit: DateUnit) -> bool:
-        """convenience method for Mark()"""
-        return unit == DateUnit.ERA
-
     def gen_years_before_era(self, start: int = 0) -> dict:
         """
         Generator for useful values related to an era range

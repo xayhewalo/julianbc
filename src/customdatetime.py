@@ -19,7 +19,6 @@ import sympy
 
 from src.customdate import ConvertibleDate, DateUnit, Ymd_tuple
 from src.customtime import ConvertibleTime, TimeUnit, Hms_tuple
-from src.ui.timeline import Timeline
 from typing import Union
 
 DateTimeEnum = Union[DateUnit, TimeUnit]
@@ -55,102 +54,6 @@ class ConvertibleDateTime:
 
     def __str__(self):
         return f"{self.date.calendar.name} - {self.time.clock.name}"
-
-    # NOTE TO FUTURE ME/MAINTAINER
-    # This is one of the most complex if not **the** most complex method in
-    # this app.
-    #
-    # It attempts to ensure there aren't too many or too little
-    # marks on screen, because simply incrementing or decrementing intervals
-    # didn't always behave well given calendars can be defined by the end-user.
-    #
-    # That said, it's a "business logic" method that depends on UI elements,
-    # which may be a design flaw...alas it behaves well and is performant.
-    def change_interval(
-        self,
-        interval: DateTime_interval,
-        timeline: Timeline,
-        increase=True,
-        recursive=False,
-    ) -> list:
-
-        frequency, unit = interval
-        changed_interval = self.change_unit(interval, timeline, increase)
-        if changed_interval is not None:
-            return changed_interval
-
-        # increasing the number of marks means decreasing the frequency
-        sign = -1 if increase else 1
-        new_frequency = frequency
-        frequencies = self.get_frequencies(unit)
-        if not recursive:  # change_unit() has already changed the frequency
-            idx = frequencies.index(frequency)
-            new_idx = idx + sign
-            new_frequency = frequencies[new_idx]
-
-        start_od = timeline.start_od
-        start_x = timeline.od_to_x(start_od)
-        assert start_x == 0, f"start_od should be at x = 0, it's {start_x}"
-
-        new_od = self.extend_od(start_od, [new_frequency, unit])
-        new_intvl_width = timeline.od_to_x(new_od)  # an approximation
-
-        secondary_mark = timeline.secondary_mark
-        too_many_marks = secondary_mark.max_label_width > new_intvl_width
-        too_few_marks = new_intvl_width * 3 > timeline.width
-        while too_many_marks or too_few_marks:
-            interval = [new_frequency, unit]
-            interval = self.change_unit(interval, timeline, increase)
-            if interval is not None:
-                return interval
-
-            idx = frequencies.index(new_frequency)
-            new_idx = idx + sign
-            new_frequency = frequencies[new_idx]
-            new_od = self.extend_od(start_od, [new_frequency, unit])
-            new_intvl_width = timeline.od_to_x(new_od)
-
-            too_many_marks = secondary_mark.max_label_width > new_intvl_width
-            too_few_marks = new_intvl_width * 3 > timeline.width
-            increase = True if too_few_marks else False
-        return [new_frequency, unit]
-
-    def change_unit(
-        self,
-        interval: DateTime_interval,
-        timeline: Timeline,
-        increase=True,
-    ) -> Union[DateTime_interval, None]:
-        """
-        Change the unit of an interval. Assumes self.datetime_units is sorted
-        largest to smallest
-
-        :raises ValueError: when increasing a Year unit or decreasing a second
-        unit.
-        """
-        frequency, unit = interval
-        frequencies = self.get_frequencies(unit)
-        decrease_unit = increase and frequency == min(frequencies)
-        increase_unit = not increase and frequency == max(frequencies)
-
-        if increase_unit:
-            if unit == DateUnit.YEAR:
-                raise ValueError("Interval unit can't be more than a year")
-
-            unit_idx = self.datetime_units.index(unit)
-            bigger_unit = self.datetime_units[unit_idx - 1]
-            frequency = min(self.get_frequencies(bigger_unit))
-            interval = [frequency, bigger_unit]
-            return self.change_interval(interval, timeline, increase, True)
-        elif decrease_unit:
-            if unit == TimeUnit.SECOND:
-                raise ValueError("Interval unit can't be less than a second")
-
-            unit_idx = self.datetime_units.index(unit)
-            smaller_unit = self.datetime_units[unit_idx + 1]
-            frequency = max(self.get_frequencies(smaller_unit))
-            interval = [frequency, smaller_unit]
-            return self.change_interval(interval, timeline, increase, True)
 
     @staticmethod
     def get_primary_interval(unit: DateTimeEnum) -> DateTime_interval:
@@ -308,3 +211,15 @@ class ConvertibleDateTime:
     def hms_to_day_decimal(self, hms: Hms_tuple) -> float:
         seconds = self.time.hms_to_seconds(hms)
         return seconds / self.time.clock.seconds_in_day
+
+    @staticmethod
+    def is_datetime_unit(unit: DateTimeEnum, attr_name: str) -> bool:
+        attr_name = attr_name.upper()
+        expected_unit = getattr(DateUnit, attr_name, None)
+        if expected_unit == unit:
+            return True
+
+        expected_unit = getattr(TimeUnit, attr_name, None)
+        if expected_unit == unit:
+            return True
+        return False

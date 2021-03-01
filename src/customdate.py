@@ -69,7 +69,7 @@ class ConvertibleDate:
 
     def __init__(self, calendar: ConvertibleCalendar, date_sep="/"):
         self.date_sep = date_sep
-        self.calendar = calendar
+        self._calendar = calendar
         if self.calendar.has_leap_year:
             start = self.calendar.leap_year_cycle_start
             self._all_cycle_ordinals = deque(
@@ -909,3 +909,11 @@ class ConvertibleDate:
         days_in_weeks = self.calendar.days_in_weeks
         if days_in_weeks:
             return (ordinal + self.calendar.epoch_weekday - 1) % days_in_weeks
+
+    @property
+    def calendar(self) -> ConvertibleCalendar:
+        return self._calendar
+
+    @calendar.setter
+    def calendar(self, _):
+        raise AttributeError("Denied. Create new ConvertibleDate.")

@@ -64,8 +64,7 @@ JulianBC will be a visual-timeline program in the near future
 - [X] remove week stuff
 - [X] `common_year_cycle_ordinals` generator is slowing the UI, refactor it so it's not generated everytime and change factories so tests to don't forever
 - [X] Test `__init__` properties
-- [ ] Test `completed_cycles` with special years
-- [ ] raise error when `calendar` is changed
+- [X] raise error when `calendar` is changed
 #### ConvertibleTime
 - [X] remove `convertible_clocks`
 - [X] test error raised for `convert_hms`
@@ -74,7 +73,7 @@ JulianBC will be a visual-timeline program in the near future
 - [X] add `shift_hms`
     - [X] make it DRY
     - [X] test `day_diff` i.e. shift by 50 hours has a `day_diff` >= 2
-- [ ] Test `__init__` properties
+- [X] Test `__init__` properties
 #### ConvertibleDateTime
 - [ ] add `change_interval`
     - [X] pass `label_width` and `interval` and pick the smallest interval that's greater than the width
@@ -86,7 +85,7 @@ JulianBC will be a visual-timeline program in the near future
 - [X] Test `__init__` properties
 - [X] Optimize next_hms while loop
 - [ ] test that `od_to_hr_date` calls the right methods with the right arguments
-- [ ] refactor `change_unit` and `change_interval` so they don't rely on `Timeline`. Let `Timeline` call `increase_unit` or `decrease_unit` until an appropriate interval width is reached
+- [X] refactor `change_unit` and `change_interval` so they don't rely on `Timeline`. Let `Timeline` call `increase_unit` or `decrease_unit` until an appropriate interval width is reached
 #### EventController
 - [ ] `fields` in `make` are based on `Event` columns
 - [ ] ensure negative `duraiton` raises error

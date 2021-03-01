@@ -445,9 +445,10 @@ def test_timeline_od_to_x():
 
 def test_timeline_dod_to_dx():
     timeline = mocked_timeline()
+    width = timeline.width
     percent = FAKE.random.uniform(0, 1)
     dod = percent * timeline.time_span
-    assert timeline.dod_to_dx(dod) == timeline.width * percent
+    assert round(timeline.dod_to_dx(dod), 5) == round(width * percent, 5)
 
 
 def test_timeline_dx_to_dod():

@@ -94,6 +94,9 @@ class ConvertibleDateTest(CalendarTestCase):
     #
     # Ordinal Conversions
     #
+
+    # ConvertibleDate.convert_ast_ymd in test_gregorian.py
+
     @patch(
         "src.customdate.ConvertibleDate._start_and_sign",
         return_value=[1, 1],
@@ -1151,9 +1154,6 @@ class ConvertibleDateTest(CalendarTestCase):
     # ConvertibleDate.days_in_year tested in test_gregorian.py
     # ConvertibleDate.months_in_year tested in test_gregorian.py
 
-    #
-    # Weeks
-    #
     @patch("src.db.ConvertibleCalendar.days_in_weeks")
     def test_day_of_week_with_no_weeks(self, patch_days_in_weeks):
         patch_days_in_weeks.__get__ = lambda *_: 0  # enforce weekless calendar
@@ -1166,3 +1166,10 @@ class ConvertibleDateTest(CalendarTestCase):
         _ordinal = FAKE.random_int()
         cdt = ConvertibleDate(calendar=weekless_calendar)
         assert cdt.day_of_week(_ordinal) is None
+
+    def test_calendar(self):
+        cd = ConvertibleDate(calendar=self.calendar_factory.build())
+        assert cd.calendar == cd._calendar
+
+        with pytest.raises(AttributeError):
+            cd.calendar = self.calendar_factory.build()
